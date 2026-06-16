@@ -1,0 +1,79 @@
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<jsp:include page="/WEB-INF/includes/header.jsp" />
+
+<div class="container my-5">
+    <h2>Thêm Sách Mới (Admin)</h2>
+    <!-- Form thêm mới sách (Skeleton để Dev 3 triển khai theo luồng TPT Transaction) -->
+    <form action="${pageContext.request.contextPath}/product?view=create" method="POST" enctype="multipart/form-data">
+        <div class="row">
+            <div class="col-md-6">
+                <h4 class="mb-3">Thông tin sản phẩm chung</h4>
+                <div class="mb-3">
+                    <label for="title" class="form-label">Tiêu đề sách</label>
+                    <input type="text" class="form-control" id="title" name="title" required>
+                </div>
+                <div class="mb-3">
+                    <label for="categoryId" class="form-label">Danh mục</label>
+                    <select class="form-select" id="categoryId" name="categoryId" required>
+                        <c:forEach var="cat" items="${categories}">
+                            <option value="${cat.id}">${cat.name}</option>
+                        </c:forEach>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="price" class="form-label">Giá tiền</label>
+                    <input type="number" step="0.01" class="form-control" id="price" name="price" required>
+                </div>
+                <div class="mb-3">
+                    <label for="sku" class="form-label">Mã SKU</label>
+                    <input type="text" class="form-control" id="sku" name="sku">
+                </div>
+                <div class="mb-3">
+                    <label for="image" class="form-label">Hình ảnh minh họa</label>
+                    <input type="file" class="form-control" id="image" name="image">
+                </div>
+                <div class="mb-3">
+                    <label for="description" class="form-label">Mô tả sản phẩm</label>
+                    <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <h4 class="mb-3">Thông số chi tiết Sách</h4>
+                <div class="mb-3">
+                    <label for="publisherId" class="form-label">Nhà xuất bản</label>
+                    <select class="form-select" id="publisherId" name="publisherId">
+                        <c:forEach var="pub" items="${publishers}">
+                            <option value="${pub.id}">${pub.name}</option>
+                        </c:forEach>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="translator" class="form-label">Dịch giả</label>
+                    <input type="text" class="form-control" id="translator" name="translator">
+                </div>
+                <div class="mb-3">
+                    <label for="publicationYear" class="form-label">Năm xuất bản</label>
+                    <input type="number" class="form-control" id="publicationYear" name="publicationYear">
+                </div>
+                <div class="mb-3">
+                    <label for="numberOfPages" class="form-label">Số trang</label>
+                    <input type="number" class="form-control" id="numberOfPages" name="numberOfPages">
+                </div>
+                <div class="mb-3">
+                    <label for="coverType" class="form-label">Loại bìa</label>
+                    <input type="text" class="form-control" id="coverType" name="coverType">
+                </div>
+                <div class="mb-3">
+                    <label for="language" class="form-label">Ngôn ngữ</label>
+                    <input type="text" class="form-control" id="language" name="language" value="Tiếng Việt">
+                </div>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-success mt-4">Thêm mới</button>
+        <a href="${pageContext.request.contextPath}/product?view=list" class="btn btn-secondary mt-4">Quay lại</a>
+    </form>
+</div>
+
+<jsp:include page="/WEB-INF/includes/footer.jsp" />

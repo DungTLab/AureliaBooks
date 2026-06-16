@@ -8,8 +8,8 @@
         <title>AureliaBooks</title>
         <link rel="icon" type="image/x-icon" href="./assets/images/Logo/sub-logo-ver2.png"/>
         <link rel="stylesheet" href="./assets/css/bootstrap.min.css">
-        <link rel="stylesheet" href="./assets/css/style.css">
         <link rel="stylesheet" href="./assets/font/font-icon-bs/bootstrap-icons.min.css"/>
+        <link rel="stylesheet" href="./assets/css/main.css">
     </head>
     <body>
 
