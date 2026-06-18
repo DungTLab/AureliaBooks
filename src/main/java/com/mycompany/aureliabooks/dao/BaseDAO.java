@@ -14,7 +14,7 @@ import java.sql.SQLException;
  * @author DungLT
  */
 public class BaseDAO {
-    private static final String DB_URL = "jdbc:sqlserver://localhost:1433;databaseName=MiniFahasaDb;encrypt=true;trustServerCertificate=true;";
+    private static final String DB_URL = "jdbc:sqlserver://localhost:1433;databaseName=AureliaBooks;encrypt=true;trustServerCertificate=true;";
     private static final String USER = "sa";
     private static final String PASS = "123456";
 
