@@ -1,0 +1,24 @@
+# Maven target directory (compiled binaries)
+target/
+*.war
+*.ear
+*.jar
+*.class
+
+# IDE files
+.idea/
+*.iml
+*.iws
+*.ipr
+.settings/
+.project
+.classpath
+.factorypath
+nbproject/private/
+nb-configuration.xml
+
+# OS temp files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
