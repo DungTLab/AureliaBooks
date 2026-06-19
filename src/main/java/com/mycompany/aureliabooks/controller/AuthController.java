@@ -27,7 +27,7 @@ public class AuthController extends HttpServlet {
             // Hủy session và logout
         } else if ("register".equals(action)) {
             request.getRequestDispatcher("/WEB-INF/auth/register.jsp").forward(request, response);
-        } else {
+        } else if("login".equals(action)){
             request.getRequestDispatcher("/WEB-INF/auth/login.jsp").forward(request, response);
         }
     }
