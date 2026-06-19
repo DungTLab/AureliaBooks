@@ -28,7 +28,7 @@
             </tr>
         </thead>
         <tbody>
-            <c:forEach var="order" items="${orders}">
+            <c:forEach var="order" items="${orderList}">
                 <tr>
                     <td>#${order.id}</td>
                     <td>${order.createdAt}</td>
