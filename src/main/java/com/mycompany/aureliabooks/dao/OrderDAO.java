@@ -49,7 +49,7 @@ public class OrderDAO extends BaseDAO {
 
     public List<Order> getAllOrders() {
         List<Order> list = new ArrayList<>();
-        String sql = "SELECT Id, UserId, TotalAmount, [Status], ShippingAddress, ContactPhone, ProcessedByUserId, ReturnReason, CreatedAt from Orders ORDER BY CreatedAt DESC";
+        String sql = "SELECT Id, UserId, DiscountId, TotalAmount, [Status], ShippingAddress, ContactPhone, ProcessedByUserId, ReturnReason, CreatedAt from Orders ORDER BY CreatedAt DESC";
 
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
 
@@ -66,7 +66,7 @@ public class OrderDAO extends BaseDAO {
 
     public List<Order> getOrdersByStatus(String status) {
         List<Order> list = new ArrayList<>();
-        String sql = "SELECT Id, UserId, TotalAmount, [Status], ShippingAddress, ContactPhone, ProcessedByUserId, ReturnReason, CreatedAt from Orders WHERE [Status] = ? ORDER BY CreatedAt DESC";
+        String sql = "SELECT Id, UserId, DiscountId, TotalAmount, [Status], ShippingAddress, ContactPhone, ProcessedByUserId, ReturnReason, CreatedAt from Orders WHERE [Status] = ? ORDER BY CreatedAt DESC";
 
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
 
