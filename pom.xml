@@ -41,6 +41,13 @@
             <artifactId>mssql-jdbc</artifactId>
             <version>12.4.2.jre11</version>
         </dependency>
+        
+        <!-- 5. BCrypt Password Hashing -->
+        <dependency>
+            <groupId>org.mindrot</groupId>
+            <artifactId>jbcrypt</artifactId>
+            <version>0.4</version>
+        </dependency>
     </dependencies>
     
     <build>
