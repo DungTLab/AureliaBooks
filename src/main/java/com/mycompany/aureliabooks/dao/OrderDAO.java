@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.mycompany.aureliabooks.dao;
 
 import com.mycompany.aureliabooks.model.Order;
@@ -14,13 +10,14 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Order & Returns & Statistics DAO class. Created like NetBeans Maven template.
- *
- * @author DungLT
+ * DAO for order persistence, status management, returns, and reporting queries.
  */
 public class OrderDAO extends BaseDAO {
 
-    // Helper method for reusing
+    /**
+     * Maps the current {@link ResultSet} row to an {@link Order} entity.
+     * Keeps row-to-object conversion in one place so the query methods stay small.
+     */
     private Order mapResultSetToOrder(ResultSet rs) throws Exception {
         Order order = new Order();
         order.setId(rs.getInt("Id"));
@@ -37,16 +34,25 @@ public class OrderDAO extends BaseDAO {
         return order;
     }
 
+    /**
+     * Inserts a new order record.
+     */
     public boolean insertOrder(Order order) {
-        // Empty skeleton for Sprint 1 (To be implemented by Dev 4)
+        // TODO: Implement order persistence when the checkout flow is wired up.
         return false;
     }
 
+    /**
+     * Returns all orders placed by a specific user.
+     */
     public List<Order> getOrdersByUserId(int userId) {
-        // Empty skeleton for Sprint 1 (To be implemented by Dev 4)
+        // TODO: Filter orders by user once the account history view is connected.
         return null;
     }
 
+    /**
+     * Returns every order sorted by newest first.
+     */
     public List<Order> getAllOrders() {
         List<Order> list = new ArrayList<>();
         String sql = "SELECT Id, UserId, DiscountId, TotalAmount, [Status], ShippingAddress, ContactPhone, ProcessedByUserId, ReturnReason, CreatedAt from Orders ORDER BY CreatedAt DESC";
@@ -64,6 +70,9 @@ public class OrderDAO extends BaseDAO {
         return list;
     }
 
+    /**
+     * Returns orders that match the given status, sorted by newest first.
+     */
     public List<Order> getOrdersByStatus(String status) {
         List<Order> list = new ArrayList<>();
         String sql = "SELECT Id, UserId, DiscountId, TotalAmount, [Status], ShippingAddress, ContactPhone, ProcessedByUserId, ReturnReason, CreatedAt from Orders WHERE [Status] = ? ORDER BY CreatedAt DESC";
@@ -84,11 +93,17 @@ public class OrderDAO extends BaseDAO {
         return list;
     }
 
+    /**
+     * Returns a single order by its primary key.
+     */
     public Order getOrderById(int orderId) {
-        // Empty skeleton for Sprint 1 (To be implemented by Dev 4/5)
+        // TODO: Load the full order detail view from the database.
         return null;
     }
 
+    /**
+     * Updates the status of an order and records the staff member who processed it.
+     */
     public boolean updateOrderStatus(int orderId, String status, Integer processedByUserId) {
         String sql = "UPDATE Orders SET [Status] = ?, ProcessedByUserId = ? WHERE Id = ?";
 
@@ -105,18 +120,27 @@ public class OrderDAO extends BaseDAO {
         return false;
     }
 
+    /**
+     * Creates a return request for an order.
+     */
     public boolean requestOrderReturn(int orderId, String reason) {
-        // Transaction to set status to RETURNED and increase stock (To be implemented by Dev 4)
+        // TODO: Wrap the return workflow in a transaction and restore inventory.
         return false;
     }
 
+    /**
+     * Returns aggregated revenue data for the requested period.
+     */
     public Map<String, Double> getRevenueReport(String type) {
-        // Statistical query (GROUP BY) for daily, monthly, quarterly reports (To be implemented by Dev 2)
+        // TODO: Aggregate revenue by day, month, or quarter as required by the report.
         return null;
     }
 
+    /**
+     * Returns best-selling product statistics for the requested period.
+     */
     public List<Map<String, Object>> getBestSellingReport(String type) {
-        // Statistical query for best-selling books (To be implemented by Dev 2)
+        // TODO: Aggregate best-selling products for the requested reporting period.
         return null;
     }
 }
