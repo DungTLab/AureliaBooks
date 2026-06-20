@@ -20,7 +20,7 @@
         <div class="container d-flex gap-3 pb-3 overflow-auto">
 
             <div class="card" style="width: 15rem;">
-                <img src="./assets/images/book-image/Harry-Potter-và-hoàng-tử-lai.gif" class="card-img-top" alt="image">
+                <img src="${pageContext.request.contextPath}/assets/images/book-image/Harry-Potter-và-hoàng-tử-lai.gif" class="card-img-top" alt="image">
                 <div class="card-body">
                     <h5 class="card-title">Harry Potter</h5>
                     <p class="card-text">Harry Potter và hoàng tử lai.</p>
@@ -28,7 +28,7 @@
                 </div>
             </div>  
             <div class="card" style="width: 15rem;">
-                <img src="./assets/images/book-image/Harry-Potter-và-hoàng-tử-lai.gif" class="card-img-top" alt="image">
+                <img src="${pageContext.request.contextPath}/assets/images/book-image/Harry-Potter-và-hoàng-tử-lai.gif" class="card-img-top" alt="image">
                 <div class="card-body">
                     <h5 class="card-title">Harry Potter</h5>
                     <p class="card-text">Harry Potter và hoàng tử lai.</p>
@@ -36,7 +36,7 @@
                 </div>
             </div>
             <div class="card" style="width: 15rem;">
-                <img src="./assets/images/book-image/Harry-Potter-và-hoàng-tử-lai.gif" class="card-img-top" alt="image">
+                <img src="${pageContext.request.contextPath}/assets/images/book-image/Harry-Potter-và-hoàng-tử-lai.gif" class="card-img-top" alt="image">
                 <div class="card-body">
                     <h5 class="card-title">Harry Potter</h5>
                     <p class="card-text">Harry Potter và hoàng tử lai.</p>
@@ -44,7 +44,7 @@
                 </div>
             </div>
             <div class="card" style="width: 15rem;">
-                <img src="./assets/images/book-image/Harry-Potter-và-hoàng-tử-lai.gif" class="card-img-top" alt="image">
+                <img src="${pageContext.request.contextPath}/assets/images/book-image/Harry-Potter-và-hoàng-tử-lai.gif" class="card-img-top" alt="image">
                 <div class="card-body">
                     <h5 class="card-title">Harry Potter</h5>
                     <p class="card-text">Harry Potter và hoàng tử lai.</p>
@@ -52,7 +52,7 @@
                 </div>
             </div>
             <div class="card" style="width: 15rem;">
-                <img src="./assets/images/book-image/Harry-Potter-và-hoàng-tử-lai.gif" class="card-img-top" alt="image">
+                <img src="${pageContext.request.contextPath}/assets/images/book-image/Harry-Potter-và-hoàng-tử-lai.gif" class="card-img-top" alt="image">
                 <div class="card-body">
                     <h5 class="card-title">Harry Potter</h5>
                     <p class="card-text">Harry Potter và hoàng tử lai.</p>
@@ -73,7 +73,7 @@
             <div class="container d-flex gap-3 pb-3 overflow-auto">
 
                 <div class="card border-2" style="width: 15rem;">
-                    <img src="./assets/images/book-image/Harry-Potter-và-hoàng-tử-lai.gif" class="card-img-top" alt="image">
+                    <img src="${pageContext.request.contextPath}/assets/images/book-image/Harry-Potter-và-hoàng-tử-lai.gif" class="card-img-top" alt="image">
                     <div class="card-body">
                         <h5 class="card-title">Harry Potter</h5>
                         <p class="card-text">Harry Potter và hoàng tử lai.</p>
@@ -81,7 +81,7 @@
                     </div>
                 </div>  
                 <div class="card border-2" style="width: 15rem;">
-                    <img src="./assets/images/book-image/Harry-Potter-và-hoàng-tử-lai.gif" class="card-img-top" alt="image">
+                    <img src="${pageContext.request.contextPath}/assets/images/book-image/Harry-Potter-và-hoàng-tử-lai.gif" class="card-img-top" alt="image">
                     <div class="card-body">
                         <h5 class="card-title">Harry Potter</h5>
                         <p class="card-text">Harry Potter và hoàng tử lai.</p>
@@ -89,7 +89,7 @@
                     </div>
                 </div>  
                 <div class="card border-2" style="width: 15rem;">
-                    <img src="./assets/images/book-image/Harry-Potter-và-hoàng-tử-lai.gif" class="card-img-top" alt="image">
+                    <img src="${pageContext.request.contextPath}/assets/images/book-image/Harry-Potter-và-hoàng-tử-lai.gif" class="card-img-top" alt="image">
                     <div class="card-body">
                         <h5 class="card-title">Harry Potter</h5>
                         <p class="card-text">Harry Potter và hoàng tử lai.</p>
@@ -97,7 +97,7 @@
                     </div>
                 </div>  
                 <div class="card border-2" style="width: 15rem;">
-                    <img src="./assets/images/book-image/Harry-Potter-và-hoàng-tử-lai.gif" class="card-img-top" alt="image">
+                    <img src="${pageContext.request.contextPath}/assets/images/book-image/Harry-Potter-và-hoàng-tử-lai.gif" class="card-img-top" alt="image">
                     <div class="card-body">
                         <h5 class="card-title">Harry Potter</h5>
                         <p class="card-text">Harry Potter và hoàng tử lai.</p>
@@ -105,7 +105,7 @@
                     </div>
                 </div>  
                 <div class="card border-2" style="width: 15rem;">
-                    <img src="./assets/images/book-image/Harry-Potter-và-hoàng-tử-lai.gif" class="card-img-top" alt="image">
+                    <img src="${pageContext.request.contextPath}/assets/images/book-image/Harry-Potter-và-hoàng-tử-lai.gif" class="card-img-top" alt="image">
                     <div class="card-body">
                         <h5 class="card-title">Harry Potter</h5>
                         <p class="card-text">Harry Potter và hoàng tử lai.</p>

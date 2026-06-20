@@ -37,7 +37,7 @@
                 <h5 class="text-uppercase mb-4 font-weight-bold text-warning">Liên hệ</h5>
                 <p><i class="bi bi-geo-alt-fill me-2"></i>600, Nguyễn Văn Cừ nối dài, TP.Cần Thơ</p>
                 <p><i class="bi bi-envelope-fill me-2"></i>Dungletiense@gmail.com</p>
-                <p><i class="bi bi-telephone-fill me-2"></i> +84 123 456 789</p>
+                <p><i class="bi bi-telephone-fill me-2"></i> +84 349 747 317</p>
                 <p><i class="bi bi-clock-fill me-2"></i> Giờ mở cửa: 8:00 - 22:00</p>
             </div>
 
@@ -49,7 +49,7 @@
         <div class="row align-items-center">
             <div class="col-md-7 col-lg-8 text-center text-md-start">
                 <p class="mb-0">© 2026 Toàn bộ bản quyền thuộc về: 
-                    <a href="http://localhost:8080/AureliaBooks/" class="text-warning text-decoration-none"><strong>AureliaBooks</strong></a>
+                    <a href="${pageContext.request.contextPath}/" class="text-warning text-decoration-none"><strong>AureliaBooks</strong></a>
                 </p>
             </div>
 
@@ -73,6 +73,6 @@
 
     </div>
 </footer>
-<script src="./assets/js/bootstrap.bundle.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/bootstrap.bundle.js"></script>
 </body>
 </html>
