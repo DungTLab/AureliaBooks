@@ -4,17 +4,20 @@
  */
 package com.mycompany.aureliabooks.controller;
 
+import com.mycompany.aureliabooks.dao.ProductDAO;
+import com.mycompany.aureliabooks.model.Product;
 import java.io.IOException;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.HashMap;
 
 /**
- * Customer Product Catalog Browser Controller.
- * Handles product search, filters, listing, pagination, and detail view.
- * Created like NetBeans Maven template.
+ * Customer Product Catalog Browser Controller. Handles product search, filters,
+ * listing, pagination, and detail view. Created like NetBeans Maven template.
+ *
  * @author DungLT
  */
 @WebServlet(name = "ProductController", urlPatterns = {"/products"})
@@ -25,7 +28,10 @@ public class ProductController extends HttpServlet {
             throws ServletException, IOException {
         String action = request.getParameter("action");
         if ("detail".equals(action)) {
-            // Xem chi tiết
+            ProductDAO productDAO = new ProductDAO();
+
+            HashMap<String, Object> product = productDAO.getProductFullInformationById(Integer.parseInt(request.getParameter("id")));
+            request.setAttribute("product", product);
             request.getRequestDispatcher("/WEB-INF/view/book-detail.jsp").forward(request, response);
         } else {
             // Xem danh sách và tìm kiếm
