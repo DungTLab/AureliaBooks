@@ -43,7 +43,7 @@
                                     </td>
                                     <td>${item.product.price * item.quantity} VNĐ</td>
                                     <td>
-                                        <form action="${pageContext.request.contextPath}/cart?action=remove" method="POST">
+                                        <form action="${pageContext.request.contextPath}/cart?action=delete" method="POST">
                                             <input type="hidden" name="itemId" value="${item.id}">
                                             <button type="submit" class="btn btn-sm btn-danger">Xóa</button>
                                         </form>
