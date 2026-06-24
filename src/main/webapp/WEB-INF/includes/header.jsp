@@ -1,4 +1,5 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 
 
 <!DOCTYPE html>
@@ -63,14 +64,35 @@
                             <span class="small d-none d-xl-inline">Giỏ hàng</span>
                         </a>
 
-<!--                                                <a href="#" class="nav-link d-flex align-items-center gap-2 text-dark fw-bold py-2">
-                                                    <i class="bi bi-person fs-5"></i>
-                                                    <span class="small d-none d-xl-inline">Tài khoản</span>
-                                                </a>-->
+                        <c:choose>
+                            <c:when test="${not empty sessionScope.user}">
+                                <div class="dropdown">
+                                    <a class="nav-link dropdown-toggle d-flex align-items-center gap-2 text-dark fw-bold py-2" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bi bi-person-circle fs-5"></i>
+                                        <span class="small d-none d-xl-inline">${sessionScope.user.username}</span>
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                        <li><a class="dropdown-item" href="${pageContext.request.contextPath}/profile"><i class="bi bi-person me-2"></i>Hồ sơ cá nhân</a></li>
+                                        <li><a class="dropdown-item" href="${pageContext.request.contextPath}/orders"><i class="bi bi-receipt me-2"></i>Đơn hàng của tôi</a></li>
 
-                        <div class="text-dark">
-                            <a href="<%= request.getContextPath() %>/auth?action=register" class="btn ">Sign up</a>|<a href="<%= request.getContextPath() %>/auth?action=login" class="btn">Login</a>
-                        </div>
+                                        <%-- Nếu là ADMIN thì hiển thị thêm nút truy cập trang Quản trị --%>
+                                        <c:if test="${sessionScope.user.roleName eq 'ADMIN'}">
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li><a class="dropdown-item text-danger fw-bold" href="${pageContext.request.contextPath}/admin/orders"><i class="bi bi-speedometer2 me-2"></i>Quản trị hệ thống</a></li>
+                                            </c:if>
+
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" href="${pageContext.request.contextPath}/auth?action=logout"><i class="bi bi-box-arrow-right me-2"></i>Đăng xuất</a></li>
+                                    </ul>
+                                </div>
+                            </c:when>
+                            <c:otherwise>
+                                <a href="${pageContext.request.contextPath}/auth?action=login" class="nav-link d-flex align-items-center gap-2 text-dark fw-bold py-2">
+                                    <i class="bi bi-person fs-5"></i>
+                                    <span class="small d-none d-xl-inline">Đăng nhập</span>
+                                </a>
+                            </c:otherwise>
+                        </c:choose>
 
                         <div class="dropdown">
                             <button class="btn btn-sm btn-outline-secondary dropdown-toggle py-1" type="button" data-bs-toggle="dropdown" aria-expanded="false">

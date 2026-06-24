@@ -8,6 +8,16 @@
             <div class="card shadow-sm">
                 <div class="card-body">
                     <h3 class="card-title text-center mb-4">Đăng Nhập</h3>
+                    <c:if test="${not empty requestScope.error}">
+                        <div class="alert alert-danger py-2" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>${requestScope.error}
+                        </div>
+                    </c:if>
+                    <c:if test="${not empty requestScope.success}">
+                        <div class="alert alert-success py-2" role="alert">
+                            <i class="bi bi-check-circle-fill me-2"></i>${requestScope.success}
+                        </div>
+                    </c:if>
                     <!-- Form đăng nhập rỗng (Skeleton để Dev 1 triển khai) -->
                     <form action="${pageContext.request.contextPath}/auth?action=login" method="POST">
                         <div class="mb-3">
