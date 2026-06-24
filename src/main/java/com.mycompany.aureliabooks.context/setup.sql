@@ -376,8 +376,12 @@ GO
 
 -- 12. Chèn dữ liệu Users (Mật khẩu mẫu ở đây tương trưng, khi code sinh viên sẽ dùng BCrypt băm)
 INSERT INTO [dbo].[Users] ([RoleId], [Username], [PasswordHash], [Email], [AuthProvider], [IsActive]) VALUES 
-(1, 'admin', 'admin123_hashed', 'admin@minifahasa.com', 'local', 1),
-(2, 'employee1', 'emp123_hashed', 'emp1@minifahasa.com', 'local', 1),
+(1, 'admin', '$2a$10$oQWb3bZ8vcAbTlWumFtMNeNoMGAa3AyHZnuTutYco4BZMD8mBIz02', 'admin@minifahasa.com', 'local', 1),
+(2, 'dunglt', '$2a$10$4cKNr/Wh2GRVb/c5CKZhC.wwexcJP0w6Xi4CdLE.ky7mgW6IMTn0.', 'emp1@minifahasa.com', 'local', 1),
+(2, 'giacth', '$2a$10$yo7zXNy/77M3vRXSudLD1.CSL4U8JEVIXLH4ccKnTjX5QlKHygscG', 'emp2@minifahasa.com', 'local', 1),
+(2, 'duyhn', '$2a$10$JO1dBx0rh8YDRr3MbDuSAO5j5D.iAEyupOlKY8sAWAilvmNoC40Qa', 'emp3@minifahasa.com', 'local', 1),
+(2, 'anhntd', '$2a$10$ibaL/gWTaAsrvmZDNKOFe.BzwxItTdVYp0VZhBSrv/6qR./JRTycS', 'emp4@minifahasa.com', 'local', 1),
+(2, 'trongnp', '$2a$10$Bw8wJmP2mAtjYYrEdfDYkuTNc4vkdZwb45KKCvfrUNOh9KWzWsCIi', 'emp5@minifahasa.com', 'local', 1),
 (3, 'customer1', 'cust123_hashed', 'customer1@gmail.com', 'local', 1),
 (3, 'customer2', 'cust456_hashed', 'customer2@gmail.com', 'google', 1);
 GO
@@ -385,9 +389,13 @@ GO
 -- 13. Chèn dữ liệu UserProfiles
 INSERT INTO [dbo].[UserProfiles] ([UserId], [FullName], [Phone], [Address], [AvatarUrl]) VALUES 
 (1, N'Trần Văn Quản Trị', '0901234567', N'123 Nguyễn Văn Cừ, Quận 5, TP. HCM', 'avatars/admin.jpg'),
-(2, N'Nguyễn Thị Nhân Viên', '0907654321', N'456 Lê Lợi, Quận 1, TP. HCM', 'avatars/emp1.jpg'),
-(3, N'Lê Minh Khách Hàng 1', '0911112222', N'789 Cách Mạng Tháng Tám, Tân Bình, TP. HCM', 'avatars/cust1.jpg'),
-(4, N'Phạm Hoàng Khách Hàng 2', '0933334444', N'101 Điện Biên Phủ, Bình Thạnh, TP. HCM', 'avatars/cust2.jpg');
+(2, N'Lê Tiến Dũng', '0907654321', N'456 Lê Lợi, Quận 1, TP. HCM', 'avatars/emp1.jpg'),
+(3, N'Trần Huỳnh Giác', '0907654322', N'456 Lê Lợi, Quận 1, TP. HCM', 'avatars/emp2.jpg'),
+(4, N'Nguyễn Nhật Duy', '0907654323', N'456 Lê Lợi, Quận 1, TP. HCM', 'avatars/emp3.jpg'),
+(5, N'Nguyễn Trần Đức Anh', '0907654324', N'456 Lê Lợi, Quận 1, TP. HCM', 'avatars/emp4.jpg'),
+(6, N'Nguyễn Phú Trọng', '0907654325', N'456 Lê Lợi, Quận 1, TP. HCM', 'avatars/emp5.jpg'),
+(7, N'Lê Minh Khách Hàng 1', '0911112222', N'789 Cách Mạng Tháng Tám, Tân Bình, TP. HCM', 'avatars/cust1.jpg'),
+(8, N'Phạm Hoàng Khách Hàng 2', '0933334444', N'101 Điện Biên Phủ, Bình Thạnh, TP. HCM', 'avatars/cust2.jpg');
 GO
 
 -- 14. Chèn dữ liệu Inventory (Số lượng tồn ban đầu)
@@ -402,7 +410,7 @@ GO
 -- 15. Chèn dữ liệu Orders & OrderItems (Thao tác thống kê mẫu)
 -- Đơn hàng 1: Hoàn thành (Dùng để chạy thử thống kê và nút Trả Hàng)
 INSERT INTO [dbo].[Orders] ([UserId], [DiscountId], [TotalAmount], [Status], [ShippingAddress], [ContactPhone], [ProcessedByUserId], [CreatedAt]) VALUES 
-(3, NULL, 196000.00, 'COMPLETED', N'789 Cách Mạng Tháng Tám, Tân Bình, TP. HCM', '0911112222', 2, '2026-06-10 14:30:00');
+(7, NULL, 196000.00, 'COMPLETED', N'789 Cách Mạng Tháng Tám, Tân Bình, TP. HCM', '0911112222', 2, '2026-06-10 14:30:00');
 
 INSERT INTO [dbo].[OrderItems] ([OrderId], [ProductId], [Quantity], [UnitPrice], [SubTotal]) VALUES 
 (1, 1, 1, 110000.00, 110000.00), -- 1 cuốn Mắt Biếc
@@ -410,7 +418,7 @@ INSERT INTO [dbo].[OrderItems] ([OrderId], [ProductId], [Quantity], [UnitPrice],
 
 -- Đơn hàng 2: Đang chờ xử lý
 INSERT INTO [dbo].[Orders] ([UserId], [DiscountId], [TotalAmount], [Status], [ShippingAddress], [ContactPhone], [ProcessedByUserId], [CreatedAt]) VALUES 
-(4, 1, 225000.00, 'PENDING', N'101 Điện Biên Phủ, Bình Thạnh, TP. HCM', '0933334444', NULL, '2026-06-15 09:15:00');
+(8, 1, 225000.00, 'PENDING', N'101 Điện Biên Phủ, Bình Thạnh, TP. HCM', '0933334444', NULL, '2026-06-15 09:15:00');
 
 INSERT INTO [dbo].[OrderItems] ([OrderId], [ProductId], [Quantity], [UnitPrice], [SubTotal]) VALUES 
 (2, 3, 1, 250000.00, 250000.00); -- 1 cuốn Rừng Na Uy (Có áp mã discount)
