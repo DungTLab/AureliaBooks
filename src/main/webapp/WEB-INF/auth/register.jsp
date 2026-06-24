@@ -8,6 +8,11 @@
             <div class="card shadow-sm">
                 <div class="card-body">
                     <h3 class="card-title text-center mb-4">Đăng Ký Tài Khoản</h3>
+                    <c:if test="${not empty requestScope.error}">
+                        <div class="alert alert-danger py-2" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>${requestScope.error}
+                        </div>
+                    </c:if>
                     <!-- Form đăng ký rỗng (Skeleton để Dev 1 triển khai) -->
                     <form action="${pageContext.request.contextPath}/auth?action=register" method="POST">
                         <div class="mb-3">

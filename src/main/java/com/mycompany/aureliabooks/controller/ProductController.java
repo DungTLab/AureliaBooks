@@ -20,7 +20,7 @@ import java.util.HashMap;
  *
  * @author DungLT
  */
-@WebServlet(name = "ProductController", urlPatterns = {"/products"})
+@WebServlet(name = "ProductController", urlPatterns = {"/products", "/product"})
 public class ProductController extends HttpServlet {
 
     @Override
@@ -34,15 +34,25 @@ public class ProductController extends HttpServlet {
             request.setAttribute("product", product);
             request.getRequestDispatcher("/WEB-INF/view/book-detail.jsp").forward(request, response);
         } else {
-            // Xem danh sách và tìm kiếm
-            request.getRequestDispatcher("/index.jsp").forward(request, response);
+            String action = request.getParameter("action");
+            if ("detail".equals(action)) {
+                // Xem chi tiết
+                request.getRequestDispatcher("/WEB-INF/view/book-detail.jsp").forward(request, response);
+            } else {
+                // Xem danh sách và tìm kiếm
+                request.getRequestDispatcher("/index.jsp").forward(request, response);
+            }
         }
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // Do get handles search, post not used here
-        doGet(request, response);
+        String servletPath = request.getServletPath();
+        if ("/product".equals(servletPath)) {
+            // Admin POST CRUD actions (To be implemented by Dev 2)
+        } else {
+            doGet(request, response);
+        }
     }
 }

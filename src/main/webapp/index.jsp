@@ -11,7 +11,6 @@
 <div class="bg-body-secondary pb-3">
 
 
-
     <%-- View all product --%>
     <div class="container mt-3">
 
