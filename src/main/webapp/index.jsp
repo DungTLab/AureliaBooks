@@ -10,57 +10,6 @@
 <%-- Body --%>
 <div class="bg-body-secondary pb-3">
 
-    <%-- FlashSell  --%>
-    <div class="card-interface mt-4 pt-1">
-        <div class=" container d-flex rounded-3 bg-white py-3 px-2 mb-3 mt-3 justify-content-between align-items-center">
-            <label class="h2"><i class="bi bi-lightning-charge-fill text-danger"></i> flash sell</label>
-            <a href="" class="btn btn-close-white text-primary h2"> View all <i class="bi bi-chevron-compact-right"></i></a>
-        </div>
-
-        <div class="container d-flex gap-3 pb-3 overflow-auto">
-
-            <div class="card" style="width: 15rem;">
-                <img src="${pageContext.request.contextPath}/assets/images/book-image/Harry-Potter-và-hoàng-tử-lai.gif" class="card-img-top" alt="image">
-                <div class="card-body">
-                    <h5 class="card-title">Harry Potter</h5>
-                    <p class="card-text">Harry Potter và hoàng tử lai.</p>
-                    <a href="#" class="btn btn-primary"> <i class="bi bi-cart"></i> Add to cart</a>
-                </div>
-            </div>  
-            <div class="card" style="width: 15rem;">
-                <img src="${pageContext.request.contextPath}/assets/images/book-image/Harry-Potter-và-hoàng-tử-lai.gif" class="card-img-top" alt="image">
-                <div class="card-body">
-                    <h5 class="card-title">Harry Potter</h5>
-                    <p class="card-text">Harry Potter và hoàng tử lai.</p>
-                    <a href="#" class="btn btn-primary"> <i class="bi bi-cart"></i> Add to cart</a>
-                </div>
-            </div>
-            <div class="card" style="width: 15rem;">
-                <img src="${pageContext.request.contextPath}/assets/images/book-image/Harry-Potter-và-hoàng-tử-lai.gif" class="card-img-top" alt="image">
-                <div class="card-body">
-                    <h5 class="card-title">Harry Potter</h5>
-                    <p class="card-text">Harry Potter và hoàng tử lai.</p>
-                    <a href="#" class="btn btn-primary"> <i class="bi bi-cart"></i> Add to cart</a>
-                </div>
-            </div>
-            <div class="card" style="width: 15rem;">
-                <img src="${pageContext.request.contextPath}/assets/images/book-image/Harry-Potter-và-hoàng-tử-lai.gif" class="card-img-top" alt="image">
-                <div class="card-body">
-                    <h5 class="card-title">Harry Potter</h5>
-                    <p class="card-text">Harry Potter và hoàng tử lai.</p>
-                    <a href="#" class="btn btn-primary"> <i class="bi bi-cart"></i> Add to cart</a>
-                </div>
-            </div>
-            <div class="card" style="width: 15rem;">
-                <img src="${pageContext.request.contextPath}/assets/images/book-image/Harry-Potter-và-hoàng-tử-lai.gif" class="card-img-top" alt="image">
-                <div class="card-body">
-                    <h5 class="card-title">Harry Potter</h5>
-                    <p class="card-text">Harry Potter và hoàng tử lai.</p>
-                    <a href="#" class="btn btn-primary"> <i class="bi bi-cart"></i> Add to cart</a>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <%-- View all product --%>
     <div class="container mt-3">
@@ -70,49 +19,60 @@
         </div>
 
         <div class="container rounded-3 bg-white pt-3">
-            <div class="container d-flex gap-3 pb-3 overflow-auto">
-
-                <div class="card border-2" style="width: 15rem;">
-                    <img src="${pageContext.request.contextPath}/assets/images/book-image/Harry-Potter-và-hoàng-tử-lai.gif" class="card-img-top" alt="image">
-                    <div class="card-body">
-                        <h5 class="card-title">Harry Potter</h5>
-                        <p class="card-text">Harry Potter và hoàng tử lai.</p>
-                        <a href="#" class="btn btn-primary"> <i class="bi bi-cart"></i> Add to cart</a>
+            <%-- Danh sách sản phẩm: mỗi dòng 1 sản phẩm --%>
+            <div class="row g-3 pb-3">
+                <c:forEach var="product" items="${listTopSaleProducts}">
+                    <div class="col-12">
+                        <div class="card border-2">
+                            <div class="row g-0">
+                                <div class="col-md-3">
+                                    <img src="${pageContext.request.contextPath}/assets/images/book-image/${product.imageUrl}" class="img-fluid rounded-start object-fit-contain w-100" alt="${product.title}" style="height: 220px;">
+                                </div>
+                                <div class="col-md-9">
+                                    <div class="card-body d-flex flex-column h-100">
+                                        <a class="card-title h4 mb-3 text-decoration-none" href="${pageContext.request.contextPath}/products?action=detail&id=${product.id}">${product.title}</a>
+                                        <p class="card-text text-secondary mb-4">${product.description}</p>
+                                        <div class="mt-auto d-flex justify-content-between align-items-center">
+                                            <span class="text-danger fw-bold h5 mb-0">
+                                                <fmt:formatNumber value="${product.price}" type="number" groupingUsed="true"/>đ
+                                            </span>
+                                            <a href="#" class="btn btn-primary px-4"> <i class="bi bi-cart"></i> Add to cart</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>  
-                <div class="card border-2" style="width: 15rem;">
-                    <img src="${pageContext.request.contextPath}/assets/images/book-image/Harry-Potter-và-hoàng-tử-lai.gif" class="card-img-top" alt="image">
-                    <div class="card-body">
-                        <h5 class="card-title">Harry Potter</h5>
-                        <p class="card-text">Harry Potter và hoàng tử lai.</p>
-                        <a href="#" class="btn btn-primary"> <i class="bi bi-cart"></i> Add to cart</a>
-                    </div>
-                </div>  
-                <div class="card border-2" style="width: 15rem;">
-                    <img src="${pageContext.request.contextPath}/assets/images/book-image/Harry-Potter-và-hoàng-tử-lai.gif" class="card-img-top" alt="image">
-                    <div class="card-body">
-                        <h5 class="card-title">Harry Potter</h5>
-                        <p class="card-text">Harry Potter và hoàng tử lai.</p>
-                        <a href="#" class="btn btn-primary"> <i class="bi bi-cart"></i> Add to cart</a>
-                    </div>
-                </div>  
-                <div class="card border-2" style="width: 15rem;">
-                    <img src="${pageContext.request.contextPath}/assets/images/book-image/Harry-Potter-và-hoàng-tử-lai.gif" class="card-img-top" alt="image">
-                    <div class="card-body">
-                        <h5 class="card-title">Harry Potter</h5>
-                        <p class="card-text">Harry Potter và hoàng tử lai.</p>
-                        <a href="#" class="btn btn-primary"> <i class="bi bi-cart"></i> Add to cart</a>
-                    </div>
-                </div>  
-                <div class="card border-2" style="width: 15rem;">
-                    <img src="${pageContext.request.contextPath}/assets/images/book-image/Harry-Potter-và-hoàng-tử-lai.gif" class="card-img-top" alt="image">
-                    <div class="card-body">
-                        <h5 class="card-title">Harry Potter</h5>
-                        <p class="card-text">Harry Potter và hoàng tử lai.</p>
-                        <a href="#" class="btn btn-primary"> <i class="bi bi-cart"></i> Add to cart</a>
-                    </div>
-                </div>  
+                </c:forEach>
             </div>
+
+            <%-- Phân trang --%>
+            <c:if test="${totalPages > 1}">
+                <nav aria-label="Page navigation" class="d-flex justify-content-center pb-3 pt-2">
+                    <ul class="pagination mb-0">
+                        <%-- Nút Previous --%>
+                        <li class="page-item ${currentPage == 1 ? 'disabled' : ''}">
+                            <a class="page-link" href="?page=${currentPage - 1}" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+
+                        <%-- Các số trang --%>
+                        <c:forEach var="i" begin="1" end="${totalPages}">
+                            <li class="page-item ${i == currentPage ? 'active' : ''}">
+                                <a class="page-link" href="?page=${i}">${i}</a>
+                            </li>
+                        </c:forEach>
+
+                        <%-- Nút Next --%>
+                        <li class="page-item ${currentPage == totalPages ? 'disabled' : ''}">
+                            <a class="page-link" href="?page=${currentPage + 1}" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </c:if>
         </div>
 
 
