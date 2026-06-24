@@ -29,19 +29,17 @@ public class ProductController extends HttpServlet {
         String action = request.getParameter("action");
         if ("detail".equals(action)) {
             ProductDAO productDAO = new ProductDAO();
-
-            HashMap<String, Object> product = productDAO.getProductFullInformationById(Integer.parseInt(request.getParameter("id")));
-            request.setAttribute("product", product);
+            try {
+                int id = Integer.parseInt(request.getParameter("id"));
+                HashMap<String, Object> product = productDAO.getProductFullInformationById(id);
+                request.setAttribute("product", product);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             request.getRequestDispatcher("/WEB-INF/view/book-detail.jsp").forward(request, response);
         } else {
-            String action = request.getParameter("action");
-            if ("detail".equals(action)) {
-                // Xem chi tiết
-                request.getRequestDispatcher("/WEB-INF/view/book-detail.jsp").forward(request, response);
-            } else {
-                // Xem danh sách và tìm kiếm
-                request.getRequestDispatcher("/index.jsp").forward(request, response);
-            }
+            // Xem danh sách và tìm kiếm
+            request.getRequestDispatcher("/index.jsp").forward(request, response);
         }
     }
 
