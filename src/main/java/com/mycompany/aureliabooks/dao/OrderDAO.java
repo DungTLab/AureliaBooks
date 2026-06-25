@@ -277,7 +277,7 @@ public class OrderDAO extends BaseDAO {
      * @return List of Order objects for the requested page
      */
     public List<Order> getOrdersPaged(String status, int offset, int pageSize) {
-        List<Order> listOrder = new ArrayList<>();
+        List<Order> list = new ArrayList<>();
 
         // SQL: Retrieve orders with pagination support using OFFSET/FETCH
         String sql = "SELECT Id, UserId, DiscountId, TotalAmount, [Status], ShippingAddress, ContactPhone, ProcessedByUserId, ReturnReason, CreatedAt \n"
@@ -301,7 +301,7 @@ public class OrderDAO extends BaseDAO {
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    listOrder.add(mapResultSetToOrder(rs));
+                    list.add(mapResultSetToOrder(rs));
                 }
             }
 
@@ -309,6 +309,6 @@ public class OrderDAO extends BaseDAO {
             e.printStackTrace();
         }
 
-        return listOrder;
+        return list;
     }
 }
