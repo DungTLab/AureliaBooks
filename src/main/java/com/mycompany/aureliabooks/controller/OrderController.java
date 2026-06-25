@@ -2,6 +2,7 @@ package com.mycompany.aureliabooks.controller;
 
 import com.mycompany.aureliabooks.dao.OrderDAO;
 import com.mycompany.aureliabooks.model.Order;
+import com.mycompany.aureliabooks.model.User;
 import java.io.IOException;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -11,7 +12,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
 
 /**
- * Handles customer order history and admin order management requests.
+ * Serves customer order history and admin order management requests.
  */
 @WebServlet(name = "OrderController", urlPatterns = {"/orders", "/admin/orders"})
 public class OrderController extends HttpServlet {
@@ -21,27 +22,48 @@ public class OrderController extends HttpServlet {
             throws ServletException, IOException {
         String requestURI = request.getRequestURI();
 
-        // Use the full request URI to distinguish customer and admin routes reliably.
         if (requestURI.contains("/admin/orders")) {
             OrderDAO orderDAO = new OrderDAO();
             String status = request.getParameter("status");
-            List<Order> orderList;
-
-            // Apply the status filter only when a specific value is selected.
-            if (status != null && !status.isEmpty() && !status.equals("ALL")) {
-                orderList = orderDAO.getOrdersByStatus(status);
-
-            } else {
-                orderList = orderDAO.getAllOrders();
+            if (status == null || status.isEmpty()) {
+                status = "ALL";
             }
-            
-            // Expose the data required by the admin list view.
+
+            int page = 1;
+            int pageSize = 10;
+            String pageStr = request.getParameter("page");
+            if (pageStr != null && !pageStr.isEmpty()) {
+                try {
+                    page = Integer.parseInt(pageStr);
+
+                    if (page < 1) {
+                        page = 1;
+                    }
+
+                } catch (NumberFormatException e) {
+                    page = 1;
+                }
+            }
+
+            int totalRecords = orderDAO.getTotalOrdersCount(status);
+            int totalPages = (int) Math.ceil((double) totalRecords / pageSize);
+            if (page > totalPages && totalPages > 0) {
+                page = totalPages;
+            }
+            int offset = (page - 1) * pageSize;
+
+            List<Order> orderList = orderDAO.getOrdersPaged(status, offset, pageSize);
+
             request.setAttribute("orderList", orderList);
-            // Preserve the selected filter in the UI.
+
             request.setAttribute("selectedStatus", status);
 
-            // Render the admin order list.
+            request.setAttribute("currentPage", page);
+
+            request.setAttribute("totalPages", totalPages);
+
             request.getRequestDispatcher("/WEB-INF/order/admin_list.jsp").forward(request, response);
+
         } else {
             // Render the customer order history page.
             request.getRequestDispatcher("/WEB-INF/order/history.jsp").forward(request, response);
@@ -55,25 +77,35 @@ public class OrderController extends HttpServlet {
         String action = request.getParameter("action");
 
         if (requestURI.contains("/admin/orders")) {
-            // Handle admin order status updates.
             if ("updateStatus".equals(action)) {
                 try {
                     int orderId = Integer.parseInt(request.getParameter("orderId"));
                     String newStatus = request.getParameter("newStatus");
 
-                    // TODO: Replace the hard-coded ID with the authenticated admin from session.
-                    Integer adminId = 1;
+                    // TODO: Resolve the authenticated admin from the session instead of using a fallback ID.
+                    User admin = (User) request.getSession().getAttribute("user");
+
+                    Integer adminId = (admin != null) ? admin.getId() : 1;
+
                     OrderDAO orderDAO = new OrderDAO();
                     orderDAO.updateOrderStatus(orderId, newStatus, adminId);
 
                     // Keep the current filter applied after redirect.
                     String filterStatus = request.getParameter("filterStatus");
+                    String page = request.getParameter("page");
                     String redirectUrl = request.getContextPath() + "/admin/orders";
-                    if (filterStatus != null && !filterStatus.isEmpty()) {
-                        redirectUrl += "?status=" + filterStatus;
+
+                    String queryParams = "";
+
+                    if (filterStatus != null && !filterStatus.isEmpty() && !filterStatus.equals("ALL")) {
+
+                        queryParams += "?status=" + filterStatus;
+                    }
+                    if (page != null && !page.isEmpty()) {
+                        queryParams += (queryParams.isEmpty() ? "?" : "&") + "page=" + page;
                     }
 
-                    response.sendRedirect(redirectUrl);
+                    response.sendRedirect(redirectUrl + queryParams);
                 } catch (Exception e) {
                     e.printStackTrace();
                     response.sendRedirect(request.getContextPath() + "/admin/orders");
@@ -81,7 +113,7 @@ public class OrderController extends HttpServlet {
             }
         } else {
             if ("return".equals(action)) {
-                // TODO: Implement customer return handling.
+                // TODO: Implement customer return processing.
             }
         }
     }
