@@ -6,7 +6,7 @@
 <div class="container my-5">
     <h2 class="mb-4">Danh Sách Đơn Hàng (Admin)</h2>
 
-    <!-- Order status filters; the active filter is highlighted in the UI. -->
+    <!-- Order status filters. The active filter is highlighted in the UI. -->
     <div class="mb-3">
         <a href="${pageContext.request.contextPath}/admin/orders" class="btn btn-sm ${selectedStatus == 'ALL' ? 'btn-dark' : 'btn-secondary'}">Tất cả</a>
         <a href="${pageContext.request.contextPath}/admin/orders?status=PENDING" class="btn btn-sm ${selectedStatus == 'PENDING' ? 'btn-info text-white' : 'btn-outline-info'}">Chờ xác nhận</a>
@@ -30,7 +30,7 @@
             <c:forEach var="order" items="${orderList}">
                 <tr>
                     <td><strong>#${order.id}</strong></td>
-                    <!-- Display the order date in local format. -->
+                    <!-- Display the order date using the local format. -->
                     <td><fmt:formatDate value="${order.createdAt}" pattern="dd/MM/yyyy HH:mm" /></td>
                     <td>KH-${order.userId}</td>
                     <!-- Display the total amount in VND. -->
@@ -89,21 +89,21 @@
     <c:if test="${totalPages > 1}">
         <nav aria-label="Page navigation" class="mt-4">
             <ul class="pagination justify-content-center">
-                <!-- Nút Về Trước (Previous) -->
+                <!-- Previous page. -->
                 <li class="page-item ${currentPage == 1 ? 'disabled' : ''}">
                     <a class="page-link" href="?status=${selectedStatus}&page=${currentPage - 1}" aria-label="Previous">
                         <span aria-hidden="true">&laquo;</span>
                     </a>
                 </li>
 
-                <!-- Các số trang -->
+                <!-- Page numbers. -->
                 <c:forEach begin="1" end="${totalPages}" var="i">
                     <li class="page-item ${currentPage == i ? 'active' : ''}">
                         <a class="page-link" href="?status=${selectedStatus}&page=${i}">${i}</a>
                     </li>
                 </c:forEach>
 
-                <!-- Nút Sang Sau (Next) -->
+                <!-- Next page. -->
                 <li class="page-item ${currentPage == totalPages ? 'disabled' : ''}">
                     <a class="page-link" href="?status=${selectedStatus}&page=${currentPage + 1}" aria-label="Next">
                         <span aria-hidden="true">&raquo;</span>
