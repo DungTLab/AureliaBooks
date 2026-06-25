@@ -5,7 +5,7 @@
 
 <div class="container my-5">
     <h2 class="mb-4">Danh Sách Đơn Hàng (Admin)</h2>
-    
+
     <!-- Order status filters; the active filter is highlighted in the UI. -->
     <div class="mb-3">
         <a href="${pageContext.request.contextPath}/admin/orders" class="btn btn-sm ${selectedStatus == 'ALL' ? 'btn-dark' : 'btn-secondary'}">Tất cả</a>
@@ -44,7 +44,7 @@
                     </td>
                     <td>
                         <a href="${pageContext.request.contextPath}/orders?action=detail&id=${order.id}" class="btn btn-sm btn-outline-secondary">Chi tiết</a>
-                        
+
                         <!-- Admin-only order status actions. -->
                         <c:if test="${order.status == 'PENDING'}">
                             <!-- Mark the order as shipping. -->
@@ -89,21 +89,25 @@
     <c:if test="${totalPages > 1}">
         <nav aria-label="Page navigation" class="mt-4">
             <ul class="pagination justify-content-center">
-                <!-- Previous page. -->
+                <!-- Nút Về Trước (Previous) -->
                 <li class="page-item ${currentPage == 1 ? 'disabled' : ''}">
-                    <a class="page-link" href="?status=${selectedStatus}&page=${currentPage - 1}">Trước</a>
+                    <a class="page-link" href="?status=${selectedStatus}&page=${currentPage - 1}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
                 </li>
-                
-                <!-- Page numbers. -->
+
+                <!-- Các số trang -->
                 <c:forEach begin="1" end="${totalPages}" var="i">
                     <li class="page-item ${currentPage == i ? 'active' : ''}">
                         <a class="page-link" href="?status=${selectedStatus}&page=${i}">${i}</a>
                     </li>
                 </c:forEach>
-                
-                <!-- Next page. -->
+
+                <!-- Nút Sang Sau (Next) -->
                 <li class="page-item ${currentPage == totalPages ? 'disabled' : ''}">
-                    <a class="page-link" href="?status=${selectedStatus}&page=${currentPage + 1}">Sau</a>
+                    <a class="page-link" href="?status=${selectedStatus}&page=${currentPage + 1}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
                 </li>
             </ul>
         </nav>
