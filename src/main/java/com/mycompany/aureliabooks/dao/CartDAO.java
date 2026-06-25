@@ -1,0 +1,244 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+package com.mycompany.aureliabooks.dao;
+
+import com.mycompany.aureliabooks.model.CartItem;
+import com.mycompany.aureliabooks.model.Product;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.List;
+import java.math.BigDecimal;
+
+/**
+ * Data Access Object (DAO) for managing shopping cart operations.
+ * Handles database interactions related to Cart, CartItems, and creating Orders.
+ * 
+ * @author ADMIN
+ */
+public class CartDAO extends BaseDAO {
+
+    /**
+     * Retrieves all cart items for a specific user.
+     * Joins CartItems, Carts, and Products tables to return complete item details.
+     * 
+     * @param userId The ID of the user whose cart items are to be fetched.
+     * @return A list of CartItem objects containing product details.
+     */
+    public List<CartItem> findAll(int userId) {
+        List<CartItem> list = new ArrayList<>();
+        String sql = "SELECT ci.Id, ci.CartId, ci.ProductId, ci.Quantity, ci.AddedAt, "
+                + "p.Title, p.Price, p.Image_URL, p.Sku "
+                + "FROM CartItems ci "
+                + "JOIN Carts c ON ci.CartId = c.Id "
+                + "JOIN Products p ON ci.ProductId = p.Id "
+                + "WHERE c.UserId = ?";
+
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    CartItem item = new CartItem();
+                    item.setId(rs.getInt("Id"));
+                    item.setCartId(rs.getInt("CartId"));
+                    item.setProductId(rs.getInt("ProductId"));
+                    item.setQuantity(rs.getInt("Quantity"));
+                    item.setAddedAt(rs.getTimestamp("AddedAt"));
+
+                    Product product = new Product();
+                    product.setId(rs.getInt("ProductId"));
+                    product.setTitle(rs.getString("Title"));
+                    product.setPrice(rs.getBigDecimal("Price"));
+                    product.setImageUrl(rs.getString("Image_URL"));
+                    product.setSku(rs.getString("Sku"));
+
+                    item.setProduct(product);
+                    list.add(item);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public void updateQuantity(int itemId, int quantity) {
+        String sql = "UPDATE CartItems SET Quantity = ? WHERE Id = ?";
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, quantity);
+            ps.setInt(2, itemId);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public int getCartIdByUserId(int userId) {
+        String sql = "SELECT Id FROM Carts WHERE UserId = ?";
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("Id");
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
+    /**
+     * Adds a product to the user's cart or updates its quantity if it already exists.
+     * 
+     * @param cartId    The ID of the cart to add the item to.
+     * @param productId The ID of the product being added.
+     * @param quantity  The quantity of the product to add.
+     */
+    public void addItem(int cartId, int productId, int quantity) {
+        String checkSql = "SELECT Id, Quantity FROM CartItems WHERE CartId = ? AND ProductId = ?";
+        try (Connection conn = getConnection(); PreparedStatement psCheck = conn.prepareStatement(checkSql)) {
+            psCheck.setInt(1, cartId);
+            psCheck.setInt(2, productId);
+            try (ResultSet rs = psCheck.executeQuery()) {
+                if (rs.next()) {
+                    int existingId = rs.getInt("Id");
+                    int newQuantity = rs.getInt("Quantity") + quantity;
+                    updateQuantity(existingId, newQuantity);
+                } else {
+                    String insertSql = "INSERT INTO CartItems (CartId, ProductId, Quantity) VALUES (?, ?, ?)";
+                    try (PreparedStatement psInsert = conn.prepareStatement(insertSql)) {
+                        psInsert.setInt(1, cartId);
+                        psInsert.setInt(2, productId);
+                        psInsert.setInt(3, quantity);
+                        psInsert.executeUpdate();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void deleteItem(int itemId) {
+        String sql = "DELETE FROM CartItems WHERE Id = ?";
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, itemId);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public String getUserInfo(int userId) {
+        String sql = "SELECT Phone, Address FROM UserProfiles WHERE UserId = ?";
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    String phone = rs.getString("Phone");
+                    String address = rs.getString("Address");
+                    // Tránh trường hợp null
+                    phone = (phone != null) ? phone : "";
+                    address = (address != null) ? address : "";
+                    return phone + "/" + address;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "/";
+    }
+
+    /**
+     * Executes a database transaction to create an order from the user's cart.
+     * 
+     * Process:
+     * 1. Inserts a new record into the Orders table.
+     * 2. Copies all items from the user's cart (CartItems) to the OrderItems table.
+     * 3. Deletes all CartItems for the current cart, effectively clearing it.
+     * 4. Commits the transaction if all steps succeed, otherwise rolls back.
+     * 
+     * @param userId          The ID of the user placing the order.
+     * @param shippingAddress The delivery address.
+     * @param contactPhone    The contact phone number.
+     * @param totalAmount     The total calculated price of the order.
+     * @return true if the order is successfully created and cart cleared, false otherwise.
+     */
+    public boolean createOrder(int userId, String shippingAddress, String contactPhone, BigDecimal totalAmount) {
+        String insertOrderSql = "INSERT INTO Orders (UserId, TotalAmount, Status, ShippingAddress, ContactPhone) VALUES (?, ?, 'PENDING', ?, ?)";
+        String insertOrderItemSql = "INSERT INTO OrderItems (OrderId, ProductId, Quantity, UnitPrice, SubTotal) "
+                + "SELECT ?, ci.ProductId, ci.Quantity, p.Price, (ci.Quantity * p.Price) "
+                + "FROM CartItems ci JOIN Products p ON ci.ProductId = p.Id "
+                + "WHERE ci.CartId = ?";
+        String clearCartSql = "DELETE FROM CartItems WHERE CartId = ?";
+
+        Connection conn = null;
+        try {
+            conn = getConnection();
+            conn.setAutoCommit(false);
+
+            int cartId = getCartIdByUserId(userId);
+            if (cartId == -1) {
+                return false;
+            }
+
+            int orderId = -1;
+            try (PreparedStatement psOrder = conn.prepareStatement(insertOrderSql, java.sql.Statement.RETURN_GENERATED_KEYS)) {
+                psOrder.setInt(1, userId);
+                psOrder.setBigDecimal(2, totalAmount);
+                psOrder.setString(3, shippingAddress);
+                psOrder.setString(4, contactPhone);
+                psOrder.executeUpdate();
+
+                try (ResultSet rs = psOrder.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        orderId = rs.getInt(1);
+                    }
+                }
+            }
+
+            if (orderId == -1) {
+                conn.rollback();
+                return false;
+            }
+
+            try (PreparedStatement psItems = conn.prepareStatement(insertOrderItemSql)) {
+                psItems.setInt(1, orderId);
+                psItems.setInt(2, cartId);
+                psItems.executeUpdate();
+            }
+
+            try (PreparedStatement psClear = conn.prepareStatement(clearCartSql)) {
+                psClear.setInt(1, cartId);
+                psClear.executeUpdate();
+            }
+
+            conn.commit();
+            return true;
+        } catch (Exception e) {
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+            e.printStackTrace();
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        }
+        return false;
+    }
+}

@@ -59,7 +59,7 @@
                             <span class="small d-none d-xl-inline">Thông báo</span>
                         </a>
 
-                        <a href="#" class="nav-link d-flex align-items-center gap-2 text-secondary py-2 text-dark">
+                        <a href="<%= request.getContextPath() %>/cart?action=view" class="nav-link d-flex align-items-center gap-2 text-secondary py-2 text-dark">
                             <i class="bi bi-cart fs-5"></i>
                             <span class="small d-none d-xl-inline">Giỏ hàng</span>
                         </a>

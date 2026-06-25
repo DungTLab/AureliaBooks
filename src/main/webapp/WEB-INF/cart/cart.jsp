@@ -3,12 +3,15 @@
 <jsp:include page="/WEB-INF/includes/header.jsp" />
 
 <div class="container my-5">
-    <h2>Giỏ Hàng Của Bạn</h2>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Giỏ Hàng Của Bạn</h2>
+    </div>
+    
     <div class="row">
         <!-- Danh sách sản phẩm trong giỏ (Skeleton để Dev 4 triển khai) -->
         <div class="col-lg-8">
             <c:choose>
-                <c:when test="${empty sessionScope.cart || empty sessionScope.cart.items}">
+                <c:when test="${empty requestScope.cartItems}">
                     <div class="alert alert-info">Giỏ hàng của bạn đang trống. <a href="${pageContext.request.contextPath}/products">Tiếp tục mua sắm</a></div>
                 </c:when>
                 <c:otherwise>
@@ -23,7 +26,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <c:forEach var="item" items="${sessionScope.cart.items}">
+                            <c:forEach var="item" items="${requestScope.cartItems}">
                                 <tr>
                                     <td>
                                         <div class="d-flex align-items-center">
@@ -40,7 +43,7 @@
                                     </td>
                                     <td>${item.product.price * item.quantity} VNĐ</td>
                                     <td>
-                                        <form action="${pageContext.request.contextPath}/cart?action=remove" method="POST">
+                                        <form action="${pageContext.request.contextPath}/cart?action=delete" method="POST">
                                             <input type="hidden" name="itemId" value="${item.id}">
                                             <button type="submit" class="btn btn-sm btn-danger">Xóa</button>
                                         </form>
@@ -61,20 +64,20 @@
                     <ul class="list-group list-group-flush mb-4">
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             Tổng tiền hàng:
-                            <strong>${sessionScope.cartTotal != null ? sessionScope.cartTotal : 0} VNĐ</strong>
+                            <strong>${requestScope.cartTotal != null ? requestScope.cartTotal : 0} VNĐ</strong>
                         </li>
                     </ul>
                     
-                    <c:if test="${not empty sessionScope.cart && not empty sessionScope.cart.items}">
+                    <c:if test="${not empty requestScope.cartItems}">
                         <h5 class="mb-3">Thông tin nhận hàng</h5>
                         <form action="${pageContext.request.contextPath}/checkout" method="POST">
                             <div class="mb-3">
                                 <label for="shippingAddress" class="form-label">Địa chỉ giao hàng</label>
-                                <textarea class="form-control" id="shippingAddress" name="shippingAddress" required>${sessionScope.userProfile.address}</textarea>
+                                <textarea class="form-control" id="shippingAddress" name="shippingAddress" required>${requestScope.defaultAddress}</textarea>
                             </div>
                             <div class="mb-3">
                                 <label for="contactPhone" class="form-label">Số điện thoại liên hệ</label>
-                                <input type="text" class="form-control" id="contactPhone" name="contactPhone" value="${sessionScope.userProfile.phone}" required>
+                                <input type="text" class="form-control" id="contactPhone" name="contactPhone" value="${requestScope.defaultPhone}" pattern="^0[0-9]{9}$" title="Vui lòng nhập số điện thoại gồm 10 chữ số và bắt đầu bằng số 0" required>
                             </div>
                             <button type="submit" class="btn btn-primary w-100">Đặt hàng (COD)</button>
                         </form>
