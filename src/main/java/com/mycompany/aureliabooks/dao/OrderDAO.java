@@ -35,24 +35,29 @@ public class OrderDAO extends BaseDAO {
         return order;
     }
 
-    /**
-     * Retrieves the total count of orders for pagination calculations.
-     * Throws SQLException to the caller layer for proper error handling.
-     */
-    public int getTotalOrdersCount(String status) throws SQLException {
-        String sql = "SELECT COUNT(*) FROM Orders";
+    // Sửa hàm đếm số lượng có hỗ trợ Tìm kiếm
+    public int getTotalOrdersCount(String status, String searchQuery) throws SQLException {
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM Orders WHERE 1=1 ");
         if (status != null && !status.equals("ALL")) {
-            sql += " WHERE [Status] = ?";
+            sql.append(" AND [Status] = ? ");
+        }
+        if (searchQuery != null && !searchQuery.trim().isEmpty()) {
+            sql.append(" AND (CAST(Id AS VARCHAR) = ? OR ContactPhone LIKE ?) ");
         }
 
-        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            int paramIndex = 1;
             if (status != null && !status.equals("ALL")) {
-                ps.setString(1, status);
+                ps.setString(paramIndex++, status);
             }
+            if (searchQuery != null && !searchQuery.trim().isEmpty()) {
+                ps.setString(paramIndex++, searchQuery.trim());
+                ps.setString(paramIndex++, "%" + searchQuery.trim() + "%");
+            }
+
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
+                if (rs.next())
                     return rs.getInt(1);
-                }
             }
         } catch (ClassNotFoundException e) {
             throw new SQLException("Database driver not found", e);
@@ -60,24 +65,28 @@ public class OrderDAO extends BaseDAO {
         return 0;
     }
 
-    /**
-     * Fetches a paginated list of orders, optionally filtered by status.
-     * Utilizes OFFSET/FETCH for efficient server-side pagination.
-     */
-    public List<Order> getOrdersPaged(String status, int offset, int pageSize) throws SQLException {
+    // Sửa hàm lấy danh sách phân trang có hỗ trợ Tìm kiếm
+    public List<Order> getOrdersPaged(String status, String searchQuery, int offset, int pageSize) throws SQLException {
         List<Order> list = new ArrayList<>();
-        String sql = "SELECT Id, UserId, DiscountId, TotalAmount, [Status], ShippingAddress, ContactPhone, ProcessedByUserId, ReturnReason, CreatedAt "
-                + "FROM Orders ";
+        StringBuilder sql = new StringBuilder(
+                "SELECT Id, UserId, DiscountId, TotalAmount, [Status], ShippingAddress, ContactPhone, ProcessedByUserId, ReturnReason, CreatedAt FROM Orders WHERE 1=1 ");
 
         if (status != null && !status.equals("ALL")) {
-            sql += "WHERE [Status] = ? ";
+            sql.append(" AND [Status] = ? ");
         }
-        sql += "ORDER BY CreatedAt DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+        if (searchQuery != null && !searchQuery.trim().isEmpty()) {
+            sql.append(" AND (CAST(Id AS VARCHAR) = ? OR ContactPhone LIKE ?) ");
+        }
+        sql.append(" ORDER BY CreatedAt DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
 
-        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql.toString())) {
             int paramIndex = 1;
             if (status != null && !status.equals("ALL")) {
                 ps.setString(paramIndex++, status);
+            }
+            if (searchQuery != null && !searchQuery.trim().isEmpty()) {
+                ps.setString(paramIndex++, searchQuery.trim());
+                ps.setString(paramIndex++, "%" + searchQuery.trim() + "%");
             }
             ps.setInt(paramIndex++, offset);
             ps.setInt(paramIndex, pageSize);
@@ -256,70 +265,4 @@ public class OrderDAO extends BaseDAO {
         }
     }
 
-    // Sửa hàm đếm số lượng có hỗ trợ Tìm kiếm
-    public int getTotalOrdersCount(String status, String searchQuery) throws SQLException {
-        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM Orders WHERE 1=1 ");
-        if (status != null && !status.equals("ALL")) {
-            sql.append(" AND [Status] = ? ");
-        }
-        if (searchQuery != null && !searchQuery.trim().isEmpty()) {
-            sql.append(" AND (CAST(Id AS VARCHAR) = ? OR ContactPhone LIKE ?) ");
-        }
-
-        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql.toString())) {
-            int paramIndex = 1;
-            if (status != null && !status.equals("ALL")) {
-                ps.setString(paramIndex++, status);
-            }
-            if (searchQuery != null && !searchQuery.trim().isEmpty()) {
-                ps.setString(paramIndex++, searchQuery.trim());
-                ps.setString(paramIndex++, "%" + searchQuery.trim() + "%");
-            }
-
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next())
-                    return rs.getInt(1);
-            }
-        } catch (ClassNotFoundException e) {
-            throw new SQLException("Database driver not found", e);
-        }
-        return 0;
-    }
-
-    // Sửa hàm lấy danh sách phân trang có hỗ trợ Tìm kiếm
-    public List<Order> getOrdersPaged(String status, String searchQuery, int offset, int pageSize) throws SQLException {
-        List<Order> list = new ArrayList<>();
-        StringBuilder sql = new StringBuilder(
-                "SELECT Id, UserId, DiscountId, TotalAmount, [Status], ShippingAddress, ContactPhone, ProcessedByUserId, ReturnReason, CreatedAt FROM Orders WHERE 1=1 ");
-
-        if (status != null && !status.equals("ALL")) {
-            sql.append(" AND [Status] = ? ");
-        }
-        if (searchQuery != null && !searchQuery.trim().isEmpty()) {
-            sql.append(" AND (CAST(Id AS VARCHAR) = ? OR ContactPhone LIKE ?) ");
-        }
-        sql.append(" ORDER BY CreatedAt DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
-
-        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql.toString())) {
-            int paramIndex = 1;
-            if (status != null && !status.equals("ALL")) {
-                ps.setString(paramIndex++, status);
-            }
-            if (searchQuery != null && !searchQuery.trim().isEmpty()) {
-                ps.setString(paramIndex++, searchQuery.trim());
-                ps.setString(paramIndex++, "%" + searchQuery.trim() + "%");
-            }
-            ps.setInt(paramIndex++, offset);
-            ps.setInt(paramIndex, pageSize);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    list.add(mapResultSetToOrder(rs));
-                }
-            }
-        } catch (ClassNotFoundException e) {
-            throw new SQLException("Database driver not found", e);
-        }
-        return list;
-    }
 }
