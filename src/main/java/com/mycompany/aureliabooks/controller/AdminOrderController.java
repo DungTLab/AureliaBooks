@@ -16,151 +16,190 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 /**
- * Controller responsible for Admin Order Management operations.
- * Handles listing, filtering, viewing details, and updating order statuses.
- * Note: Authentication and RBAC are handled upstream by SecurityFilter.
+ * Controller responsible for handling Admin Order Management operations.
+ * 
+ * DESIGN PRINCIPLES APPLIED:
+ * - Single Responsibility Principle (SRP): Only handles Admin workflows, separated from Customer workflows.
+ * - DRY (Don't Repeat Yourself): Relies on upstream SecurityFilter for Authentication & Role checks.
+ * - PRG (Post-Redirect-Get): Prevents form resubmission anomalies on page refresh.
  */
-@WebServlet(name = "AdminOrderController", urlPatterns = { "/admin/orders" })
+@WebServlet(name = "AdminOrderController", urlPatterns = {"/admin/orders"})
 public class AdminOrderController extends HttpServlet {
 
-    // Enterprise Standard: Initialize a Logger for this specific class
+    // Enterprise Standard: Use standard Logger instead of System.out or e.printStackTrace()
     private static final Logger LOGGER = Logger.getLogger(AdminOrderController.class.getName());
 
+    /**
+     * Handles HTTP GET requests.
+     * Renders the order list with pagination/search, or displays specific order details.
+     */
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-
+        
         String action = request.getParameter("action");
 
         try {
             OrderDAO orderDAO = new OrderDAO();
 
+            // -----------------------------------------------------------------
+            // BLOCK 1: HANDLE 'DETAIL' VIEW
+            // -----------------------------------------------------------------
             if ("detail".equals(action)) {
                 String orderIdParam = request.getParameter("orderId");
+                
+                // Guard clause: Redirect to list if orderId is missing
                 if (orderIdParam == null || orderIdParam.trim().isEmpty()) {
                     response.sendRedirect(request.getContextPath() + "/admin/orders");
                     return;
                 }
-
+                
                 int orderId = Integer.parseInt(orderIdParam);
                 Order order = orderDAO.getOrderById(orderId);
-
+                
+                // Return 404 Not Found if the requested order doesn't exist
                 if (order == null) {
-                    response.sendError(HttpServletResponse.SC_NOT_FOUND, "Order not found.");
+                    response.sendError(HttpServletResponse.SC_NOT_FOUND, "Order not found in the database.");
                     return;
                 }
 
+                // Forward data to the shared detail view
                 request.setAttribute("order", order);
                 request.getRequestDispatcher("/WEB-INF/order/detail.jsp").forward(request, response);
                 return;
             }
 
-            // Default action: List orders with pagination and filtering
+            // -----------------------------------------------------------------
+            // BLOCK 2: HANDLE 'LIST' VIEW (Pagination + Filtering + Searching)
+            // -----------------------------------------------------------------
+            
+            // 1. Retrieve query parameters
             String status = request.getParameter("status");
             if (status == null || status.trim().isEmpty()) {
-                status = "ALL";
+                status = "ALL"; // Default behavior
             }
+            String search = request.getParameter("search"); // Retrieves search keyword
 
-            String search = request.getParameter("search");
-
+            // 2. Pagination calculation logic
             int page = 1;
             int pageSize = 10;
             String pageStr = request.getParameter("page");
-
+            
             if (pageStr != null && !pageStr.isEmpty()) {
                 try {
                     page = Integer.parseInt(pageStr);
                 } catch (NumberFormatException e) {
-                    page = 1;
+                    page = 1; // Fallback to first page on malicious/invalid input
                 }
             }
-
+            
+            // Ensure page is never zero or negative
             page = Math.max(1, page);
-            int totalRecords = orderDAO.getTotalOrdersCount(status, search); // Truyền thêm search
 
+            // 3. Query Database for total records and calculate offsets
+            int totalRecords = orderDAO.getTotalOrdersCount(status, search);
             int totalPages = (int) Math.ceil((double) totalRecords / pageSize);
-
+            
+            // Prevent users from accessing out-of-bound pages
             if (page > totalPages && totalPages > 0) {
                 page = totalPages;
             }
 
+            // Absolute boundary safeguard: Prevents SQL exceptions caused by negative offsets
             int offset = Math.max(0, (page - 1) * pageSize);
+
+            // 4. Fetch the paginated and filtered list from DB
             List<Order> orderList = orderDAO.getOrdersPaged(status, search, offset, pageSize);
+
+            // 5. Attach data to request payload for JSP rendering
             request.setAttribute("orderList", orderList);
             request.setAttribute("selectedStatus", status);
+            request.setAttribute("searchQuery", search); // Preserves search input value in UI
             request.setAttribute("currentPage", page);
             request.setAttribute("totalPages", totalPages);
-            request.setAttribute("searchQuery", search);
 
+            // Forward to presentation layer
             request.getRequestDispatcher("/WEB-INF/order/admin_list.jsp").forward(request, response);
 
         } catch (SQLException e) {
-            // Enterprise Standard: Use Logger instead of e.printStackTrace()
-            LOGGER.log(Level.SEVERE, "Database error while fetching orders", e);
-            request.setAttribute("errorMessage", "A database error occurred while retrieving orders.");
+            // Log backend stack trace secretly; display generic 500 error page to user securely
+            LOGGER.log(Level.SEVERE, "Database connection or syntax error while fetching orders", e);
+            request.setAttribute("errorMessage", "A database error occurred. Please contact IT support.");
             request.getRequestDispatcher("/WEB-INF/error/500.jsp").forward(request, response);
             return;
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Unexpected error in AdminOrderController", e);
+            LOGGER.log(Level.SEVERE, "Unexpected critical error in AdminOrderController", e);
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "An unexpected system error occurred.");
             return;
         }
     }
 
+    /**
+     * Handles HTTP POST requests.
+     * Executes state-changing actions (Update Status) using the PRG pattern.
+     */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-
+        
         String action = request.getParameter("action");
 
         if ("updateStatus".equals(action)) {
             try {
+                // 1. Extract payload from form submission
                 int orderId = Integer.parseInt(request.getParameter("orderId"));
                 String newStatus = request.getParameter("newStatus");
 
-                // Retrieve the guaranteed admin session from SecurityFilter
+                // 2. Fetch authenticated admin identity guaranteed by upstream SecurityFilter
                 HttpSession session = request.getSession(false);
                 User admin = (User) session.getAttribute("user");
-                int adminId = admin.getId();
+                int adminId = admin.getId(); // Used for audit trail (ProcessedByUserId)
 
+                // 3. Execute DB Update
                 OrderDAO orderDAO = new OrderDAO();
                 boolean isUpdated = orderDAO.updateOrderStatus(orderId, newStatus, adminId);
-
+                
                 if (!isUpdated) {
-                    session.setAttribute("errorMsg", "Failed to update order status. Order may not exist.");
+                    session.setAttribute("errorMsg", "Failed to update order status. Entity may have been modified or deleted.");
                 }
 
-                // Preserve filters and pagination during PRG (Post-Redirect-Get)
+                // 4. Post-Redirect-Get (PRG) Pattern Implementation
+                // Reconstruct the previous URL state to maintain user's view (Search, Status, Page)
                 String filterStatus = request.getParameter("filterStatus");
+                String search = request.getParameter("search");
                 String page = request.getParameter("page");
+                
                 StringBuilder redirectUrl = new StringBuilder(request.getContextPath()).append("/admin/orders");
-
                 boolean hasQueryParams = false;
+
                 if (filterStatus != null && !filterStatus.trim().isEmpty() && !"ALL".equals(filterStatus)) {
                     redirectUrl.append("?status=").append(filterStatus);
                     hasQueryParams = true;
                 }
-
+                if (search != null && !search.trim().isEmpty()) {
+                    redirectUrl.append(hasQueryParams ? "&" : "?").append("search=").append(search.trim());
+                    hasQueryParams = true;
+                }
                 if (page != null && !page.trim().isEmpty()) {
                     redirectUrl.append(hasQueryParams ? "&" : "?").append("page=").append(page);
                 }
 
+                // Execute redirect to clear POST history
                 response.sendRedirect(redirectUrl.toString());
-                return; // Stop execution after redirect
+                return;
 
             } catch (SQLException e) {
-                // Enterprise Standard: Log error and forward to 500 page securely
-                LOGGER.log(Level.SEVERE, "Database error while updating order status", e);
-                request.setAttribute("errorMessage", "Database error occurred while updating the order status.");
+                LOGGER.log(Level.SEVERE, "SQL Execution failed during order status update", e);
+                request.setAttribute("errorMessage", "Database integrity error. Status update aborted.");
                 request.getRequestDispatcher("/WEB-INF/error/500.jsp").forward(request, response);
                 return;
             } catch (NumberFormatException e) {
-                LOGGER.log(Level.WARNING, "Invalid Order ID format submitted", e);
-                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid Order ID format.");
+                LOGGER.log(Level.WARNING, "Invalid payload format for Order ID", e);
+                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Malformed request payload.");
                 return;
             }
         } else {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid action requested.");
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Unknown POST action requested.");
             return;
         }
     }
