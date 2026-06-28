@@ -1,10 +1,12 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %> <!-- JSTL formatting tags -->
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %> 
 <jsp:include page="/WEB-INF/includes/header.jsp" />
 
 <div class="container my-5">
-    <h2 class="mb-4">Danh Sách Đơn Hàng (Admin)</h2>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Danh Sách Đơn Hàng (Admin)</h2>
+    </div>
 
     <!-- Order status filters. The active filter is highlighted in the UI. -->
     <div class="mb-3">
@@ -15,7 +17,7 @@
         <a href="${pageContext.request.contextPath}/admin/orders?status=CANCELLED" class="btn btn-sm ${selectedStatus == 'CANCELLED' ? 'btn-danger' : 'btn-outline-danger'}">Đã Hủy</a>
     </div>
 
-    <table class="table table-bordered table-hover align-middle">
+    <table class="table table-bordered table-hover align-middle shadow-sm">
         <thead class="table-dark">
             <tr>
                 <th>Mã Đơn</th>
@@ -29,49 +31,54 @@
         <tbody>
             <c:forEach var="order" items="${orderList}">
                 <tr>
-                    <td><strong>#${order.id}</strong></td>
+                    <td><strong>#<c:out value="${order.id}" /></strong></td>
+                    
                     <!-- Display the order date using the local format. -->
                     <td><fmt:formatDate value="${order.createdAt}" pattern="dd/MM/yyyy HH:mm" /></td>
-                    <td>KH-${order.userId}</td>
+                    
+                    <!-- XSS Protection applied -->
+                    <td>KH-<c:out value="${order.userId}"/></td>
+                    
                     <!-- Display the total amount in VND. -->
                     <td class="text-danger fw-bold">
                         <fmt:formatNumber value="${order.totalAmount}" type="currency" currencySymbol="VNĐ" maxFractionDigits="0"/>
                     </td>
                     <td>
                         <span class="badge ${order.status == 'COMPLETED' ? 'bg-success' : (order.status == 'CANCELLED' ? 'bg-danger' : (order.status == 'RETURNED' ? 'bg-warning' : 'bg-info'))}">
-                            ${order.status}
+                            <c:out value="${order.status}" />
                         </span>
                     </td>
                     <td>
-                        <a href="${pageContext.request.contextPath}/orders?action=detail&id=${order.id}" class="btn btn-sm btn-outline-secondary">Chi tiết</a>
+                        <!-- Updated Admin detail routing -->
+                        <a href="${pageContext.request.contextPath}/admin/orders?action=detail&orderId=${order.id}" class="btn btn-sm btn-outline-secondary">Chi tiết</a>
 
                         <!-- Admin-only order status actions. -->
                         <c:if test="${order.status == 'PENDING'}">
-                            <!-- Mark the order as shipping. -->
+                            <!-- Process order status to SHIPPING. -->
                             <form action="${pageContext.request.contextPath}/admin/orders?action=updateStatus" method="POST" style="display:inline-block;">
-                                <input type="hidden" name="orderId" value="${order.id}">
+                                <input type="hidden" name="orderId" value="<c:out value='${order.id}'/>">
                                 <input type="hidden" name="newStatus" value="SHIPPING">
-                                <input type="hidden" name="filterStatus" value="${selectedStatus}">
-                                <input type="hidden" name="page" value="${currentPage}">
+                                <input type="hidden" name="filterStatus" value="<c:out value='${selectedStatus}'/>">
+                                <input type="hidden" name="page" value="<c:out value='${currentPage}'/>">
                                 <button type="submit" class="btn btn-sm btn-primary ms-1">Giao hàng</button>
                             </form>
                             <!-- Cancel the order. -->
                             <form action="${pageContext.request.contextPath}/admin/orders?action=updateStatus" method="POST" style="display:inline-block;">
-                                <input type="hidden" name="orderId" value="${order.id}">
+                                <input type="hidden" name="orderId" value="<c:out value='${order.id}'/>">
                                 <input type="hidden" name="newStatus" value="CANCELLED">
-                                <input type="hidden" name="filterStatus" value="${selectedStatus}">
-                                <input type="hidden" name="page" value="${currentPage}">
+                                <input type="hidden" name="filterStatus" value="<c:out value='${selectedStatus}'/>">
+                                <input type="hidden" name="page" value="<c:out value='${currentPage}'/>">
                                 <button type="submit" class="btn btn-sm btn-danger ms-1" onclick="return confirm('Bạn chắc chắn muốn hủy đơn này?')">Hủy</button>
                             </form>
                         </c:if>
 
                         <c:if test="${order.status == 'SHIPPING'}">
-                            <!-- Mark the order as completed. -->
+                            <!-- Process order status to COMPLETED. -->
                             <form action="${pageContext.request.contextPath}/admin/orders?action=updateStatus" method="POST" style="display:inline-block;">
-                                <input type="hidden" name="orderId" value="${order.id}">
+                                <input type="hidden" name="orderId" value="<c:out value='${order.id}'/>">
                                 <input type="hidden" name="newStatus" value="COMPLETED">
-                                <input type="hidden" name="filterStatus" value="${selectedStatus}">
-                                <input type="hidden" name="page" value="${currentPage}">
+                                <input type="hidden" name="filterStatus" value="<c:out value='${selectedStatus}'/>">
+                                <input type="hidden" name="page" value="<c:out value='${currentPage}'/>">
                                 <button type="submit" class="btn btn-sm btn-success ms-1">Hoàn thành</button>
                             </form>
                         </c:if>
@@ -90,7 +97,7 @@
         <nav aria-label="Page navigation" class="mt-4">
             <ul class="pagination justify-content-center">
                 <!-- Previous page. -->
-                <li class="page-item ${currentPage == 1 ? 'disabled' : ''}">
+                <li class="page-item ${currentPage <= 1 ? 'disabled' : ''}">
                     <a class="page-link" href="?status=${selectedStatus}&page=${currentPage - 1}" aria-label="Previous">
                         <span aria-hidden="true">&laquo;</span>
                     </a>
@@ -99,12 +106,12 @@
                 <!-- Page numbers. -->
                 <c:forEach begin="1" end="${totalPages}" var="i">
                     <li class="page-item ${currentPage == i ? 'active' : ''}">
-                        <a class="page-link" href="?status=${selectedStatus}&page=${i}">${i}</a>
+                        <a class="page-link" href="?status=${selectedStatus}&page=${i}"><c:out value="${i}"/></a>
                     </li>
                 </c:forEach>
 
                 <!-- Next page. -->
-                <li class="page-item ${currentPage == totalPages ? 'disabled' : ''}">
+                <li class="page-item ${currentPage >= totalPages ? 'disabled' : ''}">
                     <a class="page-link" href="?status=${selectedStatus}&page=${currentPage + 1}" aria-label="Next">
                         <span aria-hidden="true">&raquo;</span>
                     </a>
