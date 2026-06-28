@@ -12,7 +12,8 @@ import java.util.List;
 
 /**
  * Data Access Object for handling Order persistence.
- * Responsible for CRUD operations and complex transactional workflows like Order Returns.
+ * Responsible for CRUD operations and complex transactional workflows like
+ * Order Returns.
  */
 public class OrderDAO extends BaseDAO {
 
@@ -66,7 +67,7 @@ public class OrderDAO extends BaseDAO {
     public List<Order> getOrdersPaged(String status, int offset, int pageSize) throws SQLException {
         List<Order> list = new ArrayList<>();
         String sql = "SELECT Id, UserId, DiscountId, TotalAmount, [Status], ShippingAddress, ContactPhone, ProcessedByUserId, ReturnReason, CreatedAt "
-                   + "FROM Orders ";
+                + "FROM Orders ";
 
         if (status != null && !status.equals("ALL")) {
             sql += "WHERE [Status] = ? ";
@@ -108,14 +109,15 @@ public class OrderDAO extends BaseDAO {
     }
 
     /**
-     * Retrieves full order details including associated OrderItems and Product titles.
+     * Retrieves full order details including associated OrderItems and Product
+     * titles.
      * Performs a JOIN operation to fetch item properties efficiently.
      */
     public Order getOrderById(int orderId) throws SQLException {
         Order order = null;
         String sqlOrder = "SELECT Id, UserId, DiscountId, TotalAmount, [Status], ShippingAddress, ContactPhone, ProcessedByUserId, ReturnReason, CreatedAt FROM Orders WHERE Id = ?";
         String sqlItems = "SELECT oi.Id, oi.OrderId, oi.ProductId, oi.Quantity, oi.UnitPrice, oi.SubTotal, p.Title " +
-                          "FROM OrderItems oi JOIN Products p ON oi.ProductId = p.Id WHERE oi.OrderId = ?";
+                "FROM OrderItems oi JOIN Products p ON oi.ProductId = p.Id WHERE oi.OrderId = ?";
 
         try (Connection conn = getConnection()) {
             try (PreparedStatement psOrder = conn.prepareStatement(sqlOrder)) {
@@ -184,7 +186,8 @@ public class OrderDAO extends BaseDAO {
                     if (rs.next()) {
                         String currentStatus = rs.getString("Status");
                         if (!"COMPLETED".equals(currentStatus)) {
-                            // Reject returns for non-completed orders to maintain business logic consistency
+                            // Reject returns for non-completed orders to maintain business logic
+                            // consistency
                             conn.rollback();
                             return false;
                         }
@@ -205,10 +208,10 @@ public class OrderDAO extends BaseDAO {
             try (PreparedStatement psGetItems = conn.prepareStatement(sqlGetItems)) {
                 psGetItems.setInt(1, orderId);
                 try (ResultSet rsItems = psGetItems.executeQuery()) {
-                    
+
                     try (PreparedStatement psUpdateInv = conn.prepareStatement(sqlUpdateInventory);
-                         PreparedStatement psInsertTrans = conn.prepareStatement(sqlInsertStockTrans)) {
-                        
+                            PreparedStatement psInsertTrans = conn.prepareStatement(sqlInsertStockTrans)) {
+
                         while (rsItems.next()) {
                             int productId = rsItems.getInt("ProductId");
                             int quantity = rsItems.getInt("Quantity");
@@ -220,7 +223,7 @@ public class OrderDAO extends BaseDAO {
 
                             // Maintain audit trail
                             psInsertTrans.setInt(1, productId);
-                            psInsertTrans.setInt(2, userId); 
+                            psInsertTrans.setInt(2, userId);
                             psInsertTrans.setInt(3, quantity);
                             psInsertTrans.executeUpdate();
                         }
@@ -251,5 +254,72 @@ public class OrderDAO extends BaseDAO {
                 }
             }
         }
+    }
+
+    // Sửa hàm đếm số lượng có hỗ trợ Tìm kiếm
+    public int getTotalOrdersCount(String status, String searchQuery) throws SQLException {
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM Orders WHERE 1=1 ");
+        if (status != null && !status.equals("ALL")) {
+            sql.append(" AND [Status] = ? ");
+        }
+        if (searchQuery != null && !searchQuery.trim().isEmpty()) {
+            sql.append(" AND (CAST(Id AS VARCHAR) = ? OR ContactPhone LIKE ?) ");
+        }
+
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            int paramIndex = 1;
+            if (status != null && !status.equals("ALL")) {
+                ps.setString(paramIndex++, status);
+            }
+            if (searchQuery != null && !searchQuery.trim().isEmpty()) {
+                ps.setString(paramIndex++, searchQuery.trim());
+                ps.setString(paramIndex++, "%" + searchQuery.trim() + "%");
+            }
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next())
+                    return rs.getInt(1);
+            }
+        } catch (ClassNotFoundException e) {
+            throw new SQLException("Database driver not found", e);
+        }
+        return 0;
+    }
+
+    // Sửa hàm lấy danh sách phân trang có hỗ trợ Tìm kiếm
+    public List<Order> getOrdersPaged(String status, String searchQuery, int offset, int pageSize) throws SQLException {
+        List<Order> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+                "SELECT Id, UserId, DiscountId, TotalAmount, [Status], ShippingAddress, ContactPhone, ProcessedByUserId, ReturnReason, CreatedAt FROM Orders WHERE 1=1 ");
+
+        if (status != null && !status.equals("ALL")) {
+            sql.append(" AND [Status] = ? ");
+        }
+        if (searchQuery != null && !searchQuery.trim().isEmpty()) {
+            sql.append(" AND (CAST(Id AS VARCHAR) = ? OR ContactPhone LIKE ?) ");
+        }
+        sql.append(" ORDER BY CreatedAt DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            int paramIndex = 1;
+            if (status != null && !status.equals("ALL")) {
+                ps.setString(paramIndex++, status);
+            }
+            if (searchQuery != null && !searchQuery.trim().isEmpty()) {
+                ps.setString(paramIndex++, searchQuery.trim());
+                ps.setString(paramIndex++, "%" + searchQuery.trim() + "%");
+            }
+            ps.setInt(paramIndex++, offset);
+            ps.setInt(paramIndex, pageSize);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSetToOrder(rs));
+                }
+            }
+        } catch (ClassNotFoundException e) {
+            throw new SQLException("Database driver not found", e);
+        }
+        return list;
     }
 }
