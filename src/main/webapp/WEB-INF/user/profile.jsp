@@ -17,6 +17,18 @@
             <div class="card shadow-sm mb-4">
                 <div class="card-body">
                     <h4 class="mb-4">Thông tin cá nhân</h4>
+
+                    <c:if test="${not empty requestScope.profileError}">
+                        <div class="alert alert-danger py-2" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>${requestScope.profileError}
+                        </div>
+                    </c:if>
+                    <c:if test="${not empty requestScope.profileSuccess}">
+                        <div class="alert alert-success py-2" role="alert">
+                            <i class="bi bi-check-circle-fill me-2"></i>${requestScope.profileSuccess}
+                        </div>
+                    </c:if>
+
                     <!-- Form thay đổi thông tin (Skeleton để Dev 1 triển khai) -->
                     <form action="${pageContext.request.contextPath}/profile?action=updateInfo" method="POST">
                         <div class="mb-3">
@@ -33,10 +45,21 @@
                         </div>
                         <button type="submit" class="btn btn-primary">Cập nhật thông tin</button>
                     </form>
-                    
+
                     <hr class="my-4">
-                    
+
                     <h4 class="mb-4">Đổi mật khẩu</h4>
+                    
+                    <c:if test="${not empty requestScope.passwordError}">
+                        <div class="alert alert-danger py-2" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>${requestScope.passwordError}
+                        </div>
+                    </c:if>
+                    <c:if test="${not empty requestScope.passwordSuccess}">
+                        <div class="alert alert-success py-2" role="alert">
+                            <i class="bi bi-check-circle-fill me-2"></i>${requestScope.passwordSuccess}
+                        </div>
+                    </c:if>
                     <!-- Form đổi mật khẩu (Skeleton để Dev 1 triển khai) -->
                     <form action="${pageContext.request.contextPath}/profile?action=changePassword" method="POST">
                         <div class="mb-3">
