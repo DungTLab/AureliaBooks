@@ -282,6 +282,96 @@ public class OrderDAO extends BaseDAO {
     }
 
     /**
+     * Inserts a new order record into the Orders table.
+     * Dùng cho tính năng Checkout của khách hàng.
+     * 
+     * @param order the Order object containing all order details (UserId, TotalAmount, Status, etc.)
+     * @return true if insertion succeeded, false otherwise
+     * @throws SQLException if a database access error occurs
+     * 
+     * TODO: Implement when checkout flow is integrated. Should:
+     *   - INSERT new record with initial status (typically "PENDING")
+     *   - Extract order items and insert into OrderItems table
+     *   - Apply any active discounts if applicable
+     *   - Return generated orderId for confirmation
+     */
+    public boolean insertOrder(Order order) throws SQLException {
+        // Placeholder cho tính năng Checkout (sẽ được implement ở phần khách hàng)
+        return false;
+    }
+
+    /**
+     * Returns all orders placed by a specific user, sorted by creation date (newest first).
+     * Dùng cho tính năng xem Lịch sử đơn hàng của khách hàng.
+     *
+     * @param userId the unique identifier of the user
+     * @return list of Order objects for the specified user
+     * @throws SQLException if a database access error occurs
+     */
+    public List<Order> getOrdersByUserId(int userId) throws SQLException {
+        List<Order> list = new ArrayList<>();
+        String sql = "SELECT Id, UserId, DiscountId, TotalAmount, [Status], ShippingAddress, ContactPhone, ProcessedByUserId, ReturnReason, CreatedAt FROM Orders WHERE UserId = ? ORDER BY CreatedAt DESC";
+
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSetToOrder(rs));
+                }
+            }
+        } catch (ClassNotFoundException e) {
+            throw new SQLException("Database driver missing", e);
+        }
+        return list;
+    }
+
+    /**
+     * Returns every order in the system sorted by creation date (newest first).
+     * Dùng để lấy toàn bộ đơn (nhưng thường bị thay thế bởi phân trang getOrdersPaged trong Admin).
+     *
+     * @return list of all Order objects in descending order by creation date
+     * @throws SQLException if a database access error occurs
+     */
+    public List<Order> getAllOrders() throws SQLException {
+        List<Order> list = new ArrayList<>();
+        String sql = "SELECT Id, UserId, DiscountId, TotalAmount, [Status], ShippingAddress, ContactPhone, ProcessedByUserId, ReturnReason, CreatedAt FROM Orders ORDER BY CreatedAt DESC";
+
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(mapResultSetToOrder(rs));
+            }
+        } catch (ClassNotFoundException e) {
+            throw new SQLException("Database driver missing", e);
+        }
+        return list;
+    }
+
+    /**
+     * Returns all orders with a specific status, sorted by creation date (newest first).
+     * Dùng để lọc theo trạng thái (nhưng bị thay thế bởi phân trang getOrdersPaged trong Admin).
+     *
+     * @param status the order status to filter by (e.g., "PENDING", "CONFIRMED", "SHIPPED")
+     * @return list of Order objects matching the given status
+     * @throws SQLException if a database access error occurs
+     */
+    public List<Order> getOrdersByStatus(String status) throws SQLException {
+        List<Order> list = new ArrayList<>();
+        String sql = "SELECT Id, UserId, DiscountId, TotalAmount, [Status], ShippingAddress, ContactPhone, ProcessedByUserId, ReturnReason, CreatedAt FROM Orders WHERE [Status] = ? ORDER BY CreatedAt DESC";
+
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, status);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSetToOrder(rs));
+                }
+            }
+        } catch (ClassNotFoundException e) {
+            throw new SQLException("Database driver missing", e);
+        }
+        return list;
+    }
+
+    /**
      * Returns aggregated revenue data for the requested time period.
      * Used for financial reporting and business analytics.
      *
