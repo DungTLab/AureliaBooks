@@ -3,8 +3,13 @@
 <jsp:include page="/WEB-INF/includes/header.jsp" />
 
 <div class="container my-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-2">
         <h2>Giỏ Hàng Của Bạn</h2>
+    </div>
+    
+    <div class="justify-content-between  mb-4">
+        <a class="btn btn-secondary" href="${pageContext.request.contextPath}/orders?action=history">Lịch sử đơn hàng</a>
+        <a class="btn btn-outline-danger" href="${pageContext.request.contextPath}/orders?action=view">Đơn hàng</a>
     </div>
     
     <div class="row">
