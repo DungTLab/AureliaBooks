@@ -4,13 +4,17 @@
 
 <div class="container my-5">
     <h2>Cập Nhật Danh Mục</h2>
+    <c:if test="${not empty errorMessage}">
+        <div class="alert alert-danger">${errorMessage}</div>
+    </c:if>
     <div class="row">
         <div class="col-md-6">
             <form action="${pageContext.request.contextPath}/admin/categories?action=update" method="POST">
                 <input type="hidden" name="id" value="${category.id}">
                 <div class="mb-3">
                     <label for="name" class="form-label">Tên danh mục</label>
-                    <input type="text" class="form-control" id="name" name="name" value="${category.name}" required>
+                    <input type="text" class="form-control" id="name" name="name"
+                           value="${category.name}" required>
                 </div>
                 <div class="mb-3">
                     <label for="parentId" class="form-label">Danh mục cha</label>
@@ -18,13 +22,17 @@
                         <option value="">Không có (Danh mục cấp 1)</option>
                         <c:forEach var="cat" items="${parentCategories}">
                             <c:if test="${cat.id != category.id}">
-                                <option value="${cat.id}" ${cat.id == category.parentId ? 'selected' : ''}>${cat.name}</option>
+                                <option value="${cat.id}"
+                                        ${cat.id == category.parentId ? 'selected' : ''}>
+                                    ${cat.name}
+                                </option>
                             </c:if>
                         </c:forEach>
                     </select>
                 </div>
                 <button type="submit" class="btn btn-primary">Cập nhật</button>
-                <a href="${pageContext.request.contextPath}/admin/categories" class="btn btn-secondary">Quay lại</a>
+                <a href="${pageContext.request.contextPath}/admin/categories"
+                   class="btn btn-secondary">Quay lại</a>
             </form>
         </div>
     </div>
