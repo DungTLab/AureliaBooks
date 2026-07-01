@@ -13,6 +13,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * Customer Product Catalog Browser Controller. Handles product search, filters,
@@ -27,8 +28,9 @@ public class ProductController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         String action = request.getParameter("action");
+        ProductDAO productDAO = new ProductDAO();
+
         if ("detail".equals(action)) {
-            ProductDAO productDAO = new ProductDAO();
             try {
                 int id = Integer.parseInt(request.getParameter("id"));
                 HashMap<String, Object> product = productDAO.getProductFullInformationById(id);
@@ -38,8 +40,41 @@ public class ProductController extends HttpServlet {
             }
             request.getRequestDispatcher("/WEB-INF/view/book-detail.jsp").forward(request, response);
         } else {
-            // Xem danh sách và tìm kiếm
-            request.getRequestDispatcher("/index.jsp").forward(request, response);
+            String query = request.getParameter("query");
+            int productsPerPage = 15;
+            int currentPage = 1;
+            String pageParam = request.getParameter("page");
+
+            if (pageParam != null && !pageParam.isEmpty()) {
+                try {
+                    currentPage = Integer.parseInt(pageParam);
+                    if (currentPage < 1) {
+                        currentPage = 1;
+                    }
+                } catch (NumberFormatException e) {
+                    currentPage = 1;
+                }
+            }
+
+            int totalProducts = productDAO.countSearchProducts(query, 0);
+            int totalPages = (int) Math.ceil((double) totalProducts / productsPerPage);
+            if (totalPages < 1) {
+                totalPages = 1;
+            }
+            if (currentPage > totalPages) {
+                currentPage = totalPages;
+            }
+
+            int offset = (currentPage - 1) * productsPerPage;
+            List<Product> products = productDAO.searchProducts(query, 0, offset, productsPerPage);
+
+            request.setAttribute("products", products);
+            request.setAttribute("query", query == null ? "" : query.trim());
+            request.setAttribute("currentPage", currentPage);
+            request.setAttribute("totalPages", totalPages);
+            request.setAttribute("totalProducts", totalProducts);
+
+            request.getRequestDispatcher("/WEB-INF/product/search.jsp").forward(request, response);
         }
     }
 

@@ -42,9 +42,9 @@
                         </ul>
                     </div>
 
-                    <form class="d-flex flex-grow-1 mx-2" role="search" style="max-width: 550px;">
+                    <form class="d-flex flex-grow-1 mx-2" role="search" action="${pageContext.request.contextPath}/products" method="get" style="max-width: 550px;">
                         <div class="input-group">
-                            <input class="form-control border-end-0 py-2" type="search" placeholder="Tìm kiếm sách..." aria-label="Search"/>
+                            <input class="form-control border-end-0 py-2" type="search" name="query" value="${param.query}" placeholder="Tìm kiếm sách..." aria-label="Search"/>
                             <button class="btn btn-danger px-4" type="submit">
                                 <i class="bi bi-search"></i>
                             </button>
