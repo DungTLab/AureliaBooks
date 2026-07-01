@@ -17,9 +17,12 @@ import java.util.Map;
  * Data Access Object (DAO) for Order persistence.
  * 
  * DESIGN HIGHLIGHTS:
- * - Exception Propagation: Throws SQLException to Controller instead of swallowing errors.
- * - SQL Injection Prevention: Uses Parameterized Queries (PreparedStatement) exclusively.
- * - ACID Compliance: Uses Manual Commit/Rollback for complex multi-table operations.
+ * - Exception Propagation: Throws SQLException to Controller instead of
+ * swallowing errors.
+ * - SQL Injection Prevention: Uses Parameterized Queries (PreparedStatement)
+ * exclusively.
+ * - ACID Compliance: Uses Manual Commit/Rollback for complex multi-table
+ * operations.
  */
 public class OrderDAO extends BaseDAO {
 
@@ -48,7 +51,7 @@ public class OrderDAO extends BaseDAO {
      */
     public int getTotalOrdersCount(String status, String searchQuery) throws SQLException {
         StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM Orders WHERE 1=1 ");
-        
+
         // Dynamically append SQL conditions based on active filters
         if (status != null && !status.equals("ALL")) {
             sql.append(" AND [Status] = ? ");
@@ -59,7 +62,7 @@ public class OrderDAO extends BaseDAO {
 
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql.toString())) {
             int paramIndex = 1;
-            
+
             // Bind parameters sequentially to prevent SQL Injection
             if (status != null && !status.equals("ALL")) {
                 ps.setString(paramIndex++, status);
@@ -68,9 +71,10 @@ public class OrderDAO extends BaseDAO {
                 ps.setString(paramIndex++, searchQuery.trim());
                 ps.setString(paramIndex++, "%" + searchQuery.trim() + "%"); // Partial match for phone
             }
-            
+
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return rs.getInt(1);
+                if (rs.next())
+                    return rs.getInt(1);
             }
         } catch (ClassNotFoundException e) {
             throw new SQLException("Database driver missing in classpath", e);
@@ -80,11 +84,13 @@ public class OrderDAO extends BaseDAO {
 
     /**
      * Retrieves a specific chunk (page) of orders from the database.
-     * Uses SQL Server OFFSET-FETCH mechanism for high-performance server-side pagination.
+     * Uses SQL Server OFFSET-FETCH mechanism for high-performance server-side
+     * pagination.
      */
     public List<Order> getOrdersPaged(String status, String searchQuery, int offset, int pageSize) throws SQLException {
         List<Order> list = new ArrayList<>();
-        StringBuilder sql = new StringBuilder("SELECT Id, UserId, DiscountId, TotalAmount, [Status], ShippingAddress, ContactPhone, ProcessedByUserId, ReturnReason, CreatedAt FROM Orders WHERE 1=1 ");
+        StringBuilder sql = new StringBuilder(
+                "SELECT Id, UserId, DiscountId, TotalAmount, [Status], ShippingAddress, ContactPhone, ProcessedByUserId, ReturnReason, CreatedAt FROM Orders WHERE 1=1 ");
 
         if (status != null && !status.equals("ALL")) {
             sql.append(" AND [Status] = ? ");
@@ -119,28 +125,84 @@ public class OrderDAO extends BaseDAO {
     }
 
     /**
-     * Updates order status and implements Audit Trail by recording which Admin executed the action.
+     * Helper Method: Phục hồi số lượng sản phẩm vào kho khi Admin Hủy Đơn hoặc Khách Trả Hàng.
+     * (Cột tồn kho là Quantity trong bảng Products).
      */
-    public boolean updateOrderStatus(int orderId, String status, int processedByUserId) throws SQLException {
-        String sql = "UPDATE Orders SET [Status] = ?, ProcessedByUserId = ? WHERE Id = ?";
-        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, status);
-            ps.setInt(2, processedByUserId); // Tracks accountability
-            ps.setInt(3, orderId);
-            return ps.executeUpdate() > 0;
-        } catch (ClassNotFoundException e) {
-            throw new SQLException("Database driver missing", e);
+    private void restoreInventory(Connection conn, int orderId) throws SQLException {
+        String sqlGetItems = "SELECT ProductId, Quantity FROM OrderItems WHERE OrderId = ?";
+        String sqlUpdateProduct = "UPDATE Products SET Quantity = Quantity + ? WHERE Id = ?";
+
+        try (PreparedStatement psGetItems = conn.prepareStatement(sqlGetItems)) {
+            psGetItems.setInt(1, orderId);
+            try (ResultSet rsItems = psGetItems.executeQuery()) {
+                try (PreparedStatement psUpdateProduct = conn.prepareStatement(sqlUpdateProduct)) {
+                    while (rsItems.next()) {
+                        int productId = rsItems.getInt("ProductId");
+                        int quantity = rsItems.getInt("Quantity");
+
+                        psUpdateProduct.setInt(1, quantity);
+                        psUpdateProduct.setInt(2, productId);
+                        psUpdateProduct.executeUpdate();
+                    }
+                }
+            }
         }
     }
 
     /**
-     * Retrieves complete order blueprint including line items and joined product names.
+     * Updates order status and implements Audit Trail by recording which Admin executed the action.
+     * Tự động hoàn trả kho nếu Admin Hủy Đơn (CANCELLED).
+     */
+    public boolean updateOrderStatus(int orderId, String status, Integer processedByUserId) throws SQLException {
+        String sqlUpdateStatus = "UPDATE Orders SET [Status] = ?, ProcessedByUserId = ? WHERE Id = ?";
+        
+        Connection conn = null;
+        try {
+            conn = getConnection();
+            // Luôn dùng Transaction vì có thể phải update cả bảng Products
+            conn.setAutoCommit(false);
+
+            try (PreparedStatement ps = conn.prepareStatement(sqlUpdateStatus)) {
+                ps.setString(1, status);
+                ps.setObject(2, processedByUserId);
+                ps.setInt(3, orderId);
+                
+                int rows = ps.executeUpdate();
+                if (rows == 0) {
+                    conn.rollback();
+                    return false;
+                }
+            }
+
+            // Nếu trạng thái là HỦY, bắt buộc hoàn lại hàng vào kho
+            if ("CANCELLED".equals(status)) {
+                restoreInventory(conn, orderId);
+            }
+
+            conn.commit();
+            return true;
+
+        } catch (Exception e) {
+            if (conn != null) {
+                try { conn.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
+            }
+            throw new SQLException("Lỗi khi cập nhật trạng thái: " + e.getMessage(), e);
+        } finally {
+            if (conn != null) {
+                try { conn.setAutoCommit(true); conn.close(); } catch (SQLException e) { e.printStackTrace(); }
+            }
+        }
+    }
+
+    /**
+     * Retrieves complete order blueprint including line items and joined product
+     * names.
      */
     public Order getOrderById(int orderId) throws SQLException {
         Order order = null;
         String sqlOrder = "SELECT Id, UserId, DiscountId, TotalAmount, [Status], ShippingAddress, ContactPhone, ProcessedByUserId, ReturnReason, CreatedAt FROM Orders WHERE Id = ?";
         String sqlItems = "SELECT oi.Id, oi.OrderId, oi.ProductId, oi.Quantity, oi.UnitPrice, oi.SubTotal, p.Title " +
-                          "FROM OrderItems oi JOIN Products p ON oi.ProductId = p.Id WHERE oi.OrderId = ?";
+                "FROM OrderItems oi JOIN Products p ON oi.ProductId = p.Id WHERE oi.OrderId = ?";
 
         try (Connection conn = getConnection()) {
             try (PreparedStatement psOrder = conn.prepareStatement(sqlOrder)) {
@@ -184,24 +246,25 @@ public class OrderDAO extends BaseDAO {
 
     /**
      * Executes a strictly isolated Database Transaction to handle Order Returns.
-     * Guarantees Atomicity (All-or-Nothing) across Orders, Inventory, and StockTransactions tables.
+     * Guarantees Atomicity (All-or-Nothing) across Orders, Products, and
+     * StockTransactions tables.
      */
     public boolean requestOrderReturn(int orderId, String reason) throws SQLException {
         String sqlCheckOrder = "SELECT UserId, [Status] FROM Orders WHERE Id = ?";
         String sqlUpdateOrder = "UPDATE Orders SET [Status] = 'RETURNED', ReturnReason = ? WHERE Id = ?";
         String sqlGetItems = "SELECT ProductId, Quantity FROM OrderItems WHERE OrderId = ?";
-        String sqlUpdateInventory = "UPDATE Inventory SET QuantityInStock = QuantityInStock + ?, LastUpdated = CURRENT_TIMESTAMP WHERE ProductId = ?";
-        String sqlInsertStockTrans = "INSERT INTO StockTransactions (ProductId, HandledByUserId, TransactionType, Quantity, TransactionDate) VALUES (?, ?, 'RETURN', ?, CURRENT_TIMESTAMP)";
+        String sqlUpdateProduct = "UPDATE Products SET Quantity = Quantity + ? WHERE Id = ?";
+        String sqlInsertStockTrans = "INSERT INTO StockTransactions (ProductId, HandledByUserId, TransactionType, Quantity, TransactionDate) VALUES (?, ?, 'RETURN_IN', ?, CURRENT_TIMESTAMP)";
 
         Connection conn = null;
         try {
             conn = getConnection();
-            
+
             // 1. Initiate Transaction - Disable auto-commit
             conn.setAutoCommit(false);
 
             int userId = -1;
-            
+
             // 2. Validate precondition: Order must be COMPLETED
             try (PreparedStatement psCheck = conn.prepareStatement(sqlCheckOrder)) {
                 psCheck.setInt(1, orderId);
@@ -231,22 +294,22 @@ public class OrderDAO extends BaseDAO {
             try (PreparedStatement psGetItems = conn.prepareStatement(sqlGetItems)) {
                 psGetItems.setInt(1, orderId);
                 try (ResultSet rsItems = psGetItems.executeQuery()) {
-                    
-                    try (PreparedStatement psUpdateInv = conn.prepareStatement(sqlUpdateInventory);
-                         PreparedStatement psInsertTrans = conn.prepareStatement(sqlInsertStockTrans)) {
-                        
+
+                    try (PreparedStatement psUpdateInv = conn.prepareStatement(sqlUpdateProduct);
+                            PreparedStatement psInsertTrans = conn.prepareStatement(sqlInsertStockTrans)) {
+
                         while (rsItems.next()) {
                             int productId = rsItems.getInt("ProductId");
                             int quantity = rsItems.getInt("Quantity");
 
-                            // Restore physical stock count
+                            // Restore physical stock count (Products table)
                             psUpdateInv.setInt(1, quantity);
                             psUpdateInv.setInt(2, productId);
                             psUpdateInv.executeUpdate();
 
                             // Maintain historical audit log (Stock Transaction)
                             psInsertTrans.setInt(1, productId);
-                            psInsertTrans.setInt(2, userId); 
+                            psInsertTrans.setInt(2, userId);
                             psInsertTrans.setInt(3, quantity);
                             psInsertTrans.executeUpdate();
                         }
@@ -259,10 +322,11 @@ public class OrderDAO extends BaseDAO {
             return true;
 
         } catch (Exception e) {
-            // Rollback mechanism: Reverts DB to its pristine state before the failure occurred
+            // Rollback mechanism: Reverts DB to its pristine state before the failure
+            // occurred
             if (conn != null) {
                 try {
-                    conn.rollback(); 
+                    conn.rollback();
                 } catch (SQLException ex) {
                     ex.printStackTrace();
                 }
@@ -285,15 +349,18 @@ public class OrderDAO extends BaseDAO {
      * Inserts a new order record into the Orders table.
      * Dùng cho tính năng Checkout của khách hàng.
      * 
-     * @param order the Order object containing all order details (UserId, TotalAmount, Status, etc.)
+     * @param order the Order object containing all order details (UserId,
+     *              TotalAmount, Status, etc.)
      * @return true if insertion succeeded, false otherwise
      * @throws SQLException if a database access error occurs
      * 
-     * TODO: Implement when checkout flow is integrated. Should:
-     *   - INSERT new record with initial status (typically "PENDING")
-     *   - Extract order items and insert into OrderItems table
-     *   - Apply any active discounts if applicable
-     *   - Return generated orderId for confirmation
+     *                      TODO: Implement when checkout flow is integrated.
+     *                      Should:
+     *                      - INSERT new record with initial status (typically
+     *                      "PENDING")
+     *                      - Extract order items and insert into OrderItems table
+     *                      - Apply any active discounts if applicable
+     *                      - Return generated orderId for confirmation
      */
     public boolean insertOrder(Order order) throws SQLException {
         // Placeholder cho tính năng Checkout (sẽ được implement ở phần khách hàng)
@@ -301,7 +368,8 @@ public class OrderDAO extends BaseDAO {
     }
 
     /**
-     * Returns all orders placed by a specific user, sorted by creation date (newest first).
+     * Returns all orders placed by a specific user, sorted by creation date (newest
+     * first).
      * Dùng cho tính năng xem Lịch sử đơn hàng của khách hàng.
      *
      * @param userId the unique identifier of the user
@@ -327,7 +395,8 @@ public class OrderDAO extends BaseDAO {
 
     /**
      * Returns every order in the system sorted by creation date (newest first).
-     * Dùng để lấy toàn bộ đơn (nhưng thường bị thay thế bởi phân trang getOrdersPaged trong Admin).
+     * Dùng để lấy toàn bộ đơn (nhưng thường bị thay thế bởi phân trang
+     * getOrdersPaged trong Admin).
      *
      * @return list of all Order objects in descending order by creation date
      * @throws SQLException if a database access error occurs
@@ -336,7 +405,9 @@ public class OrderDAO extends BaseDAO {
         List<Order> list = new ArrayList<>();
         String sql = "SELECT Id, UserId, DiscountId, TotalAmount, [Status], ShippingAddress, ContactPhone, ProcessedByUserId, ReturnReason, CreatedAt FROM Orders ORDER BY CreatedAt DESC";
 
-        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+        try (Connection conn = getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 list.add(mapResultSetToOrder(rs));
             }
@@ -347,10 +418,13 @@ public class OrderDAO extends BaseDAO {
     }
 
     /**
-     * Returns all orders with a specific status, sorted by creation date (newest first).
-     * Dùng để lọc theo trạng thái (nhưng bị thay thế bởi phân trang getOrdersPaged trong Admin).
+     * Returns all orders with a specific status, sorted by creation date (newest
+     * first).
+     * Dùng để lọc theo trạng thái (nhưng bị thay thế bởi phân trang getOrdersPaged
+     * trong Admin).
      *
-     * @param status the order status to filter by (e.g., "PENDING", "CONFIRMED", "SHIPPED")
+     * @param status the order status to filter by (e.g., "PENDING", "CONFIRMED",
+     *               "SHIPPED")
      * @return list of Order objects matching the given status
      * @throws SQLException if a database access error occurs
      */
@@ -376,7 +450,8 @@ public class OrderDAO extends BaseDAO {
      * Used for financial reporting and business analytics.
      *
      * @param type the aggregation period - "DAY", "MONTH", or "QUARTER"
-     * @return Map with period keys (e.g., "2026-01") mapped to total revenue as Double,
+     * @return Map with period keys (e.g., "2026-01") mapped to total revenue as
+     *         Double,
      *         or null if not yet implemented
      */
     private String normalizeReportType(String type) {
@@ -399,11 +474,14 @@ public class OrderDAO extends BaseDAO {
             case "MONTH":
                 return "YEAR(" + alias + ") = YEAR(GETDATE()) AND MONTH(" + alias + ") = MONTH(GETDATE())";
             case "QUARTER":
-                return "YEAR(" + alias + ") = YEAR(GETDATE()) AND DATEPART(QUARTER, " + alias + ") = DATEPART(QUARTER, GETDATE())";
+                return "YEAR(" + alias + ") = YEAR(GETDATE()) AND DATEPART(QUARTER, " + alias
+                        + ") = DATEPART(QUARTER, GETDATE())";
             default:
                 return "CAST(" + alias + " AS DATE) = CAST(GETDATE() AS DATE)";
         }
     }
+
+
 
     /**
      * Retrieve aggregated revenue data grouped by day, month, or quarter.
@@ -416,28 +494,28 @@ public class OrderDAO extends BaseDAO {
         String sql;
         if ("MONTH".equals(reportType)) {
             sql = "SELECT CONVERT(varchar(7), CreatedAt, 120) AS PeriodLabel, SUM(TotalAmount) AS Revenue "
-                + "FROM Orders "
-                + "WHERE [Status] IN ('CONFIRMED','SHIPPED','DELIVERED','COMPLETED') "
-                + "GROUP BY CONVERT(varchar(7), CreatedAt, 120) "
-                + "ORDER BY PeriodLabel DESC";
+                    + "FROM Orders "
+                    + "WHERE [Status] IN ('CONFIRMED','SHIPPED','DELIVERED','COMPLETED') "
+                    + "GROUP BY CONVERT(varchar(7), CreatedAt, 120) "
+                    + "ORDER BY PeriodLabel DESC";
         } else if ("QUARTER".equals(reportType)) {
             sql = "SELECT CONCAT(YEAR(CreatedAt), '-Q', DATEPART(QUARTER, CreatedAt)) AS PeriodLabel, "
-                + "SUM(TotalAmount) AS Revenue "
-                + "FROM Orders "
-                + "WHERE [Status] IN ('CONFIRMED','SHIPPED','DELIVERED','COMPLETED') "
-                + "GROUP BY YEAR(CreatedAt), DATEPART(QUARTER, CreatedAt) "
-                + "ORDER BY PeriodLabel DESC";
+                    + "SUM(TotalAmount) AS Revenue "
+                    + "FROM Orders "
+                    + "WHERE [Status] IN ('CONFIRMED','SHIPPED','DELIVERED','COMPLETED') "
+                    + "GROUP BY YEAR(CreatedAt), DATEPART(QUARTER, CreatedAt) "
+                    + "ORDER BY PeriodLabel DESC";
         } else {
             sql = "SELECT CONVERT(varchar(10), CreatedAt, 23) AS PeriodLabel, SUM(TotalAmount) AS Revenue "
-                + "FROM Orders "
-                + "WHERE [Status] IN ('CONFIRMED','SHIPPED','DELIVERED','COMPLETED') "
-                + "GROUP BY CONVERT(varchar(10), CreatedAt, 23) "
-                + "ORDER BY PeriodLabel DESC";
+                    + "FROM Orders "
+                    + "WHERE [Status] IN ('CONFIRMED','SHIPPED','DELIVERED','COMPLETED') "
+                    + "GROUP BY CONVERT(varchar(10), CreatedAt, 23) "
+                    + "ORDER BY PeriodLabel DESC";
         }
 
         try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+                PreparedStatement ps = conn.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
                 revenueData.put(rs.getString("PeriodLabel"), rs.getDouble("Revenue"));
@@ -458,17 +536,17 @@ public class OrderDAO extends BaseDAO {
         String dateFilter = buildBestSellerDateFilter(type, "o.CreatedAt");
 
         String sql = "SELECT TOP 10 p.SKU AS sku, p.Title AS title, SUM(oi.Quantity) AS salesQuantity "
-                   + "FROM OrderItems oi "
-                   + "JOIN Orders o ON oi.OrderId = o.Id "
-                   + "JOIN Products p ON oi.ProductId = p.Id "
-                   + "WHERE o.[Status] IN ('CONFIRMED','SHIPPED','DELIVERED','COMPLETED') "
-                   + "AND " + dateFilter + " "
-                   + "GROUP BY p.SKU, p.Title "
-                   + "ORDER BY salesQuantity DESC";
+                + "FROM OrderItems oi "
+                + "JOIN Orders o ON oi.OrderId = o.Id "
+                + "JOIN Products p ON oi.ProductId = p.Id "
+                + "WHERE o.[Status] IN ('CONFIRMED','SHIPPED','DELIVERED','COMPLETED') "
+                + "AND " + dateFilter + " "
+                + "GROUP BY p.SKU, p.Title "
+                + "ORDER BY salesQuantity DESC";
 
         try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+                PreparedStatement ps = conn.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
                 Map<String, Object> item = new HashMap<>();
