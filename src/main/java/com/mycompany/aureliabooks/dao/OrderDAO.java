@@ -14,21 +14,24 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Data Access Object (DAO) for Order persistence.
+ * Data Access Object (DAO) for Order persistence and management.
+ * Handles all database operations related to Orders, including retrieval,
+ * updates, pagination, and reporting.
  * 
  * DESIGN HIGHLIGHTS:
- * - Exception Propagation: Throws SQLException to Controller instead of
- * swallowing errors.
- * - SQL Injection Prevention: Uses Parameterized Queries (PreparedStatement)
- * exclusively.
- * - ACID Compliance: Uses Manual Commit/Rollback for complex multi-table
- * operations.
+ * - Exception Propagation: Throws SQLException to the Controller layer.
+ * - SQL Injection Prevention: Uses Parameterized Queries (PreparedStatement).
+ * - ACID Compliance: Uses Manual Commit/Rollback for complex multi-table operations.
  */
 public class OrderDAO extends BaseDAO {
 
     /**
-     * Utility method to map a database row to an Order object.
-     * Prevents code duplication across multiple SELECT methods.
+     * Utility method to map a database row (ResultSet) to an Order entity.
+     * Prevents code duplication across multiple SELECT query methods.
+     *
+     * @param rs the ResultSet positioned at the current row
+     * @return Order object populated with database fields
+     * @throws SQLException if a database access error occurs or column is missing
      */
     private Order mapResultSetToOrder(ResultSet rs) throws SQLException {
         Order order = new Order();
@@ -46,13 +49,17 @@ public class OrderDAO extends BaseDAO {
     }
 
     /**
-     * Retrieves the total count of orders based on filters.
-     * Essential for mathematical calculation of Total Pages in pagination.
+     * Retrieves the total count of orders based on dynamic filters.
+     * Essential for mathematical calculation of Total Pages in server-side pagination.
+     *
+     * @param status the order status filter ("ALL" or specific status)
+     * @param searchQuery the keyword to search by Order ID or Contact Phone
+     * @return the total number of matching orders
+     * @throws SQLException if a database access error occurs
      */
     public int getTotalOrdersCount(String status, String searchQuery) throws SQLException {
         StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM Orders WHERE 1=1 ");
 
-        // Dynamically append SQL conditions based on active filters
         if (status != null && !status.equals("ALL")) {
             sql.append(" AND [Status] = ? ");
         }
@@ -63,18 +70,18 @@ public class OrderDAO extends BaseDAO {
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql.toString())) {
             int paramIndex = 1;
 
-            // Bind parameters sequentially to prevent SQL Injection
             if (status != null && !status.equals("ALL")) {
                 ps.setString(paramIndex++, status);
             }
             if (searchQuery != null && !searchQuery.trim().isEmpty()) {
                 ps.setString(paramIndex++, searchQuery.trim());
-                ps.setString(paramIndex++, "%" + searchQuery.trim() + "%"); // Partial match for phone
+                ps.setString(paramIndex++, "%" + searchQuery.trim() + "%");
             }
 
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next())
+                if (rs.next()) {
                     return rs.getInt(1);
+                }
             }
         } catch (ClassNotFoundException e) {
             throw new SQLException("Database driver missing in classpath", e);
@@ -84,8 +91,14 @@ public class OrderDAO extends BaseDAO {
 
     /**
      * Retrieves a specific chunk (page) of orders from the database.
-     * Uses SQL Server OFFSET-FETCH mechanism for high-performance server-side
-     * pagination.
+     * Uses SQL Server OFFSET-FETCH mechanism for high-performance pagination.
+     *
+     * @param status the order status filter ("ALL" or specific status)
+     * @param searchQuery the keyword to search by Order ID or Contact Phone
+     * @param offset the number of rows to skip
+     * @param pageSize the maximum number of rows to return
+     * @return a List of Order objects for the requested page
+     * @throws SQLException if a database access error occurs
      */
     public List<Order> getOrdersPaged(String status, String searchQuery, int offset, int pageSize) throws SQLException {
         List<Order> list = new ArrayList<>();
@@ -109,7 +122,7 @@ public class OrderDAO extends BaseDAO {
                 ps.setString(paramIndex++, searchQuery.trim());
                 ps.setString(paramIndex++, "%" + searchQuery.trim() + "%");
             }
-            // Bind pagination boundary parameters
+            
             ps.setInt(paramIndex++, offset);
             ps.setInt(paramIndex, pageSize);
 
@@ -125,8 +138,12 @@ public class OrderDAO extends BaseDAO {
     }
 
     /**
-     * Helper Method: Phục hồi số lượng sản phẩm vào kho khi Admin Hủy Đơn hoặc Khách Trả Hàng.
-     * (Cột tồn kho là Quantity trong bảng Products).
+     * Helper Method: Restores product inventory quantities when an order is cancelled or returned.
+     * Re-adds the quantity of each order item back to the Products table.
+     *
+     * @param conn the active database Connection (must be within a transaction)
+     * @param orderId the unique identifier of the order
+     * @throws SQLException if a database access error occurs
      */
     private void restoreInventory(Connection conn, int orderId) throws SQLException {
         String sqlGetItems = "SELECT ProductId, Quantity FROM OrderItems WHERE OrderId = ?";
@@ -150,8 +167,14 @@ public class OrderDAO extends BaseDAO {
     }
 
     /**
-     * Updates order status and implements Audit Trail by recording which Admin executed the action.
-     * Tự động hoàn trả kho nếu Admin Hủy Đơn (CANCELLED).
+     * Updates the status of an order and implements an Audit Trail.
+     * Safely wrapped in a Transaction because it may update inventory.
+     *
+     * @param orderId the unique identifier of the order to update
+     * @param status the new status value (e.g., "CONFIRMED", "SHIPPED", "CANCELLED")
+     * @param processedByUserId the ID of the staff member processing this update
+     * @return true if the update was successful, false otherwise
+     * @throws SQLException if a database error occurs or transaction fails
      */
     public boolean updateOrderStatus(int orderId, String status, Integer processedByUserId) throws SQLException {
         String sqlUpdateStatus = "UPDATE Orders SET [Status] = ?, ProcessedByUserId = ? WHERE Id = ?";
@@ -159,7 +182,7 @@ public class OrderDAO extends BaseDAO {
         Connection conn = null;
         try {
             conn = getConnection();
-            // Luôn dùng Transaction vì có thể phải update cả bảng Products
+            // Enable manual transaction control
             conn.setAutoCommit(false);
 
             try (PreparedStatement ps = conn.prepareStatement(sqlUpdateStatus)) {
@@ -174,7 +197,7 @@ public class OrderDAO extends BaseDAO {
                 }
             }
 
-            // Nếu trạng thái là HỦY, bắt buộc hoàn lại hàng vào kho
+            // Restore inventory if the order is cancelled
             if ("CANCELLED".equals(status)) {
                 restoreInventory(conn, orderId);
             }
@@ -186,7 +209,7 @@ public class OrderDAO extends BaseDAO {
             if (conn != null) {
                 try { conn.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
             }
-            throw new SQLException("Lỗi khi cập nhật trạng thái: " + e.getMessage(), e);
+            throw new SQLException("Failed to update order status: " + e.getMessage(), e);
         } finally {
             if (conn != null) {
                 try { conn.setAutoCommit(true); conn.close(); } catch (SQLException e) { e.printStackTrace(); }
@@ -195,8 +218,12 @@ public class OrderDAO extends BaseDAO {
     }
 
     /**
-     * Retrieves complete order blueprint including line items and joined product
-     * names.
+     * Retrieves the complete blueprint of a specific order.
+     * Fetches the main order record and joins its associated line items (OrderItems) and product names.
+     *
+     * @param orderId the unique identifier of the order
+     * @return the fully populated Order object, or null if not found
+     * @throws SQLException if a database access error occurs
      */
     public Order getOrderById(int orderId) throws SQLException {
         Order order = null;
@@ -214,7 +241,6 @@ public class OrderDAO extends BaseDAO {
                 }
             }
 
-            // Only fetch items if the parent order successfully exists
             if (order != null) {
                 try (PreparedStatement psItems = conn.prepareStatement(sqlItems)) {
                     psItems.setInt(1, orderId);
@@ -233,6 +259,7 @@ public class OrderDAO extends BaseDAO {
                             product.setTitle(rsItems.getString("Title"));
                             item.setProduct(product);
 
+                            // WARNING: Order.java must initialize the items list: private List<OrderItem> items = new ArrayList<>();
                             order.getItems().add(item);
                         }
                     }
@@ -246,8 +273,12 @@ public class OrderDAO extends BaseDAO {
 
     /**
      * Executes a strictly isolated Database Transaction to handle Order Returns.
-     * Guarantees Atomicity (All-or-Nothing) across Orders, Products, and
-     * StockTransactions tables.
+     * Guarantees Atomicity (All-or-Nothing) across Orders, Products, and StockTransactions tables.
+     *
+     * @param orderId the unique identifier of the order being returned
+     * @param reason the reason provided by the customer for the return
+     * @return true if the return transaction succeeded, false otherwise
+     * @throws SQLException if a database error occurs or transaction is aborted
      */
     public boolean requestOrderReturn(int orderId, String reason) throws SQLException {
         String sqlCheckOrder = "SELECT UserId, [Status] FROM Orders WHERE Id = ?";
@@ -259,20 +290,18 @@ public class OrderDAO extends BaseDAO {
         Connection conn = null;
         try {
             conn = getConnection();
-
-            // 1. Initiate Transaction - Disable auto-commit
             conn.setAutoCommit(false);
 
             int userId = -1;
 
-            // 2. Validate precondition: Order must be COMPLETED
+            // 1. Validate precondition: Order must be COMPLETED
             try (PreparedStatement psCheck = conn.prepareStatement(sqlCheckOrder)) {
                 psCheck.setInt(1, orderId);
                 try (ResultSet rs = psCheck.executeQuery()) {
                     if (rs.next()) {
                         String currentStatus = rs.getString("Status");
                         if (!"COMPLETED".equals(currentStatus)) {
-                            conn.rollback(); // Precondition failed -> Abort
+                            conn.rollback(); 
                             return false;
                         }
                         userId = rs.getInt("UserId");
@@ -283,14 +312,14 @@ public class OrderDAO extends BaseDAO {
                 }
             }
 
-            // 3. Flag order as RETURNED
+            // 2. Flag order as RETURNED
             try (PreparedStatement psUpdateOrder = conn.prepareStatement(sqlUpdateOrder)) {
                 psUpdateOrder.setString(1, reason);
                 psUpdateOrder.setInt(2, orderId);
                 psUpdateOrder.executeUpdate();
             }
 
-            // 4. Fetch line items and iterate to restore inventory quantities
+            // 3. Fetch line items and iterate to restore inventory quantities
             try (PreparedStatement psGetItems = conn.prepareStatement(sqlGetItems)) {
                 psGetItems.setInt(1, orderId);
                 try (ResultSet rsItems = psGetItems.executeQuery()) {
@@ -317,60 +346,37 @@ public class OrderDAO extends BaseDAO {
                 }
             }
 
-            // 5. Success -> Persist all changes atomically
+            // 4. Success -> Persist all changes atomically
             conn.commit();
             return true;
 
         } catch (Exception e) {
-            // Rollback mechanism: Reverts DB to its pristine state before the failure
-            // occurred
             if (conn != null) {
-                try {
-                    conn.rollback();
-                } catch (SQLException ex) {
-                    ex.printStackTrace();
-                }
+                try { conn.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
             }
             throw new SQLException("Critical Failure: Order Return Transaction aborted and rolled back.", e);
         } finally {
-            // Resource cleanup: Restore connection properties and release back to pool
             if (conn != null) {
-                try {
-                    conn.setAutoCommit(true);
-                    conn.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
+                try { conn.setAutoCommit(true); conn.close(); } catch (SQLException e) { e.printStackTrace(); }
             }
         }
     }
 
     /**
-     * Inserts a new order record into the Orders table.
-     * Dùng cho tính năng Checkout của khách hàng.
+     * Inserts a new order record into the database during Customer Checkout.
      * 
-     * @param order the Order object containing all order details (UserId,
-     *              TotalAmount, Status, etc.)
+     * @param order the Order object containing all order details
      * @return true if insertion succeeded, false otherwise
      * @throws SQLException if a database access error occurs
-     * 
-     *                      TODO: Implement when checkout flow is integrated.
-     *                      Should:
-     *                      - INSERT new record with initial status (typically
-     *                      "PENDING")
-     *                      - Extract order items and insert into OrderItems table
-     *                      - Apply any active discounts if applicable
-     *                      - Return generated orderId for confirmation
      */
     public boolean insertOrder(Order order) throws SQLException {
-        // Placeholder cho tính năng Checkout (sẽ được implement ở phần khách hàng)
+        // TODO: Implement checkout flow (Insert Order -> Insert OrderItems -> Update Inventory)
         return false;
     }
 
     /**
-     * Returns all orders placed by a specific user, sorted by creation date (newest
-     * first).
-     * Dùng cho tính năng xem Lịch sử đơn hàng của khách hàng.
+     * Returns all orders placed by a specific user, sorted by creation date (newest first).
+     * Used for the Customer's Order History page.
      *
      * @param userId the unique identifier of the user
      * @return list of Order objects for the specified user
@@ -395,8 +401,7 @@ public class OrderDAO extends BaseDAO {
 
     /**
      * Returns every order in the system sorted by creation date (newest first).
-     * Dùng để lấy toàn bộ đơn (nhưng thường bị thay thế bởi phân trang
-     * getOrdersPaged trong Admin).
+     * Typically superseded by getOrdersPaged() to avoid memory overload.
      *
      * @return list of all Order objects in descending order by creation date
      * @throws SQLException if a database access error occurs
@@ -418,13 +423,10 @@ public class OrderDAO extends BaseDAO {
     }
 
     /**
-     * Returns all orders with a specific status, sorted by creation date (newest
-     * first).
-     * Dùng để lọc theo trạng thái (nhưng bị thay thế bởi phân trang getOrdersPaged
-     * trong Admin).
+     * Returns all orders with a specific status, sorted by creation date (newest first).
+     * Typically superseded by getOrdersPaged() to avoid memory overload.
      *
-     * @param status the order status to filter by (e.g., "PENDING", "CONFIRMED",
-     *               "SHIPPED")
+     * @param status the exact order status to filter by
      * @return list of Order objects matching the given status
      * @throws SQLException if a database access error occurs
      */
@@ -446,13 +448,11 @@ public class OrderDAO extends BaseDAO {
     }
 
     /**
-     * Returns aggregated revenue data for the requested time period.
-     * Used for financial reporting and business analytics.
+     * Normalizes the requested report period type for statistical queries.
+     * Defaults to "DAY" if the input is invalid or null.
      *
-     * @param type the aggregation period - "DAY", "MONTH", or "QUARTER"
-     * @return Map with period keys (e.g., "2026-01") mapped to total revenue as
-     *         Double,
-     *         or null if not yet implemented
+     * @param type the raw input aggregation period (e.g., "MONTH", "QUARTER")
+     * @return the normalized period type ("DAY", "MONTH", or "QUARTER")
      */
     private String normalizeReportType(String type) {
         if (type == null) {
@@ -466,8 +466,12 @@ public class OrderDAO extends BaseDAO {
     }
 
     /**
-     * Build a date filter condition for best-selling report queries
-     * based on the selected report type.
+     * Builds a date filter SQL condition for best-selling report queries.
+     * Ensures the report only calculates data for the CURRENT day, month, or quarter.
+     *
+     * @param type the aggregation period type
+     * @param alias the SQL alias for the Date column to filter (e.g., "o.CreatedAt")
+     * @return the generated SQL condition string
      */
     private String buildBestSellerDateFilter(String type, String alias) {
         switch (normalizeReportType(type)) {
@@ -481,11 +485,13 @@ public class OrderDAO extends BaseDAO {
         }
     }
 
-
-
     /**
-     * Retrieve aggregated revenue data grouped by day, month, or quarter.
-     * Refactored to throw SQLException to Controller for proper 500 error handling.
+     * Retrieves aggregated revenue data grouped by day, month, or quarter.
+     * Supports generating trend charts in the Admin Dashboard.
+     *
+     * @param type the aggregation period ("DAY", "MONTH", "QUARTER")
+     * @return Map with period keys mapped to total revenue (e.g., "2026-06" -> 5000.0)
+     * @throws SQLException if a database access error occurs
      */
     public Map<String, Double> getRevenueReport(String type) throws SQLException {
         Map<String, Double> revenueData = new LinkedHashMap<>();
@@ -528,8 +534,12 @@ public class OrderDAO extends BaseDAO {
     }
 
     /**
-     * Retrieve best-selling product report data for the selected time period.
-     * Refactored to throw SQLException to Controller for proper 500 error handling.
+     * Retrieves best-selling product statistics for the CURRENT day, month, or quarter.
+     * Joins Orders, OrderItems, and Products to aggregate total sales volume.
+     *
+     * @param type the aggregation period ("DAY", "MONTH", "QUARTER")
+     * @return List of Maps containing product SKU, title, and total quantity sold
+     * @throws SQLException if a database access error occurs
      */
     public List<Map<String, Object>> getBestSellingReport(String type) throws SQLException {
         List<Map<String, Object>> list = new ArrayList<>();
