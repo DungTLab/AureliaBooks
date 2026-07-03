@@ -128,4 +128,38 @@ public class CategoryDAO extends BaseDAO {
         }
         return false;
     }
+    
+    //Kiem tra co danh muc con hay ko
+    public boolean hasChildCategory(int id){
+        String sql = "SELECT 1 FROM Categories WHERE Id = ?";
+        try (Connection conn = getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)){
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()){
+                return rs.next();
+            } 
+        } catch (SQLException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+    //kiem tra co san pham hay ko
+    public boolean hasProducts(int id) {
+    String sql = "SELECT 1 FROM Products WHERE CategoryId = ?";
+
+    try (Connection conn = getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql)) {
+
+        ps.setInt(1, id);
+
+        try (ResultSet rs = ps.executeQuery()) {
+            return rs.next();
+        }
+
+    } catch (SQLException | ClassNotFoundException e) {
+        e.printStackTrace();
+    }
+
+    return false;
+}
 }

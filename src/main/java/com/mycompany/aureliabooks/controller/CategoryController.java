@@ -26,18 +26,16 @@ public class CategoryController extends HttpServlet {
     private final CategoryDAO categoryDAO = new CategoryDAO();
 
     /**
-     * Validate the category name:
-     * - must not be empty
-     * - must contain only letters and spaces
-     * - length must be between 2 and 100 characters
+     * Validate the category name: - must not be empty - must contain only
+     * letters and spaces - length must be between 2 and 100 characters
      */
     private String validateCategoryName(String name) {
         if (name == null || name.trim().isEmpty()) {
             return "Tên danh mục không được để trống.";
         }
         String trimmed = name.trim();
-        if (!trimmed.matches("^[\\p{L} ]+$")) {
-            return "Tên danh mục chỉ được chứa chữ cái và dấu cách, không được chứa số hoặc ký tự đặc biệt.";
+        if (!trimmed.matches("^[\\p{L}0-9 \\-&()]+$")) {
+            return "Tên danh mục chỉ được chứa chữ cái, dấu cách, chứa số hoặc ký tự đặc biệt.";
         }
         if (trimmed.length() < 2 || trimmed.length() > 100) {
             return "Tên danh mục phải có độ dài từ 2 đến 100 ký tự.";
@@ -46,8 +44,8 @@ public class CategoryController extends HttpServlet {
     }
 
     /**
-     * Parse a nullable integer from a string input.
-     * Returns null for empty or invalid values.
+     * Parse a nullable integer from a string input. Returns null for empty or
+     * invalid values.
      */
     private Integer parseNullableInteger(String raw) {
         if (raw == null || raw.trim().isEmpty()) {
@@ -71,14 +69,30 @@ public class CategoryController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         String action = request.getParameter("action");
+        String ctx = request.getContextPath();
         if ("create".equals(action)) {
             request.setAttribute("parentCategories", categoryDAO.getAllCategories());
             request.getRequestDispatcher("/WEB-INF/category/create.jsp").forward(request, response);
 
         } else if ("update".equals(action)) {
-            int id = Integer.parseInt(request.getParameter("id"));
+            Integer id;
+            try {
+                id = Integer.parseInt(request.getParameter("id"));
+            } catch (NumberFormatException | NullPointerException e) {
+                response.sendRedirect(ctx + "/admin/categories?error="
+                        + encodeParam("ID không hợp lệ."));
+                return;
+            }
 
-            request.setAttribute("category", categoryDAO.getCategoryById(id));
+            // Kiem tra danh muc co ton tai hay ko
+            Category category = categoryDAO.getCategoryById(id);
+            if (category == null) {
+                response.sendRedirect(ctx + "/admin/categories?error="
+                        + encodeParam("Danh mục không tồn tại."));
+                return;
+
+            }
+            request.setAttribute("category", category);
             request.setAttribute("parentCategories", categoryDAO.getAllCategories());
 
             request.getRequestDispatcher("/WEB-INF/category/update.jsp").forward(request, response);
@@ -134,7 +148,23 @@ public class CategoryController extends HttpServlet {
                 request.getRequestDispatcher("/WEB-INF/category/create.jsp").forward(request, response);
             }
         } else if ("update".equals(action)) {
-            int id = Integer.parseInt(request.getParameter("id"));
+            // Check 
+            Integer id;
+            try {
+                id = Integer.parseInt(request.getParameter("id"));
+
+            } catch (NumberFormatException | NullPointerException e) {
+                response.sendRedirect(ctx + "/admin/categories?error=" + encodeParam("ID không hợp lệ"));
+                return;
+            }
+
+            // Check category have already existed
+            Category existing = categoryDAO.getCategoryById(id);
+            System.out.println("CAtegory: " + existing);
+            if (existing == null) {
+                response.sendRedirect(ctx + "/admin/categories?error=" + encodeParam("Danh mục không tồn tại"));
+                return;
+            }
             String name = request.getParameter("name");
             String parentIdRaw = request.getParameter("parentId");
 
@@ -171,14 +201,29 @@ public class CategoryController extends HttpServlet {
                 request.getRequestDispatcher("/WEB-INF/category/update.jsp").forward(request, response);
             }
         } else if ("delete".equals(action)) {
-            int id = Integer.parseInt(request.getParameter("id"));
+            try {
+                int id = Integer.parseInt(request.getParameter("id"));
+                if (categoryDAO.hasChildCategory(id)) {
+                    response.sendRedirect(ctx + "/admin/categories?error="
+                            + encodeParam("Danh mục đang có danh mục con, không thể xóa."));
+                    return;
+                }
 
-            boolean success = categoryDAO.deleteCategory(id);
+                if (categoryDAO.hasProducts(id)) {
+                    response.sendRedirect(ctx + "/admin/categories?error="
+                            + encodeParam("Danh mục đang có sản phẩm, không thể xóa."));
+                    return;
+                }
+                boolean success = categoryDAO.deleteCategory(id);
 
-            if (success) {
-                response.sendRedirect(ctx + "/admin/categories?success=" + encodeParam("Xóa danh mục thành công."));
-            } else {
-                response.sendRedirect(ctx + "/admin/categories?error=" + encodeParam("Không thể xóa danh mục."));
+                if (success) {
+                    response.sendRedirect(ctx + "/admin/categories?success=" + encodeParam("Xóa danh mục thành công."));
+                } else {
+                    response.sendRedirect(ctx + "/admin/categories?error=" + encodeParam("Không thể xóa danh mục."));
+                }
+            } catch (NumberFormatException e) {
+                response.sendRedirect(ctx + "/admin/categories?error="
+                        + encodeParam("ID không hợp lệ."));
             }
         } else {
             response.sendRedirect(ctx + "/admin/categories");
