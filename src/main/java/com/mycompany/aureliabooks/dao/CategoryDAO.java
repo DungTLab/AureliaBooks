@@ -131,7 +131,7 @@ public class CategoryDAO extends BaseDAO {
     
     //Kiem tra co danh muc con hay ko
     public boolean hasChildCategory(int id){
-        String sql = "SELECT 1 FROM Categories WHERE Id = ?";
+        String sql = "SELECT 1 FROM Categories WHERE ParentId = ?";
         try (Connection conn = getConnection();
                 PreparedStatement ps = conn.prepareStatement(sql)){
             ps.setInt(1, id);
