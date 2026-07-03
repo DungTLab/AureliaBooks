@@ -7,14 +7,14 @@
 <c:set var="safeSearch"><c:out value="${searchQuery}"/></c:set>
 <c:set var="safeStatus"><c:out value="${selectedStatus}"/></c:set>
 
-<div class="container my-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Danh Sách Đơn Hàng (Admin)</h2>
-    </div>
+    <div class="container my-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Danh Sách Đơn Hàng (Admin)</h2>
+        </div>
 
-    <div class="d-flex justify-content-between mb-3 flex-wrap gap-2">
-        <div>
-            <a href="${pageContext.request.contextPath}/admin/orders?status=ALL&search=${safeSearch}" class="btn btn-sm ${selectedStatus == 'ALL' ? 'btn-dark' : 'btn-secondary'}">Tất cả</a>
+        <div class="d-flex justify-content-between mb-3 flex-wrap gap-2">
+            <div>
+                <a href="${pageContext.request.contextPath}/admin/orders?status=ALL&search=${safeSearch}" class="btn btn-sm ${selectedStatus == 'ALL' ? 'btn-dark' : 'btn-secondary'}">Tất cả</a>
             <a href="${pageContext.request.contextPath}/admin/orders?status=PENDING&search=${safeSearch}" class="btn btn-sm ${selectedStatus == 'PENDING' ? 'btn-info text-white' : 'btn-outline-info'}">Chờ xác nhận</a>
             <a href="${pageContext.request.contextPath}/admin/orders?status=SHIPPING&search=${safeSearch}" class="btn btn-sm ${selectedStatus == 'SHIPPING' ? 'btn-primary' : 'btn-outline-primary'}">Đang giao</a>
             <a href="${pageContext.request.contextPath}/admin/orders?status=COMPLETED&search=${safeSearch}" class="btn btn-sm ${selectedStatus == 'COMPLETED' ? 'btn-success' : 'btn-outline-success'}">Hoàn thành</a>
@@ -25,7 +25,7 @@
             <input type="hidden" name="status" value="${safeStatus}">
             <input type="text" name="search" class="form-control form-control-sm me-2" placeholder="Tìm Mã đơn, Số ĐT..." value="${safeSearch}">
             <button type="submit" class="btn btn-sm btn-outline-dark px-3">Tìm</button>
-            
+
             <c:if test="${not empty searchQuery}">
                 <a href="${pageContext.request.contextPath}/admin/orders?status=${safeStatus}" class="btn btn-sm btn-link text-danger text-decoration-none text-nowrap">Xóa tìm kiếm</a>
             </c:if>
@@ -63,7 +63,7 @@
                                 <c:out value="${order.status}" />
                             </span>
                         </td>
-                        
+
                         <td>
                             <c:choose>
                                 <c:when test="${not empty order.processedByUserId}">
@@ -110,7 +110,7 @@
                         </td>
                     </tr>
                 </c:forEach>
-                
+
                 <c:if test="${empty orderList}">
                     <tr>
                         <td colspan="7" class="text-center text-muted py-5">
@@ -126,23 +126,42 @@
     <c:if test="${totalPages > 1}">
         <nav aria-label="Page navigation" class="mt-4">
             <ul class="pagination justify-content-center">
+
+                <!-- First & Previous Page Links -->
                 <li class="page-item ${currentPage <= 1 ? 'disabled' : ''}">
-                    <a class="page-link" href="?status=${safeStatus}&search=${safeSearch}&page=${currentPage - 1}" aria-label="Previous">
-                        <span aria-hidden="true">&laquo;</span>
-                    </a>
+                    <a class="page-link" href="?status=${safeStatus}&search=${safeSearch}&page=1" title="First Page">&laquo;&laquo;</a>
+                </li>
+                <li class="page-item ${currentPage <= 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="?status=${safeStatus}&search=${safeSearch}&page=${currentPage - 1}" title="Previous Page">&laquo;</a>
                 </li>
 
-                <c:forEach begin="1" end="${totalPages}" var="i">
+                <!-- Left Ellipsis (show if startPage > 1) -->
+                <c:if test="${startPage > 1}">
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                    </c:if>
+
+                <!-- Sliding Window Loop (render pages from startPage to endPage) -->
+                <c:forEach begin="${startPage}" end="${endPage}" var="i">
                     <li class="page-item ${currentPage == i ? 'active' : ''}">
-                        <a class="page-link" href="?status=${safeStatus}&search=${safeSearch}&page=${i}"><c:out value="${i}"/></a>
+                        <a class="page-link" href="?status=${safeStatus}&search=${safeSearch}&page=${i}">
+                            <c:out value="${i}"/>
+                        </a>
                     </li>
                 </c:forEach>
 
+                <!-- Right Ellipsis (show if endPage < totalPages) -->
+                <c:if test="${endPage < totalPages}">
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                    </c:if>
+
+                <!-- Next & Last Page Links -->
                 <li class="page-item ${currentPage >= totalPages ? 'disabled' : ''}">
-                    <a class="page-link" href="?status=${safeStatus}&search=${safeSearch}&page=${currentPage + 1}" aria-label="Next">
-                        <span aria-hidden="true">&raquo;</span>
-                    </a>
+                    <a class="page-link" href="?status=${safeStatus}&search=${safeSearch}&page=${currentPage + 1}" title="Next Page">&raquo;</a>
                 </li>
+                <li class="page-item ${currentPage >= totalPages ? 'disabled' : ''}">
+                    <a class="page-link" href="?status=${safeStatus}&search=${safeSearch}&page=${totalPages}" title="Last Page">&raquo;&raquo;</a>
+                </li>
+
             </ul>
         </nav>
     </c:if>
