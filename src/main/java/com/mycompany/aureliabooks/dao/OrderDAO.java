@@ -1,301 +1,130 @@
 package com.mycompany.aureliabooks.dao;
 
 import com.mycompany.aureliabooks.model.Order;
+import com.mycompany.aureliabooks.model.OrderItem;
 import com.mycompany.aureliabooks.model.Product;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * DAO for order persistence, status management, returns, and reporting queries.
+ * Data Access Object (DAO) for Order persistence and management.
+ * Handles all database operations related to Orders, including retrieval,
+ * updates, pagination, and reporting.
+ * 
+ * DESIGN HIGHLIGHTS:
+ * - Exception Propagation: Throws SQLException to the Controller layer.
+ * - SQL Injection Prevention: Uses Parameterized Queries (PreparedStatement).
+ * - ACID Compliance: Uses Manual Commit/Rollback for complex multi-table
+ * operations.
  */
 public class OrderDAO extends BaseDAO {
 
     /**
-     * Maps the current {@link ResultSet} row to an {@link Order} entity. Keeps
-     * row-to-object conversion in one place so the query methods stay small.
+     * Utility method to map a database row (ResultSet) to an Order entity.
+     * Prevents code duplication across multiple SELECT query methods.
      *
      * @param rs the ResultSet positioned at the current row
-     * @return Order object with all fields populated from the ResultSet
-     * @throws Exception if database column access fails
+     * @return Order object populated with database fields
+     * @throws SQLException if a database access error occurs or column is missing
      */
-    private Order mapResultSetToOrder(ResultSet rs) throws Exception {
+    private Order mapResultSetToOrder(ResultSet rs) throws SQLException {
         Order order = new Order();
-        // Map all database columns to Order entity fields
         order.setId(rs.getInt("Id"));
         order.setUserId(rs.getInt("UserId"));
-        // DiscountId is nullable, so cast to Integer wrapper
         order.setDiscountId((Integer) rs.getObject("DiscountId"));
         order.setTotalAmount(rs.getBigDecimal("TotalAmount"));
         order.setStatus(rs.getString("Status"));
         order.setShippingAddress(rs.getString("ShippingAddress"));
         order.setContactPhone(rs.getString("ContactPhone"));
-        // ProcessedByUserId is populated when admin processes the order
-        order.setProcessedByUserId((Integer) rs.getInt("ProcessedByUserId"));
+        order.setProcessedByUserId((Integer) rs.getObject("ProcessedByUserId"));
         order.setReturnReason(rs.getString("ReturnReason"));
         order.setCreatedAt(rs.getTimestamp("CreatedAt"));
-
         return order;
     }
 
     /**
-     * Inserts a new order record into the Orders table.
-     * 
-     * @param order the Order object containing all order details (UserId, TotalAmount, Status, etc.)
-     * @return true if insertion succeeded, false otherwise
-     * 
-     * TODO: Implement when checkout flow is integrated. Should:
-     *   - INSERT new record with initial status (typically "PENDING")
-     *   - Extract order items and insert into OrderItems table
-     *   - Apply any active discounts if applicable
-     *   - Return generated orderId for confirmation
-     */
-    public boolean insertOrder(Order order) {
-        return false;
-    }
-
-    /**
-     * Returns all orders placed by a specific user, sorted by creation date (newest first).
-     * Used for displaying user's order history.
+     * Retrieves the total count of orders based on dynamic filters.
+     * Essential for mathematical calculation of Total Pages in server-side
+     * pagination.
      *
-     * @param userId the unique identifier of the user
-     * @return list of Order objects for the specified user, or null if not implemented
-     * 
-     * TODO: Implement when user account history view is connected. Should:
-     *   - Query Orders table WHERE UserId = ?
-     *   - Include related OrderItems and Product details if needed
-     *   - Sort by CreatedAt DESC to show most recent orders first
+     * @param status      the order status filter ("ALL" or specific status)
+     * @param searchQuery the keyword to search by Order ID or Contact Phone
+     * @return the total number of matching orders
+     * @throws SQLException if a database access error occurs
      */
-    public List<Order> getOrdersByUserId(int userId) {
-        return null;
-    }
+    public int getTotalOrdersCount(String status, String searchQuery) throws SQLException {
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM Orders WHERE 1=1 ");
 
-    /**
-     * Returns every order in the system sorted by creation date (newest first).
-     * Typically used for admin dashboard to view all orders.
-     *
-     * @return list of all Order objects in descending order by creation date
-     */
-    public List<Order> getAllOrders() {
-        List<Order> list = new ArrayList<>();
-        // SQL: Retrieve all orders sorted by creation date (newest first)
-        // Uses [Status] with brackets because "Status" is a SQL reserved keyword
-        String sql = "SELECT Id, UserId, DiscountId, TotalAmount, [Status], ShippingAddress, ContactPhone, ProcessedByUserId, ReturnReason, CreatedAt from Orders ORDER BY CreatedAt DESC";
-
-        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) {
-                list.add(mapResultSetToOrder(rs));
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return list;
-    }
-
-    /**
-     * Returns all orders with a specific status, sorted by creation date (newest first).
-     * Used for filtering orders by stage (e.g., PENDING, CONFIRMED, SHIPPED, DELIVERED).
-     *
-     * @param status the order status to filter by (e.g., "PENDING", "CONFIRMED", "SHIPPED")
-     * @return list of Order objects matching the given status
-     */
-    public List<Order> getOrdersByStatus(String status) {
-        List<Order> list = new ArrayList<>();
-        // SQL: Filter orders by exact status match, sorted by newest first
-        String sql = "SELECT Id, UserId, DiscountId, TotalAmount, [Status], ShippingAddress, ContactPhone, ProcessedByUserId, ReturnReason, CreatedAt from Orders WHERE [Status] = ? ORDER BY CreatedAt DESC";
-
-        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, status);
-            try (ResultSet rs = ps.executeQuery()) {
-
-                while (rs.next()) {
-                    list.add(mapResultSetToOrder(rs));
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return list;
-    }
-
-    /**
-     * Returns a single order by its primary key.
-     * Used for displaying detailed order information.
-     *
-     * @param orderId the unique identifier of the order
-     * @return Order object if found, null otherwise
-     * 
-     * TODO: Implement to load full order details. Should:
-     *   - Query Orders table WHERE Id = ?
-     *   - Retrieve associated OrderItems and related Product data
-     *   - Include discount information if applicable
-     *   - Include staff member info who processed the order (if any)
-     */
-    public Order getOrderById(int orderId) {
-        return null;
-    }
-
-    /**
-     * Updates the status of an order and records which staff member processed it.
-     * Used when admin changes order state (e.g., PENDING → CONFIRMED → SHIPPED).
-     *
-     * @param orderId the unique identifier of the order to update
-     * @param status the new status value (e.g., "CONFIRMED", "SHIPPED", "DELIVERED")
-     * @param processedByUserId the ID of the staff member making this change (may be null)
-     * @return true if update succeeded (1+ rows affected), false otherwise
-     */
-    public boolean updateOrderStatus(int orderId, String status, Integer processedByUserId) {
-        // SQL: Update status and record which admin processed this order
-        String sql = "UPDATE Orders SET [Status] = ?, ProcessedByUserId = ? WHERE Id = ?";
-
-        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            // Parameter 1: New status
-            ps.setString(1, status);
-            // Parameter 2: Admin/staff user ID (nullable for automated status changes)
-            ps.setObject(2, processedByUserId);
-            // Parameter 3: Order ID to identify which order to update
-            ps.setInt(3, orderId);
-
-            // Returns true if at least one row was affected
-            return ps.executeUpdate() > 0;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return false;
-    }
-
-    /**
-     * Creates a return request for an order, allowing customers to request refunds.
-     * Records the reason for the return.
-     *
-     * @param orderId the unique identifier of the order being returned
-     * @param reason the customer's reason for requesting the return
-     * @return true if return request was created successfully, false otherwise
-     * 
-     * TODO: Implement as a transactional operation that:
-     *   - Creates a return record with orderId, reason, and current timestamp
-     *   - Updates order status to "RETURN_REQUESTED"
-     *   - Restores inventory (increase product quantities for items in this order)
-     *   - Potentially holds refund processing for admin approval
-     *   - Use transaction to ensure consistency if any step fails
-     */
-    public boolean requestOrderReturn(int orderId, String reason) {
-        return false;
-    }
-
-    /**
-     * Returns aggregated revenue data for the requested time period.
-     * Used for financial reporting and business analytics.
-     *
-     * @param type the aggregation period - "DAY", "MONTH", or "QUARTER"
-     * @return Map with period keys (e.g., "2026-01") mapped to total revenue as Double,
-     *         or null if not yet implemented
-     * 
-     * TODO: Implement to aggregate revenue by specified period:
-     *   - For type="DAY": Group by DATE, return revenue per day
-     *   - For type="MONTH": Group by YEAR-MONTH, return revenue per month
-     *   - For type="QUARTER": Group by YEAR-QUARTER, return revenue per quarter
-     *   - Only include orders with confirmed/completed status
-     *   - Apply any discounts to get accurate net revenue
-     */
-    public Map<String, Double> getRevenueReport(String type) {
-        return null;
-    }
-
-    /**
-     * Returns best-selling product statistics for the requested time period.
-     * Each map contains product info and sales quantity/revenue metrics.
-     *
-     * @param type the aggregation period - "DAY", "MONTH", or "QUARTER"
-     * @return List of Maps containing product ID, name, quantity sold, and total revenue,
-     *         ordered by sales volume (highest first), or null if not implemented
-     * 
-     * TODO: Implement to find top-selling products:
-     *   - Join Orders → OrderItems → Products to get sales data
-     *   - Group by product and aggregate quantities sold
-     *   - Filter by date range based on type parameter
-     *   - Only include completed/delivered orders
-     *   - Sort by quantity descending to show best sellers first
-     *   - Return top 10-20 products for the report
-     */
-    public List<Map<String, Object>> getBestSellingReport(String type) {
-        return null;
-    }
-
-    /**
-     * Returns the total count of orders (optionally filtered by status).
-     * Used for pagination calculations to determine total number of pages.
-     *
-     * @param status the order status filter ("ALL" for no filter, or specific status like "PENDING")
-     * @return total number of orders matching the criteria
-     */
-    public int getTotalOrdersCount(String status) {
-        // SQL: Count all orders, optionally filtered by status
-        String sql = "SELECT COUNT(*) FROM Orders";
-
-        // If status is specified and not "ALL", add WHERE clause to filter
         if (status != null && !status.equals("ALL")) {
-            sql += " WHERE [Status] = ?";
+            sql.append(" AND [Status] = ? ");
+        }
+        if (searchQuery != null && !searchQuery.trim().isEmpty()) {
+            sql.append(" AND (CAST(Id AS VARCHAR) = ? OR ContactPhone LIKE ?) ");
         }
 
-        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            // Only bind parameter if filtering by status
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            int paramIndex = 1;
+
             if (status != null && !status.equals("ALL")) {
-                ps.setString(1, status);
+                ps.setString(paramIndex++, status);
+            }
+            if (searchQuery != null && !searchQuery.trim().isEmpty()) {
+                ps.setString(paramIndex++, searchQuery.trim());
+                ps.setString(paramIndex++, "%" + searchQuery.trim() + "%");
             }
 
             try (ResultSet rs = ps.executeQuery()) {
-                // COUNT(*) always returns one row with the count value
                 if (rs.next()) {
                     return rs.getInt(1);
                 }
             }
-
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            throw new SQLException("Database driver missing in classpath", e);
         }
-
         return 0;
     }
 
     /**
-     * Returns a paginated list of orders, optionally filtered by status.
-     * Used for admin dashboard pagination to display orders in chunks.
+     * Retrieves a specific chunk (page) of orders from the database.
+     * Uses SQL Server OFFSET-FETCH mechanism for high-performance pagination.
      *
-     * @param status the order status filter ("ALL" for no filter, or specific status like "PENDING")
-     * @param offset the number of rows to skip (0-based index for first page)
-     * @param pageSize the maximum number of orders to return per page
-     * @return List of Order objects for the requested page
+     * @param status      the order status filter ("ALL" or specific status)
+     * @param searchQuery the keyword to search by Order ID or Contact Phone
+     * @param offset      the number of rows to skip
+     * @param pageSize    the maximum number of rows to return
+     * @return a List of Order objects for the requested page
+     * @throws SQLException if a database access error occurs
      */
-    public List<Order> getOrdersPaged(String status, int offset, int pageSize) {
+    public List<Order> getOrdersPaged(String status, String searchQuery, int offset, int pageSize) throws SQLException {
         List<Order> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+                "SELECT Id, UserId, DiscountId, TotalAmount, [Status], ShippingAddress, ContactPhone, ProcessedByUserId, ReturnReason, CreatedAt FROM Orders WHERE 1=1 ");
 
-        // SQL: Retrieve orders with pagination support using OFFSET/FETCH
-        String sql = "SELECT Id, UserId, DiscountId, TotalAmount, [Status], ShippingAddress, ContactPhone, ProcessedByUserId, ReturnReason, CreatedAt \n"
-                + "FROM Orders ";
-
-        // Only add WHERE clause if filtering by specific status (NOT "ALL")
         if (status != null && !status.equals("ALL")) {
-            sql += "WHERE [Status] = ? ";
+            sql.append(" AND [Status] = ? ");
         }
+        if (searchQuery != null && !searchQuery.trim().isEmpty()) {
+            sql.append(" AND (CAST(Id AS VARCHAR) = ? OR ContactPhone LIKE ?) ");
+        }
+        sql.append(" ORDER BY CreatedAt DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
 
-        // SQL: Sort by newest first, then apply pagination (OFFSET/FETCH for SQL Server)
-        sql += "ORDER BY CreatedAt DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
-
-        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql);) {
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql.toString())) {
             int paramIndex = 1;
             if (status != null && !status.equals("ALL")) {
                 ps.setString(paramIndex++, status);
             }
+            if (searchQuery != null && !searchQuery.trim().isEmpty()) {
+                ps.setString(paramIndex++, searchQuery.trim());
+                ps.setString(paramIndex++, "%" + searchQuery.trim() + "%");
+            }
+
             ps.setInt(paramIndex++, offset);
             ps.setInt(paramIndex, pageSize);
 
@@ -304,11 +133,474 @@ public class OrderDAO extends BaseDAO {
                     list.add(mapResultSetToOrder(rs));
                 }
             }
+        } catch (ClassNotFoundException e) {
+            throw new SQLException("Database driver missing", e);
+        }
+        return list;
+    }
+
+    /**
+     * Helper Method: Restores product inventory quantities when an order is
+     * cancelled or returned.
+     * Re-adds the quantity of each order item back to the Products table.
+     *
+     * @param conn    the active database Connection (must be within a transaction)
+     * @param orderId the unique identifier of the order
+     * @throws SQLException if a database access error occurs
+     */
+    private void restoreInventory(Connection conn, int orderId) throws SQLException {
+        String sqlGetItems = "SELECT ProductId, Quantity FROM OrderItems WHERE OrderId = ?";
+        String sqlUpdateProduct = "UPDATE Products SET Quantity = Quantity + ? WHERE Id = ?";
+
+        try (PreparedStatement psGetItems = conn.prepareStatement(sqlGetItems)) {
+            psGetItems.setInt(1, orderId);
+            try (ResultSet rsItems = psGetItems.executeQuery()) {
+                try (PreparedStatement psUpdateProduct = conn.prepareStatement(sqlUpdateProduct)) {
+                    while (rsItems.next()) {
+                        int productId = rsItems.getInt("ProductId");
+                        int quantity = rsItems.getInt("Quantity");
+
+                        psUpdateProduct.setInt(1, quantity);
+                        psUpdateProduct.setInt(2, productId);
+                        psUpdateProduct.executeUpdate();
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Updates the status of an order and implements an Audit Trail.
+     * Safely wrapped in a Transaction because it may update inventory.
+     *
+     * @param orderId           the unique identifier of the order to update
+     * @param status            the new status value (e.g., "CONFIRMED", "SHIPPED",
+     *                          "CANCELLED")
+     * @param processedByUserId the ID of the staff member processing this update
+     * @return true if the update was successful, false otherwise
+     * @throws SQLException if a database error occurs or transaction fails
+     */
+    public boolean updateOrderStatus(int orderId, String status, Integer processedByUserId) throws SQLException {
+        String sqlUpdateStatus = "UPDATE Orders SET [Status] = ?, ProcessedByUserId = ? WHERE Id = ?";
+
+        Connection conn = null;
+        try {
+            conn = getConnection();
+            // Enable manual transaction control
+            conn.setAutoCommit(false);
+
+            try (PreparedStatement ps = conn.prepareStatement(sqlUpdateStatus)) {
+                ps.setString(1, status);
+                ps.setObject(2, processedByUserId);
+                ps.setInt(3, orderId);
+
+                int rows = ps.executeUpdate();
+                if (rows == 0) {
+                    conn.rollback();
+                    return false;
+                }
+            }
+
+            // Restore inventory if the order is cancelled
+            if ("CANCELLED".equals(status)) {
+                restoreInventory(conn, orderId);
+            }
+
+            conn.commit();
+            return true;
 
         } catch (Exception e) {
-            e.printStackTrace();
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+            }
+            throw new SQLException("Failed to update order status: " + e.getMessage(), e);
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    /**
+     * Retrieves the complete blueprint of a specific order.
+     * Fetches the main order record and joins its associated line items
+     * (OrderItems) and product names.
+     *
+     * @param orderId the unique identifier of the order
+     * @return the fully populated Order object, or null if not found
+     * @throws SQLException if a database access error occurs
+     */
+    public Order getOrderById(int orderId) throws SQLException {
+        Order order = null;
+        String sqlOrder = "SELECT Id, UserId, DiscountId, TotalAmount, [Status], ShippingAddress, ContactPhone, ProcessedByUserId, ReturnReason, CreatedAt FROM Orders WHERE Id = ?";
+        String sqlItems = "SELECT oi.Id, oi.OrderId, oi.ProductId, oi.Quantity, oi.UnitPrice, oi.SubTotal, p.Title " +
+                "FROM OrderItems oi JOIN Products p ON oi.ProductId = p.Id WHERE oi.OrderId = ?";
+
+        try (Connection conn = getConnection()) {
+            try (PreparedStatement psOrder = conn.prepareStatement(sqlOrder)) {
+                psOrder.setInt(1, orderId);
+                try (ResultSet rsOrder = psOrder.executeQuery()) {
+                    if (rsOrder.next()) {
+                        order = mapResultSetToOrder(rsOrder);
+                    }
+                }
+            }
+
+            if (order != null) {
+                try (PreparedStatement psItems = conn.prepareStatement(sqlItems)) {
+                    psItems.setInt(1, orderId);
+                    try (ResultSet rsItems = psItems.executeQuery()) {
+                        while (rsItems.next()) {
+                            OrderItem item = new OrderItem();
+                            item.setId(rsItems.getInt("Id"));
+                            item.setOrderId(rsItems.getInt("OrderId"));
+                            item.setProductId(rsItems.getInt("ProductId"));
+                            item.setQuantity(rsItems.getInt("Quantity"));
+                            item.setUnitPrice(rsItems.getBigDecimal("UnitPrice"));
+                            item.setSubTotal(rsItems.getBigDecimal("SubTotal"));
+
+                            Product product = new Product();
+                            product.setId(rsItems.getInt("ProductId"));
+                            product.setTitle(rsItems.getString("Title"));
+                            item.setProduct(product);
+
+                            if (order.getItems() == null) {
+                                order.setItems(new ArrayList<>());
+                            }
+                            order.getItems().add(item);
+                        }
+                    }
+                }
+            }
+        } catch (ClassNotFoundException e) {
+            throw new SQLException("Database driver missing", e);
+        }
+        return order;
+    }
+
+    /**
+     * Executes a strictly isolated Database Transaction to handle Order Returns.
+     * Guarantees Atomicity (All-or-Nothing) across Orders, Products, and
+     * StockTransactions tables.
+     *
+     * @param orderId the unique identifier of the order being returned
+     * @param reason  the reason provided by the customer for the return
+     * @return true if the return transaction succeeded, false otherwise
+     * @throws SQLException if a database error occurs or transaction is aborted
+     */
+    public boolean requestOrderReturn(int orderId, String reason) throws SQLException {
+        String sqlCheckOrder = "SELECT UserId, [Status] FROM Orders WHERE Id = ?";
+        String sqlUpdateOrder = "UPDATE Orders SET [Status] = 'RETURNED', ReturnReason = ? WHERE Id = ?";
+        String sqlGetItems = "SELECT ProductId, Quantity FROM OrderItems WHERE OrderId = ?";
+        String sqlUpdateProduct = "UPDATE Products SET Quantity = Quantity + ? WHERE Id = ?";
+        String sqlInsertStockTrans = "INSERT INTO StockTransactions (ProductId, HandledByUserId, TransactionType, Quantity, TransactionDate) VALUES (?, ?, 'RETURN_IN', ?, CURRENT_TIMESTAMP)";
+
+        Connection conn = null;
+        try {
+            conn = getConnection();
+            conn.setAutoCommit(false);
+
+            int userId = -1;
+
+            // 1. Validate precondition: Order must be COMPLETED
+            try (PreparedStatement psCheck = conn.prepareStatement(sqlCheckOrder)) {
+                psCheck.setInt(1, orderId);
+                try (ResultSet rs = psCheck.executeQuery()) {
+                    if (rs.next()) {
+                        String currentStatus = rs.getString("Status");
+                        if (!"COMPLETED".equals(currentStatus)) {
+                            conn.rollback();
+                            return false;
+                        }
+                        userId = rs.getInt("UserId");
+                    } else {
+                        conn.rollback();
+                        return false;
+                    }
+                }
+            }
+
+            // 2. Flag order as RETURNED
+            try (PreparedStatement psUpdateOrder = conn.prepareStatement(sqlUpdateOrder)) {
+                psUpdateOrder.setString(1, reason);
+                psUpdateOrder.setInt(2, orderId);
+                psUpdateOrder.executeUpdate();
+            }
+
+            // 3. Fetch line items and iterate to restore inventory quantities
+            try (PreparedStatement psGetItems = conn.prepareStatement(sqlGetItems)) {
+                psGetItems.setInt(1, orderId);
+                try (ResultSet rsItems = psGetItems.executeQuery()) {
+
+                    try (PreparedStatement psUpdateInv = conn.prepareStatement(sqlUpdateProduct);
+                            PreparedStatement psInsertTrans = conn.prepareStatement(sqlInsertStockTrans)) {
+
+                        while (rsItems.next()) {
+                            int productId = rsItems.getInt("ProductId");
+                            int quantity = rsItems.getInt("Quantity");
+
+                            // Restore physical stock count (Products table)
+                            psUpdateInv.setInt(1, quantity);
+                            psUpdateInv.setInt(2, productId);
+                            psUpdateInv.executeUpdate();
+
+                            // Maintain historical audit log (Stock Transaction)
+                            psInsertTrans.setInt(1, productId);
+                            psInsertTrans.setInt(2, userId);
+                            psInsertTrans.setInt(3, quantity);
+                            psInsertTrans.executeUpdate();
+                        }
+                    }
+                }
+            }
+
+            // 4. Success -> Persist all changes atomically
+            conn.commit();
+            return true;
+
+        } catch (Exception e) {
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+            }
+            throw new SQLException("Critical Failure: Order Return Transaction aborted and rolled back.", e);
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    /**
+     * Inserts a new order record into the database during Customer Checkout.
+     * 
+     * @param order the Order object containing all order details
+     * @return true if insertion succeeded, false otherwise
+     * @throws SQLException if a database access error occurs
+     */
+    public boolean insertOrder(Order order) throws SQLException {
+        // TODO: Implement checkout flow (Insert Order -> Insert OrderItems -> Update
+        // Inventory)
+        return false;
+    }
+
+    /**
+     * Returns all orders placed by a specific user, sorted by creation date (newest
+     * first).
+     * Used for the Customer's Order History page.
+     *
+     * @param userId the unique identifier of the user
+     * @return list of Order objects for the specified user
+     * @throws SQLException if a database access error occurs
+     */
+    public List<Order> getOrdersByUserId(int userId) throws SQLException {
+        List<Order> list = new ArrayList<>();
+        String sql = "SELECT Id, UserId, DiscountId, TotalAmount, [Status], ShippingAddress, ContactPhone, ProcessedByUserId, ReturnReason, CreatedAt FROM Orders WHERE UserId = ? ORDER BY CreatedAt DESC";
+
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSetToOrder(rs));
+                }
+            }
+        } catch (ClassNotFoundException e) {
+            throw new SQLException("Database driver missing", e);
+        }
+        return list;
+    }
+
+    /**
+     * Returns every order in the system sorted by creation date (newest first).
+     * Typically superseded by getOrdersPaged() to avoid memory overload.
+     *
+     * @return list of all Order objects in descending order by creation date
+     * @throws SQLException if a database access error occurs
+     */
+    public List<Order> getAllOrders() throws SQLException {
+        List<Order> list = new ArrayList<>();
+        String sql = "SELECT Id, UserId, DiscountId, TotalAmount, [Status], ShippingAddress, ContactPhone, ProcessedByUserId, ReturnReason, CreatedAt FROM Orders ORDER BY CreatedAt DESC";
+
+        try (Connection conn = getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(mapResultSetToOrder(rs));
+            }
+        } catch (ClassNotFoundException e) {
+            throw new SQLException("Database driver missing", e);
+        }
+        return list;
+    }
+
+    /**
+     * Returns all orders with a specific status, sorted by creation date (newest
+     * first).
+     * Typically superseded by getOrdersPaged() to avoid memory overload.
+     *
+     * @param status the exact order status to filter by
+     * @return list of Order objects matching the given status
+     * @throws SQLException if a database access error occurs
+     */
+    public List<Order> getOrdersByStatus(String status) throws SQLException {
+        List<Order> list = new ArrayList<>();
+        String sql = "SELECT Id, UserId, DiscountId, TotalAmount, [Status], ShippingAddress, ContactPhone, ProcessedByUserId, ReturnReason, CreatedAt FROM Orders WHERE [Status] = ? ORDER BY CreatedAt DESC";
+
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, status);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSetToOrder(rs));
+                }
+            }
+        } catch (ClassNotFoundException e) {
+            throw new SQLException("Database driver missing", e);
+        }
+        return list;
+    }
+
+    /**
+     * Normalizes the requested report period type for statistical queries.
+     * Defaults to "DAY" if the input is invalid or null.
+     *
+     * @param type the raw input aggregation period (e.g., "MONTH", "QUARTER")
+     * @return the normalized period type ("DAY", "MONTH", or "QUARTER")
+     */
+    private String normalizeReportType(String type) {
+        if (type == null) {
+            return "DAY";
+        }
+        String normalized = type.trim().toUpperCase();
+        if (!normalized.equals("MONTH") && !normalized.equals("QUARTER")) {
+            return "DAY";
+        }
+        return normalized;
+    }
+
+    /**
+     * Builds a date filter SQL condition for best-selling report queries.
+     * Ensures the report only calculates data for the CURRENT day, month, or
+     * quarter.
+     *
+     * @param type  the aggregation period type
+     * @param alias the SQL alias for the Date column to filter (e.g.,
+     *              "o.CreatedAt")
+     * @return the generated SQL condition string
+     */
+    private String buildBestSellerDateFilter(String type, String alias) {
+        switch (normalizeReportType(type)) {
+            case "MONTH":
+                return "YEAR(" + alias + ") = YEAR(GETDATE()) AND MONTH(" + alias + ") = MONTH(GETDATE())";
+            case "QUARTER":
+                return "YEAR(" + alias + ") = YEAR(GETDATE()) AND DATEPART(QUARTER, " + alias
+                        + ") = DATEPART(QUARTER, GETDATE())";
+            default:
+                return "CAST(" + alias + " AS DATE) = CAST(GETDATE() AS DATE)";
+        }
+    }
+
+    /**
+     * Retrieves aggregated revenue data grouped by day, month, or quarter.
+     * Supports generating trend charts in the Admin Dashboard.
+     *
+     * @param type the aggregation period ("DAY", "MONTH", "QUARTER")
+     * @return Map with period keys mapped to total revenue (e.g., "2026-06" ->
+     *         5000.0)
+     * @throws SQLException if a database access error occurs
+     */
+    public Map<String, Double> getRevenueReport(String type) throws SQLException {
+        Map<String, Double> revenueData = new LinkedHashMap<>();
+        String reportType = normalizeReportType(type);
+
+        String sql;
+        if ("MONTH".equals(reportType)) {
+            sql = "SELECT CONVERT(varchar(7), CreatedAt, 120) AS PeriodLabel, SUM(TotalAmount) AS Revenue "
+                    + "FROM Orders "
+                    + "WHERE [Status] IN ('CONFIRMED','SHIPPED','DELIVERED','COMPLETED') "
+                    + "GROUP BY CONVERT(varchar(7), CreatedAt, 120) "
+                    + "ORDER BY PeriodLabel DESC";
+        } else if ("QUARTER".equals(reportType)) {
+            sql = "SELECT CONCAT(YEAR(CreatedAt), '-Q', DATEPART(QUARTER, CreatedAt)) AS PeriodLabel, "
+                    + "SUM(TotalAmount) AS Revenue "
+                    + "FROM Orders "
+                    + "WHERE [Status] IN ('CONFIRMED','SHIPPED','DELIVERED','COMPLETED') "
+                    + "GROUP BY YEAR(CreatedAt), DATEPART(QUARTER, CreatedAt) "
+                    + "ORDER BY PeriodLabel DESC";
+        } else {
+            sql = "SELECT CONVERT(varchar(10), CreatedAt, 23) AS PeriodLabel, SUM(TotalAmount) AS Revenue "
+                    + "FROM Orders "
+                    + "WHERE [Status] IN ('CONFIRMED','SHIPPED','DELIVERED','COMPLETED') "
+                    + "GROUP BY CONVERT(varchar(10), CreatedAt, 23) "
+                    + "ORDER BY PeriodLabel DESC";
         }
 
+        try (Connection conn = getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                revenueData.put(rs.getString("PeriodLabel"), rs.getDouble("Revenue"));
+            }
+        } catch (ClassNotFoundException e) {
+            throw new SQLException("Database driver missing", e);
+        }
+
+        return revenueData;
+    }
+
+    /**
+     * Retrieves best-selling product statistics for the CURRENT day, month, or
+     * quarter.
+     * Joins Orders, OrderItems, and Products to aggregate total sales volume.
+     *
+     * @param type the aggregation period ("DAY", "MONTH", "QUARTER")
+     * @return List of Maps containing product SKU, title, and total quantity sold
+     * @throws SQLException if a database access error occurs
+     */
+    public List<Map<String, Object>> getBestSellingReport(String type) throws SQLException {
+        List<Map<String, Object>> list = new ArrayList<>();
+        String dateFilter = buildBestSellerDateFilter(type, "o.CreatedAt");
+
+        String sql = "SELECT TOP 10 p.SKU AS sku, p.Title AS title, SUM(oi.Quantity) AS salesQuantity "
+                + "FROM OrderItems oi "
+                + "JOIN Orders o ON oi.OrderId = o.Id "
+                + "JOIN Products p ON oi.ProductId = p.Id "
+                + "WHERE o.[Status] IN ('CONFIRMED','SHIPPED','DELIVERED','COMPLETED') "
+                + "AND " + dateFilter + " "
+                + "GROUP BY p.SKU, p.Title "
+                + "ORDER BY salesQuantity DESC";
+
+        try (Connection conn = getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                Map<String, Object> item = new HashMap<>();
+                item.put("sku", rs.getString("sku"));
+                item.put("title", rs.getString("title"));
+                item.put("salesQuantity", rs.getInt("salesQuantity"));
+                list.add(item);
+            }
+        } catch (ClassNotFoundException e) {
+            throw new SQLException("Database driver missing", e);
+        }
         return list;
     }
 }
