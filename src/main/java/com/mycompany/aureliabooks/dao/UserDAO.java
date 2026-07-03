@@ -135,17 +135,76 @@ public class UserDAO extends BaseDAO {
     }
 
     public UserProfile getUserProfile(int userId) {
-        // Empty skeleton for Sprint 1 (To be implemented by Dev 1)
+        String sql = "SELECT * FROM UserProfiles WHERE UserId = ?"; // Tìm theo UserId
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    UserProfile profile = new UserProfile();
+                    profile.setId(rs.getInt("Id"));
+                    profile.setUserId(rs.getInt("UserId"));
+                    profile.setFullName(rs.getString("FullName"));
+                    profile.setPhone(rs.getString("Phone"));
+                    profile.setAddress(rs.getString("Address"));
+                    profile.setAvatarUrl(rs.getString("AvatarUrl")); // Tên cột đúng: AvatarUrl
+                    return profile;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return null;
     }
 
     public boolean updateUserProfile(UserProfile profile) {
-        // Empty skeleton for Sprint 1 (To be implemented by Dev 1)
+        String sql = "UPDATE UserProfiles SET FullName = ?, Phone = ?, [Address] = ?, AvatarUrl = ? WHERE UserId = ?";
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, profile.getFullName());
+            ps.setString(2, profile.getPhone());
+            ps.setString(3, profile.getAddress());
+            ps.setString(4, profile.getAvatarUrl());
+            ps.setInt(5, profile.getUserId()); // Định danh chỉ bằng UserId
+
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return false;
     }
 
-    public boolean changePassword(int userId, String oldPasswordHash, String newPasswordHash) {
-        // Empty skeleton for Sprint 1 (To be implemented by Dev 1)
-        return false;
+    public boolean changePassword(int userId, String oldPassword, String newPassword) {
+        // Bước 1: Lấy mật khẩu đã băm cũ từ DB của user này ra
+        String selectSql = "SELECT PasswordHash FROM Users WHERE Id = ?";
+        String updateSql = "UPDATE Users SET PasswordHash = ? WHERE Id = ?";
+
+        try (Connection conn = getConnection()) {
+            String storedHash = null;
+
+            // Truy vấn lấy hash cũ
+            try (PreparedStatement psSelect = conn.prepareStatement(selectSql)) {
+                psSelect.setInt(1, userId);
+                try (ResultSet rs = psSelect.executeQuery()) {
+                    if (rs.next()) {
+                        storedHash = rs.getString("PasswordHash");
+                    }
+                }
+            }
+
+            // Bước 2: So khớp mật khẩu cũ thô với hash trong DB
+            if (storedHash != null && BCrypt.checkpw(oldPassword, storedHash)) {
+                // Bước 3: Nếu khớp, băm mật khẩu mới và cập nhật vào DB
+                String newHashedPassword = BCrypt.hashpw(newPassword, BCrypt.gensalt());
+                try (PreparedStatement psUpdate = conn.prepareStatement(updateSql)) {
+                    psUpdate.setString(1, newHashedPassword);
+                    psUpdate.setInt(2, userId);
+                    return psUpdate.executeUpdate() > 0;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false; // Trả về false nếu sai mật khẩu cũ hoặc lỗi kết nối
     }
 }
