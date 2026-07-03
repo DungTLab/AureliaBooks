@@ -24,98 +24,104 @@ import java.util.List;
 public class ProductDAO extends BaseDAO {
 
     public List<Product> getallActiveProducts(int offset, int limit) {
-        List<Product> allProducts = new ArrayList<>();
+        List<Product> products = new ArrayList<>();
+        if (limit <= 0) {
+            return products;
+        }
 
-        // 1. Lấy tất cả Sách đang hoạt động và map trực tiếp
-        String sqlBooks = "SELECT p.*, b.* FROM [dbo].[Products] p JOIN [dbo].[Books] b ON p.[Id] = b.[ProductId] WHERE p.[IsActive] = 1 ORDER BY p.[Id]";
+        String sql = "SELECT "
+                + "CASE WHEN b.[ProductId] IS NOT NULL THEN 1 ELSE 2 END AS [ProductOrder], "
+                + "p.[Id], p.[CategoryId], p.[SupplierId], p.[Title], p.[Description], p.[Price], p.[Sku], p.[Image_URL], p.[IsActive], p.[CreatedAt], "
+                + "b.[ProductId] AS [BookProductId], b.[PublisherId], b.[Translator], b.[PublicationYear], b.[NumberOfPages], b.[CoverType], b.[Language], b.[Weight] AS [BookWeight], b.[Dimensions] AS [BookDimensions], "
+                + "s.[ProductId] AS [StationeryProductId], s.[BrandId], s.[Origin], s.[Material], s.[Color], s.[Weight] AS [StationeryWeight], s.[Dimensions] AS [StationeryDimensions], s.[Specifications], s.[Warning] "
+                + "FROM [dbo].[Products] p "
+                + "LEFT JOIN [dbo].[Books] b ON p.[Id] = b.[ProductId] "
+                + "LEFT JOIN [dbo].[Stationeries] s ON p.[Id] = s.[ProductId] "
+                + "WHERE p.[IsActive] = 1 "
+                + "AND (b.[ProductId] IS NOT NULL OR s.[ProductId] IS NOT NULL) "
+                + "ORDER BY [ProductOrder], p.[Id] "
+                + "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+
         try (Connection conn = this.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sqlBooks);
-             ResultSet rs = stmt.executeQuery()) {
-            while (rs.next()) {
-                Book book = new Book();
-                book.setId(rs.getInt("Id"));
-                book.setCategoryId(rs.getInt("CategoryId"));
-                book.setSupplierId(rs.getInt("SupplierId"));
-                if (rs.wasNull()) {
-                    book.setSupplierId(null);
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, Math.max(offset, 0));
+            stmt.setInt(2, limit);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    products.add(mapPagedProduct(rs));
                 }
-                book.setTitle(rs.getString("Title"));
-                book.setDescription(rs.getString("Description"));
-                book.setPrice(rs.getBigDecimal("Price"));
-                book.setSku(rs.getString("Sku"));
-                book.setImageUrl(rs.getString("Image_URL"));
-                book.setIsActive(rs.getBoolean("IsActive"));
-                book.setCreatedAt(rs.getTimestamp("CreatedAt"));
-
-                book.setPublisherId(rs.getInt("PublisherId"));
-                if (rs.wasNull()) {
-                    book.setPublisherId(null);
-                }
-                book.setTranslator(rs.getString("Translator"));
-                book.setPublicationYear(rs.getInt("PublicationYear"));
-                if (rs.wasNull()) {
-                    book.setPublicationYear(null);
-                }
-                book.setNumberOfPages(rs.getInt("NumberOfPages"));
-                if (rs.wasNull()) {
-                    book.setNumberOfPages(null);
-                }
-                book.setCoverType(rs.getString("CoverType"));
-                book.setLanguage(rs.getString("Language"));
-                book.setWeight(rs.getBigDecimal("Weight"));
-                book.setDimensions(rs.getString("Dimensions"));
-
-                allProducts.add(book);
             }
         } catch (SQLException | ClassNotFoundException e) {
             e.printStackTrace();
         }
 
-        // 2. Lấy tất cả Văn phòng phẩm đang hoạt động và map trực tiếp
-        String sqlStationeries = "SELECT p.*, s.* FROM [dbo].[Products] p JOIN [dbo].[Stationeries] s ON p.[Id] = s.[ProductId] WHERE p.[IsActive] = 1 ORDER BY p.[Id]";
-        try (Connection conn = this.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sqlStationeries);
-             ResultSet rs = stmt.executeQuery()) {
-            while (rs.next()) {
-                Stationery stationery = new Stationery();
-                stationery.setId(rs.getInt("Id"));
-                stationery.setCategoryId(rs.getInt("CategoryId"));
-                stationery.setSupplierId(rs.getInt("SupplierId"));
-                if (rs.wasNull()) {
-                    stationery.setSupplierId(null);
-                }
-                stationery.setTitle(rs.getString("Title"));
-                stationery.setDescription(rs.getString("Description"));
-                stationery.setPrice(rs.getBigDecimal("Price"));
-                stationery.setSku(rs.getString("Sku"));
-                stationery.setImageUrl(rs.getString("Image_URL"));
-                stationery.setIsActive(rs.getBoolean("IsActive"));
-                stationery.setCreatedAt(rs.getTimestamp("CreatedAt"));
+        return products;
+    }
 
-                stationery.setBrandId(rs.getInt("BrandId"));
-                if (rs.wasNull()) {
-                    stationery.setBrandId(null);
-                }
-                stationery.setOrigin(rs.getString("Origin"));
-                stationery.setMaterial(rs.getString("Material"));
-                stationery.setColor(rs.getString("Color"));
-                stationery.setWeight(rs.getBigDecimal("Weight"));
-                stationery.setDimensions(rs.getString("Dimensions"));
-                stationery.setSpecifications(rs.getString("Specifications"));
-                stationery.setWarning(rs.getString("Warning"));
-
-                allProducts.add(stationery);
+    private Product mapPagedProduct(ResultSet rs) throws SQLException {
+        if (rs.getObject("BookProductId") != null) {
+            Book book = new Book();
+            book.setId(rs.getInt("Id"));
+            book.setCategoryId(rs.getInt("CategoryId"));
+            book.setSupplierId(rs.getInt("SupplierId"));
+            if (rs.wasNull()) {
+                book.setSupplierId(null);
             }
-        } catch (SQLException | ClassNotFoundException e) {
-            e.printStackTrace();
+            book.setTitle(rs.getString("Title"));
+            book.setDescription(rs.getString("Description"));
+            book.setPrice(rs.getBigDecimal("Price"));
+            book.setSku(rs.getString("Sku"));
+            book.setImageUrl(rs.getString("Image_URL"));
+            book.setIsActive(rs.getBoolean("IsActive"));
+            book.setCreatedAt(rs.getTimestamp("CreatedAt"));
+
+            book.setPublisherId(rs.getInt("PublisherId"));
+            if (rs.wasNull()) {
+                book.setPublisherId(null);
+            }
+            book.setTranslator(rs.getString("Translator"));
+            book.setPublicationYear(rs.getInt("PublicationYear"));
+            if (rs.wasNull()) {
+                book.setPublicationYear(null);
+            }
+            book.setNumberOfPages(rs.getInt("NumberOfPages"));
+            if (rs.wasNull()) {
+                book.setNumberOfPages(null);
+            }
+            book.setCoverType(rs.getString("CoverType"));
+            book.setLanguage(rs.getString("Language"));
+            book.setWeight(rs.getBigDecimal("BookWeight"));
+            book.setDimensions(rs.getString("BookDimensions"));
+            return book;
         }
 
-        // Phân trang trên bộ nhớ (In-memory Pagination)
-        if (offset >= allProducts.size()) {
-            return new ArrayList<>();
+        Stationery stationery = new Stationery();
+        stationery.setId(rs.getInt("Id"));
+        stationery.setCategoryId(rs.getInt("CategoryId"));
+        stationery.setSupplierId(rs.getInt("SupplierId"));
+        if (rs.wasNull()) {
+            stationery.setSupplierId(null);
         }
-        int toIndex = Math.min(offset + limit, allProducts.size());
-        return allProducts.subList(offset, toIndex);
+        stationery.setTitle(rs.getString("Title"));
+        stationery.setDescription(rs.getString("Description"));
+        stationery.setPrice(rs.getBigDecimal("Price"));
+        stationery.setSku(rs.getString("Sku"));
+        stationery.setImageUrl(rs.getString("Image_URL"));
+        stationery.setIsActive(rs.getBoolean("IsActive"));
+        stationery.setCreatedAt(rs.getTimestamp("CreatedAt"));
+
+        stationery.setBrandId(rs.getInt("BrandId"));
+        if (rs.wasNull()) {
+            stationery.setBrandId(null);
+        }
+        stationery.setOrigin(rs.getString("Origin"));
+        stationery.setMaterial(rs.getString("Material"));
+        stationery.setColor(rs.getString("Color"));
+        stationery.setWeight(rs.getBigDecimal("StationeryWeight"));
+        stationery.setDimensions(rs.getString("StationeryDimensions"));
+        stationery.setSpecifications(rs.getString("Specifications"));
+        stationery.setWarning(rs.getString("Warning"));
+        return stationery;
     }
 
     public int getProductCount() {
@@ -328,20 +334,33 @@ public class ProductDAO extends BaseDAO {
     }
 
     public List<Product> searchProducts(String query, int categoryId, int offset, int limit) {
-        List<Product> allProducts = new ArrayList<>();
+        List<Product> products = new ArrayList<>();
+        if (limit <= 0) {
+            return products;
+        }
 
-        // 1. Tìm kiếm sách và map trực tiếp
-        StringBuilder sqlBooks = new StringBuilder("SELECT p.*, b.* FROM [dbo].[Products] p JOIN [dbo].[Books] b ON p.[Id] = b.[ProductId] WHERE p.[IsActive] = 1 ");
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT ");
+        sql.append("CASE WHEN b.[ProductId] IS NOT NULL THEN 1 ELSE 2 END AS [ProductOrder], ");
+        sql.append("p.[Id], p.[CategoryId], p.[SupplierId], p.[Title], p.[Description], p.[Price], p.[Sku], p.[Image_URL], p.[IsActive], p.[CreatedAt], ");
+        sql.append("b.[ProductId] AS [BookProductId], b.[PublisherId], b.[Translator], b.[PublicationYear], b.[NumberOfPages], b.[CoverType], b.[Language], b.[Weight] AS [BookWeight], b.[Dimensions] AS [BookDimensions], ");
+        sql.append("s.[ProductId] AS [StationeryProductId], s.[BrandId], s.[Origin], s.[Material], s.[Color], s.[Weight] AS [StationeryWeight], s.[Dimensions] AS [StationeryDimensions], s.[Specifications], s.[Warning] ");
+        sql.append("FROM [dbo].[Products] p ");
+        sql.append("LEFT JOIN [dbo].[Books] b ON p.[Id] = b.[ProductId] ");
+        sql.append("LEFT JOIN [dbo].[Stationeries] s ON p.[Id] = s.[ProductId] ");
+        sql.append("WHERE p.[IsActive] = 1 ");
+        sql.append("AND (b.[ProductId] IS NOT NULL OR s.[ProductId] IS NOT NULL) ");
         if (query != null && !query.trim().isEmpty()) {
-            sqlBooks.append("AND (p.[Title] LIKE ? OR p.[Description] LIKE ?) ");
+            sql.append("AND (p.[Title] LIKE ? OR p.[Description] LIKE ?) ");
         }
         if (categoryId > 0) {
-            sqlBooks.append("AND p.[CategoryId] = ? ");
+            sql.append("AND p.[CategoryId] = ? ");
         }
-        sqlBooks.append("ORDER BY p.[Id]");
+        sql.append("ORDER BY [ProductOrder], p.[Id] ");
+        sql.append("OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
 
         try (Connection conn = this.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sqlBooks.toString())) {
+             PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
             int paramIndex = 1;
             if (query != null && !query.trim().isEmpty()) {
                 String searchPattern = "%" + query.trim() + "%";
@@ -351,111 +370,19 @@ public class ProductDAO extends BaseDAO {
             if (categoryId > 0) {
                 stmt.setInt(paramIndex++, categoryId);
             }
+            stmt.setInt(paramIndex++, Math.max(offset, 0));
+            stmt.setInt(paramIndex, limit);
+
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    Book book = new Book();
-                    book.setId(rs.getInt("Id"));
-                    book.setCategoryId(rs.getInt("CategoryId"));
-                    book.setSupplierId(rs.getInt("SupplierId"));
-                    if (rs.wasNull()) {
-                        book.setSupplierId(null);
-                    }
-                    book.setTitle(rs.getString("Title"));
-                    book.setDescription(rs.getString("Description"));
-                    book.setPrice(rs.getBigDecimal("Price"));
-                    book.setSku(rs.getString("Sku"));
-                    book.setImageUrl(rs.getString("Image_URL"));
-                    book.setIsActive(rs.getBoolean("IsActive"));
-                    book.setCreatedAt(rs.getTimestamp("CreatedAt"));
-
-                    book.setPublisherId(rs.getInt("PublisherId"));
-                    if (rs.wasNull()) {
-                        book.setPublisherId(null);
-                    }
-                    book.setTranslator(rs.getString("Translator"));
-                    book.setPublicationYear(rs.getInt("PublicationYear"));
-                    if (rs.wasNull()) {
-                        book.setPublicationYear(null);
-                    }
-                    book.setNumberOfPages(rs.getInt("NumberOfPages"));
-                    if (rs.wasNull()) {
-                        book.setNumberOfPages(null);
-                    }
-                    book.setCoverType(rs.getString("CoverType"));
-                    book.setLanguage(rs.getString("Language"));
-                    book.setWeight(rs.getBigDecimal("Weight"));
-                    book.setDimensions(rs.getString("Dimensions"));
-
-                    allProducts.add(book);
+                    products.add(mapPagedProduct(rs));
                 }
             }
         } catch (SQLException | ClassNotFoundException e) {
             e.printStackTrace();
         }
 
-        // 2. Tìm kiếm văn phòng phẩm và map trực tiếp
-        StringBuilder sqlStationeries = new StringBuilder("SELECT p.*, s.* FROM [dbo].[Products] p JOIN [dbo].[Stationeries] s ON p.[Id] = s.[ProductId] WHERE p.[IsActive] = 1 ");
-        if (query != null && !query.trim().isEmpty()) {
-            sqlStationeries.append("AND (p.[Title] LIKE ? OR p.[Description] LIKE ?) ");
-        }
-        if (categoryId > 0) {
-            sqlStationeries.append("AND p.[CategoryId] = ? ");
-        }
-        sqlStationeries.append("ORDER BY p.[Id]");
-
-        try (Connection conn = this.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sqlStationeries.toString())) {
-            int paramIndex = 1;
-            if (query != null && !query.trim().isEmpty()) {
-                String searchPattern = "%" + query.trim() + "%";
-                stmt.setString(paramIndex++, searchPattern);
-                stmt.setString(paramIndex++, searchPattern);
-            }
-            if (categoryId > 0) {
-                stmt.setInt(paramIndex++, categoryId);
-            }
-            try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
-                    Stationery stationery = new Stationery();
-                    stationery.setId(rs.getInt("Id"));
-                    stationery.setCategoryId(rs.getInt("CategoryId"));
-                    stationery.setSupplierId(rs.getInt("SupplierId"));
-                    if (rs.wasNull()) {
-                        stationery.setSupplierId(null);
-                    }
-                    stationery.setTitle(rs.getString("Title"));
-                    stationery.setDescription(rs.getString("Description"));
-                    stationery.setPrice(rs.getBigDecimal("Price"));
-                    stationery.setSku(rs.getString("Sku"));
-                    stationery.setImageUrl(rs.getString("Image_URL"));
-                    stationery.setIsActive(rs.getBoolean("IsActive"));
-                    stationery.setCreatedAt(rs.getTimestamp("CreatedAt"));
-
-                    stationery.setBrandId(rs.getInt("BrandId"));
-                    if (rs.wasNull()) {
-                        stationery.setBrandId(null);
-                    }
-                    stationery.setOrigin(rs.getString("Origin"));
-                    stationery.setMaterial(rs.getString("Material"));
-                    stationery.setColor(rs.getString("Color"));
-                    stationery.setWeight(rs.getBigDecimal("Weight"));
-                    stationery.setDimensions(rs.getString("Dimensions"));
-                    stationery.setSpecifications(rs.getString("Specifications"));
-                    stationery.setWarning(rs.getString("Warning"));
-
-                    allProducts.add(stationery);
-                }
-            }
-        } catch (SQLException | ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-
-        // Phân trang trên bộ nhớ
-        if (offset >= allProducts.size()) {
-            return new ArrayList<>();
-        }
-        int toIndex = Math.min(offset + limit, allProducts.size());
-        return allProducts.subList(offset, toIndex);
+        return products;
     }
 
     public int countSearchProducts(String query, int categoryId) {
