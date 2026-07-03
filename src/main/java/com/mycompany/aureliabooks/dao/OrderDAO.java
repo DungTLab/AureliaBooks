@@ -21,7 +21,8 @@ import java.util.Map;
  * DESIGN HIGHLIGHTS:
  * - Exception Propagation: Throws SQLException to the Controller layer.
  * - SQL Injection Prevention: Uses Parameterized Queries (PreparedStatement).
- * - ACID Compliance: Uses Manual Commit/Rollback for complex multi-table operations.
+ * - ACID Compliance: Uses Manual Commit/Rollback for complex multi-table
+ * operations.
  */
 public class OrderDAO extends BaseDAO {
 
@@ -50,9 +51,10 @@ public class OrderDAO extends BaseDAO {
 
     /**
      * Retrieves the total count of orders based on dynamic filters.
-     * Essential for mathematical calculation of Total Pages in server-side pagination.
+     * Essential for mathematical calculation of Total Pages in server-side
+     * pagination.
      *
-     * @param status the order status filter ("ALL" or specific status)
+     * @param status      the order status filter ("ALL" or specific status)
      * @param searchQuery the keyword to search by Order ID or Contact Phone
      * @return the total number of matching orders
      * @throws SQLException if a database access error occurs
@@ -93,10 +95,10 @@ public class OrderDAO extends BaseDAO {
      * Retrieves a specific chunk (page) of orders from the database.
      * Uses SQL Server OFFSET-FETCH mechanism for high-performance pagination.
      *
-     * @param status the order status filter ("ALL" or specific status)
+     * @param status      the order status filter ("ALL" or specific status)
      * @param searchQuery the keyword to search by Order ID or Contact Phone
-     * @param offset the number of rows to skip
-     * @param pageSize the maximum number of rows to return
+     * @param offset      the number of rows to skip
+     * @param pageSize    the maximum number of rows to return
      * @return a List of Order objects for the requested page
      * @throws SQLException if a database access error occurs
      */
@@ -122,7 +124,7 @@ public class OrderDAO extends BaseDAO {
                 ps.setString(paramIndex++, searchQuery.trim());
                 ps.setString(paramIndex++, "%" + searchQuery.trim() + "%");
             }
-            
+
             ps.setInt(paramIndex++, offset);
             ps.setInt(paramIndex, pageSize);
 
@@ -138,10 +140,11 @@ public class OrderDAO extends BaseDAO {
     }
 
     /**
-     * Helper Method: Restores product inventory quantities when an order is cancelled or returned.
+     * Helper Method: Restores product inventory quantities when an order is
+     * cancelled or returned.
      * Re-adds the quantity of each order item back to the Products table.
      *
-     * @param conn the active database Connection (must be within a transaction)
+     * @param conn    the active database Connection (must be within a transaction)
      * @param orderId the unique identifier of the order
      * @throws SQLException if a database access error occurs
      */
@@ -170,15 +173,16 @@ public class OrderDAO extends BaseDAO {
      * Updates the status of an order and implements an Audit Trail.
      * Safely wrapped in a Transaction because it may update inventory.
      *
-     * @param orderId the unique identifier of the order to update
-     * @param status the new status value (e.g., "CONFIRMED", "SHIPPED", "CANCELLED")
+     * @param orderId           the unique identifier of the order to update
+     * @param status            the new status value (e.g., "CONFIRMED", "SHIPPED",
+     *                          "CANCELLED")
      * @param processedByUserId the ID of the staff member processing this update
      * @return true if the update was successful, false otherwise
      * @throws SQLException if a database error occurs or transaction fails
      */
     public boolean updateOrderStatus(int orderId, String status, Integer processedByUserId) throws SQLException {
         String sqlUpdateStatus = "UPDATE Orders SET [Status] = ?, ProcessedByUserId = ? WHERE Id = ?";
-        
+
         Connection conn = null;
         try {
             conn = getConnection();
@@ -189,7 +193,7 @@ public class OrderDAO extends BaseDAO {
                 ps.setString(1, status);
                 ps.setObject(2, processedByUserId);
                 ps.setInt(3, orderId);
-                
+
                 int rows = ps.executeUpdate();
                 if (rows == 0) {
                     conn.rollback();
@@ -207,19 +211,29 @@ public class OrderDAO extends BaseDAO {
 
         } catch (Exception e) {
             if (conn != null) {
-                try { conn.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
+                try {
+                    conn.rollback();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
             }
             throw new SQLException("Failed to update order status: " + e.getMessage(), e);
         } finally {
             if (conn != null) {
-                try { conn.setAutoCommit(true); conn.close(); } catch (SQLException e) { e.printStackTrace(); }
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
 
     /**
      * Retrieves the complete blueprint of a specific order.
-     * Fetches the main order record and joins its associated line items (OrderItems) and product names.
+     * Fetches the main order record and joins its associated line items
+     * (OrderItems) and product names.
      *
      * @param orderId the unique identifier of the order
      * @return the fully populated Order object, or null if not found
@@ -259,7 +273,9 @@ public class OrderDAO extends BaseDAO {
                             product.setTitle(rsItems.getString("Title"));
                             item.setProduct(product);
 
-                            // WARNING: Order.java must initialize the items list: private List<OrderItem> items = new ArrayList<>();
+                            if (order.getItems() == null) {
+                                order.setItems(new ArrayList<>());
+                            }
                             order.getItems().add(item);
                         }
                     }
@@ -273,10 +289,11 @@ public class OrderDAO extends BaseDAO {
 
     /**
      * Executes a strictly isolated Database Transaction to handle Order Returns.
-     * Guarantees Atomicity (All-or-Nothing) across Orders, Products, and StockTransactions tables.
+     * Guarantees Atomicity (All-or-Nothing) across Orders, Products, and
+     * StockTransactions tables.
      *
      * @param orderId the unique identifier of the order being returned
-     * @param reason the reason provided by the customer for the return
+     * @param reason  the reason provided by the customer for the return
      * @return true if the return transaction succeeded, false otherwise
      * @throws SQLException if a database error occurs or transaction is aborted
      */
@@ -301,7 +318,7 @@ public class OrderDAO extends BaseDAO {
                     if (rs.next()) {
                         String currentStatus = rs.getString("Status");
                         if (!"COMPLETED".equals(currentStatus)) {
-                            conn.rollback(); 
+                            conn.rollback();
                             return false;
                         }
                         userId = rs.getInt("UserId");
@@ -352,12 +369,21 @@ public class OrderDAO extends BaseDAO {
 
         } catch (Exception e) {
             if (conn != null) {
-                try { conn.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
+                try {
+                    conn.rollback();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
             }
             throw new SQLException("Critical Failure: Order Return Transaction aborted and rolled back.", e);
         } finally {
             if (conn != null) {
-                try { conn.setAutoCommit(true); conn.close(); } catch (SQLException e) { e.printStackTrace(); }
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -370,12 +396,14 @@ public class OrderDAO extends BaseDAO {
      * @throws SQLException if a database access error occurs
      */
     public boolean insertOrder(Order order) throws SQLException {
-        // TODO: Implement checkout flow (Insert Order -> Insert OrderItems -> Update Inventory)
+        // TODO: Implement checkout flow (Insert Order -> Insert OrderItems -> Update
+        // Inventory)
         return false;
     }
 
     /**
-     * Returns all orders placed by a specific user, sorted by creation date (newest first).
+     * Returns all orders placed by a specific user, sorted by creation date (newest
+     * first).
      * Used for the Customer's Order History page.
      *
      * @param userId the unique identifier of the user
@@ -423,7 +451,8 @@ public class OrderDAO extends BaseDAO {
     }
 
     /**
-     * Returns all orders with a specific status, sorted by creation date (newest first).
+     * Returns all orders with a specific status, sorted by creation date (newest
+     * first).
      * Typically superseded by getOrdersPaged() to avoid memory overload.
      *
      * @param status the exact order status to filter by
@@ -467,10 +496,12 @@ public class OrderDAO extends BaseDAO {
 
     /**
      * Builds a date filter SQL condition for best-selling report queries.
-     * Ensures the report only calculates data for the CURRENT day, month, or quarter.
+     * Ensures the report only calculates data for the CURRENT day, month, or
+     * quarter.
      *
-     * @param type the aggregation period type
-     * @param alias the SQL alias for the Date column to filter (e.g., "o.CreatedAt")
+     * @param type  the aggregation period type
+     * @param alias the SQL alias for the Date column to filter (e.g.,
+     *              "o.CreatedAt")
      * @return the generated SQL condition string
      */
     private String buildBestSellerDateFilter(String type, String alias) {
@@ -490,7 +521,8 @@ public class OrderDAO extends BaseDAO {
      * Supports generating trend charts in the Admin Dashboard.
      *
      * @param type the aggregation period ("DAY", "MONTH", "QUARTER")
-     * @return Map with period keys mapped to total revenue (e.g., "2026-06" -> 5000.0)
+     * @return Map with period keys mapped to total revenue (e.g., "2026-06" ->
+     *         5000.0)
      * @throws SQLException if a database access error occurs
      */
     public Map<String, Double> getRevenueReport(String type) throws SQLException {
@@ -534,7 +566,8 @@ public class OrderDAO extends BaseDAO {
     }
 
     /**
-     * Retrieves best-selling product statistics for the CURRENT day, month, or quarter.
+     * Retrieves best-selling product statistics for the CURRENT day, month, or
+     * quarter.
      * Joins Orders, OrderItems, and Products to aggregate total sales volume.
      *
      * @param type the aggregation period ("DAY", "MONTH", "QUARTER")
