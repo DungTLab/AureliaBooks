@@ -4,7 +4,10 @@
  */
 package com.mycompany.aureliabooks.controller;
 
+import com.mycompany.aureliabooks.dao.OrderDAO;
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -19,10 +22,28 @@ import jakarta.servlet.http.HttpServletResponse;
 @WebServlet(name = "ReportController", urlPatterns = {"/admin/reports"})
 public class ReportController extends HttpServlet {
 
+    private final OrderDAO orderDAO = new OrderDAO();
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // Hiển thị báo cáo thống kê
+        String type = request.getParameter("type");
+        if (type == null || type.trim().isEmpty()) {
+            type = "DAY";
+        } else {
+            type = type.trim().toUpperCase();
+            if (!type.equals("DAY") && !type.equals("MONTH") && !type.equals("QUARTER")) {
+                type = "DAY";
+            }
+        }
+
+        Map<String, Double> revenueData = orderDAO.getRevenueReport(type);
+        List<Map<String, Object>> bestSellingData = orderDAO.getBestSellingReport(type);
+
+        request.setAttribute("reportType", type);
+        request.setAttribute("revenueData", revenueData);
+        request.setAttribute("bestSellingData", bestSellingData);
+
         request.getRequestDispatcher("/WEB-INF/report/dashboard.jsp").forward(request, response);
     }
 

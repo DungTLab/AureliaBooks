@@ -77,9 +77,14 @@
 
                                         <%-- Nếu là ADMIN thì hiển thị thêm nút truy cập trang Quản trị --%>
                                         <c:if test="${sessionScope.user.roleName eq 'ADMIN'}">
+                                            <li>
+                                                <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/categories">
+                                                    <i class="bi bi-list-ul me-2"></i>Quản lý Danh mục
+                                                </a>
+                                            </li>
                                             <li><hr class="dropdown-divider"></li>
                                             <li><a class="dropdown-item text-danger fw-bold" href="${pageContext.request.contextPath}/admin/orders"><i class="bi bi-speedometer2 me-2"></i>Quản trị hệ thống</a></li>
-                                            </c:if>
+                                        </c:if>
 
                                         <li><hr class="dropdown-divider"></li>
                                         <li><a class="dropdown-item" href="${pageContext.request.contextPath}/auth?action=logout"><i class="bi bi-box-arrow-right me-2"></i>Đăng xuất</a></li>
