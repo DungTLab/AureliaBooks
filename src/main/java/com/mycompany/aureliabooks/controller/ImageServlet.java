@@ -37,13 +37,44 @@ public class ImageServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // TODO: Thành viên nhóm triển khai code đọc và stream ảnh ở đây
+        // 1. Lấy đường dẫn ảnh từ URL request (ví dụ: /products/filename.jpg)
+        String pathInfo = request.getPathInfo();
+        if (pathInfo == null || pathInfo.equals("/")) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+
+        // 2. Trỏ tới file ảnh vật lý trên ổ đĩa
+        java.io.File file = new java.io.File(com.mycompany.aureliabooks.util.UploadUtils.UPLOAD_DIR + pathInfo);
+
+        // 3. Kiểm tra file tồn tại
+        if (!file.exists() || !file.isFile()) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+
+        // 4. Xác định MIME Type (Content-Type)
+        String contentType = getServletContext().getMimeType(file.getName());
+        if (contentType == null) {
+            contentType = "application/octet-stream";
+        }
+        response.setContentType(contentType);
+        response.setContentLength((int) file.length());
+
+        // 5. Đọc file và xuất ra OutputStream của Response
+        try (java.io.FileInputStream fis = new java.io.FileInputStream(file);
+             java.io.OutputStream os = response.getOutputStream()) {
+            byte[] buffer = new byte[4096];
+            int bytesRead;
+            while ((bytesRead = fis.read(buffer)) != -1) {
+                os.write(buffer, 0, bytesRead);
+            }
+        }
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // Không sử dụng doPost cho việc hiển thị ảnh
         doGet(request, response);
     }
 }
