@@ -55,6 +55,7 @@
                 <ul class="pagination mb-0">
                     <c:url var="prevPageUrl" value="/products">
                         <c:param name="query" value="${query}" />
+                        <c:param name="categoryId" value="${categoryId}" />
                         <c:param name="page" value="${currentPage - 1}" />
                     </c:url>
                     <li class="page-item ${currentPage == 1 ? 'disabled' : ''}">
@@ -68,6 +69,7 @@
                             <c:forEach var="i" begin="1" end="${totalPages}">
                                 <c:url var="pageUrl" value="/products">
                                     <c:param name="query" value="${query}" />
+                                    <c:param name="categoryId" value="${categoryId}" />
                                     <c:param name="page" value="${i}" />
                                 </c:url>
                                 <li class="page-item ${i == currentPage ? 'active' : ''}">
@@ -78,6 +80,7 @@
                         <c:otherwise>
                             <c:url var="firstPageUrl" value="/products">
                                 <c:param name="query" value="${query}" />
+                                <c:param name="categoryId" value="${categoryId}" />
                                 <c:param name="page" value="1" />
                             </c:url>
                             <li class="page-item ${currentPage == 1 ? 'active' : ''}">
@@ -102,6 +105,7 @@
                             <c:forEach var="i" begin="${startPage}" end="${endPage}">
                                 <c:url var="pageUrl" value="/products">
                                     <c:param name="query" value="${query}" />
+                                    <c:param name="categoryId" value="${categoryId}" />
                                     <c:param name="page" value="${i}" />
                                 </c:url>
                                 <li class="page-item ${i == currentPage ? 'active' : ''}">
@@ -115,6 +119,7 @@
 
                             <c:url var="lastPageUrl" value="/products">
                                 <c:param name="query" value="${query}" />
+                                <c:param name="categoryId" value="${categoryId}" />
                                 <c:param name="page" value="${totalPages}" />
                             </c:url>
                             <li class="page-item ${currentPage == totalPages ? 'active' : ''}">
@@ -125,6 +130,7 @@
 
                     <c:url var="nextPageUrl" value="/products">
                         <c:param name="query" value="${query}" />
+                        <c:param name="categoryId" value="${categoryId}" />
                         <c:param name="page" value="${currentPage + 1}" />
                     </c:url>
                     <li class="page-item ${currentPage == totalPages ? 'disabled' : ''}">

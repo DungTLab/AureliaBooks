@@ -44,15 +44,30 @@ public class SecurityFilter implements Filter {
         // 2. Lấy thông tin User
         User loggedInUser = (session != null) ? (User) session.getAttribute("user") : null;
 
-        // 3. Phân quyền Admin
+        // 3. Phân quyền Admin & Employee (Nhân viên)
         if (requestURI.contains("/admin/")) {
             if (loggedInUser == null) {
                 httpResponse.sendRedirect(httpRequest.getContextPath() + "/auth?action=login");
                 return;
             }
-            if (!"ADMIN".equals(loggedInUser.getRoleName())) {
-                httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN, "Access Denied");
-                return;
+            
+            String role = loggedInUser.getRoleName();
+            
+            // Các phân hệ chỉ dành riêng cho ADMIN: Báo cáo thống kê, Quản lý tài khoản, Quản lý Voucher
+            if (requestURI.contains("/admin/reports") 
+                || requestURI.contains("/admin/users") 
+                || requestURI.contains("/admin/discounts")) {
+                if (!"ADMIN".equals(role)) {
+                    httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN, "Access Denied - Admin Only");
+                    return;
+                }
+            } 
+            // Các phân hệ dùng chung cho ADMIN và EMPLOYEE: Đơn hàng, Thể loại, Sản phẩm, Hỗ trợ (Tickets)
+            else {
+                if (!"ADMIN".equals(role) && !"EMPLOYEE".equals(role)) {
+                    httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN, "Access Denied");
+                    return;
+                }
             }
         }
 

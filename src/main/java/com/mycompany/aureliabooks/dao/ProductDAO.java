@@ -354,7 +354,13 @@ public class ProductDAO extends BaseDAO {
             sql.append("AND (p.[Title] LIKE ? OR p.[Description] LIKE ?) ");
         }
         if (categoryId > 0) {
-            sql.append("AND p.[CategoryId] = ? ");
+            if (categoryId == 1) {
+                sql.append("AND b.[Language] = N'Tiếng Việt' ");
+            } else if (categoryId == 2) {
+                sql.append("AND b.[Language] IS NOT NULL AND b.[Language] <> N'Tiếng Việt' ");
+            } else {
+                sql.append("AND (p.[CategoryId] = ? OR p.[CategoryId] IN (SELECT Id FROM Categories WHERE ParentId = ?)) ");
+            }
         }
         sql.append("ORDER BY [ProductOrder], p.[Id] ");
         sql.append("OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
@@ -367,7 +373,8 @@ public class ProductDAO extends BaseDAO {
                 stmt.setString(paramIndex++, searchPattern);
                 stmt.setString(paramIndex++, searchPattern);
             }
-            if (categoryId > 0) {
+            if (categoryId > 0 && categoryId != 1 && categoryId != 2) {
+                stmt.setInt(paramIndex++, categoryId);
                 stmt.setInt(paramIndex++, categoryId);
             }
             stmt.setInt(paramIndex++, Math.max(offset, 0));
@@ -394,7 +401,13 @@ public class ProductDAO extends BaseDAO {
             sqlBooks.append("AND (p.[Title] LIKE ? OR p.[Description] LIKE ?) ");
         }
         if (categoryId > 0) {
-            sqlBooks.append("AND p.[CategoryId] = ? ");
+            if (categoryId == 1) {
+                sqlBooks.append("AND b.[Language] = N'Tiếng Việt' ");
+            } else if (categoryId == 2) {
+                sqlBooks.append("AND b.[Language] IS NOT NULL AND b.[Language] <> N'Tiếng Việt' ");
+            } else {
+                sqlBooks.append("AND (p.[CategoryId] = ? OR p.[CategoryId] IN (SELECT Id FROM Categories WHERE ParentId = ?)) ");
+            }
         }
         try (Connection conn = this.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sqlBooks.toString())) {
@@ -404,7 +417,8 @@ public class ProductDAO extends BaseDAO {
                 stmt.setString(paramIndex++, searchPattern);
                 stmt.setString(paramIndex++, searchPattern);
             }
-            if (categoryId > 0) {
+            if (categoryId > 0 && categoryId != 1 && categoryId != 2) {
+                stmt.setInt(paramIndex++, categoryId);
                 stmt.setInt(paramIndex++, categoryId);
             }
             try (ResultSet rs = stmt.executeQuery()) {
@@ -422,7 +436,11 @@ public class ProductDAO extends BaseDAO {
             sqlStationeries.append("AND (p.[Title] LIKE ? OR p.[Description] LIKE ?) ");
         }
         if (categoryId > 0) {
-            sqlStationeries.append("AND p.[CategoryId] = ? ");
+            if (categoryId == 1 || categoryId == 2) {
+                sqlStationeries.append("AND 1 = 0 ");
+            } else {
+                sqlStationeries.append("AND (p.[CategoryId] = ? OR p.[CategoryId] IN (SELECT Id FROM Categories WHERE ParentId = ?)) ");
+            }
         }
         try (Connection conn = this.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sqlStationeries.toString())) {
@@ -432,7 +450,8 @@ public class ProductDAO extends BaseDAO {
                 stmt.setString(paramIndex++, searchPattern);
                 stmt.setString(paramIndex++, searchPattern);
             }
-            if (categoryId > 0) {
+            if (categoryId > 0 && categoryId != 1 && categoryId != 2) {
+                stmt.setInt(paramIndex++, categoryId);
                 stmt.setInt(paramIndex++, categoryId);
             }
             try (ResultSet rs = stmt.executeQuery()) {

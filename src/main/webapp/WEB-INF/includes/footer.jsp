@@ -17,20 +17,21 @@
             <!-- Column 2: Book Categories -->
             <div class="col-md-2 col-lg-2 col-xl-2 mx-auto mt-3">
                 <h5 class="text-uppercase mb-4 font-weight-bold text-warning">Danh mục sách</h5>
-                <p><a href="#" class="text-light text-decoration-none">Sách Văn Học</a></p>
-                <p><a href="#" class="text-light text-decoration-none">Kinh Tế - Kỹ Năng</a></p>
-                <p><a href="#" class="text-light text-decoration-none">Sách Thiếu Nhi</a></p>
-                <p><a href="#" class="text-light text-decoration-none">Truyện Tranh - Manga</a></p>
+                <p><a href="${pageContext.request.contextPath}/products?categoryId=4" class="text-light text-decoration-none">Sách Văn Học</a></p>
+                <p><a href="${pageContext.request.contextPath}/products?categoryId=5" class="text-light text-decoration-none">Kinh Tế - Kỹ Năng</a></p>
+                <p><a href="${pageContext.request.contextPath}/products?categoryId=6" class="text-light text-decoration-none">Sách Thiếu Nhi</a></p>
+                <p><a href="${pageContext.request.contextPath}/products?categoryId=7" class="text-light text-decoration-none">Truyện Tranh - Manga</a></p>
+                <p><a href="${pageContext.request.contextPath}/categories" class="text-warning fw-bold text-decoration-none small"><i class="bi bi-chevron-right"></i> Xem tất cả danh mục</a></p>
             </div>
 
-            <!-- Column 3: Quick Links / Policies -->
-            <div class="col-md-3 col-lg-2 col-xl-2 mx-auto mt-3">
-                <h5 class="text-uppercase mb-4 font-weight-bold text-warning">Chính sách</h5>
-                <p><a href="#" class="text-light text-decoration-none">Trang chủ</a></p>
-                <p><a href="#" class="text-light text-decoration-none">Chính sách đổi trả</a></p>
-                <p><a href="#" class="text-light text-decoration-none">Chính sách bảo mật</a></p>
-                <p><a href="#" class="text-light text-decoration-none">Điều khoản dịch vụ</a></p>
-            </div>
+             <!-- Column 3: Quick Links / Policies -->
+             <div class="col-md-3 col-lg-2 col-xl-2 mx-auto mt-3">
+                 <h5 class="text-uppercase mb-4 font-weight-bold text-warning">Chính sách</h5>
+                 <p><a href="${pageContext.request.contextPath}/" class="text-light text-decoration-none">Trang chủ</a></p>
+                 <p><a href="${pageContext.request.contextPath}/policy?type=return" class="text-light text-decoration-none">Chính sách đổi trả</a></p>
+                 <p><a href="${pageContext.request.contextPath}/policy?type=privacy" class="text-light text-decoration-none">Chính sách bảo mật</a></p>
+                 <p><a href="${pageContext.request.contextPath}/policy?type=terms" class="text-light text-decoration-none">Điều khoản dịch vụ</a></p>
+             </div>
 
             <!-- Column 4: Contact Info -->
             <div class="col-md-4 col-lg-3 col-xl-3 mx-auto mt-3">
