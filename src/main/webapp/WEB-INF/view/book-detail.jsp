@@ -15,8 +15,8 @@
             </div>
 
             <div class="d-flex gap-2">
-                <a class="btn btn-outline-danger w-50" href="#">Thêm vào giỏ hàng</a>
-                <a class="btn btn-danger w-50" href="#">Mua ngay</a>
+                <button type="button" class="btn btn-outline-danger w-50" onclick="addToCart(false)">Thêm vào giỏ hàng</button>
+                <button type="button" class="btn btn-danger w-50" onclick="addToCart(true)">Mua ngay</button>
             </div>
         </div>
 
@@ -192,6 +192,18 @@
 </div>
 
 
+<!-- Toast Notification Container -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1100;">
+    <div id="cartToast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="3000">
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="bi bi-check-circle-fill me-2"></i> Đã thêm sản phẩm vào giỏ hàng thành công!
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+
 <script>
     function decreaseQuantity() {
         var input = document.getElementById('quantityInput');
@@ -206,6 +218,38 @@
         if (val < 99) {
             input.value = val + 1;
         }
+    }
+    function addToCart(redirect) {
+        var productId = "${product.id}";
+        var quantity = document.getElementById('quantityInput').value;
+        var contextPath = "${pageContext.request.contextPath}";
+        
+        var url = contextPath + "/cart?action=add&productId=" + productId + "&quantity=" + quantity;
+        
+        fetch(url, {
+            method: 'POST'
+        }).then(response => {
+            if (response.redirected) {
+                window.location.href = response.url;
+            } else if (response.ok) {
+                if (redirect) {
+                    window.location.href = contextPath + "/cart";
+                } else {
+                    var toastEl = document.getElementById('cartToast');
+                    var toast = new bootstrap.Toast(toastEl);
+                    toast.show();
+                }
+            } else {
+                if (response.url && response.url.includes("login")) {
+                    window.location.href = contextPath + "/auth?action=login";
+                } else {
+                    alert("Có lỗi xảy ra khi thêm vào giỏ hàng!");
+                }
+            }
+        }).catch(error => {
+            console.error('Error:', error);
+            alert("Có lỗi xảy ra khi thêm vào giỏ hàng!");
+        });
     }
 </script>
 

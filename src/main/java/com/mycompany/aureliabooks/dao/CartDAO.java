@@ -78,12 +78,30 @@ public class CartDAO extends BaseDAO {
     }
 
     public int getCartIdByUserId(int userId) {
-        String sql = "SELECT Id FROM Carts WHERE UserId = ?";
-        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, userId);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getInt("Id");
+        String sqlSelect = "SELECT Id FROM Carts WHERE UserId = ?";
+        String sqlInsert = "INSERT INTO Carts (UserId, CreatedAt) VALUES (?, CURRENT_TIMESTAMP)";
+        
+        try (Connection conn = getConnection()) {
+            // Check if cart exists
+            try (PreparedStatement psSelect = conn.prepareStatement(sqlSelect)) {
+                psSelect.setInt(1, userId);
+                try (ResultSet rs = psSelect.executeQuery()) {
+                    if (rs.next()) {
+                        return rs.getInt("Id");
+                    }
+                }
+            }
+            
+            // Cart does not exist, insert a new one dynamically
+            try (PreparedStatement psInsert = conn.prepareStatement(sqlInsert, java.sql.Statement.RETURN_GENERATED_KEYS)) {
+                psInsert.setInt(1, userId);
+                int affectedRows = psInsert.executeUpdate();
+                if (affectedRows > 0) {
+                    try (ResultSet rsKeys = psInsert.getGeneratedKeys()) {
+                        if (rsKeys.next()) {
+                            return rsKeys.getInt(1);
+                        }
+                    }
                 }
             }
         } catch (Exception e) {

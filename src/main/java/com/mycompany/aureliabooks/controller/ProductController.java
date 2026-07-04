@@ -41,6 +41,16 @@ public class ProductController extends HttpServlet {
             request.getRequestDispatcher("/WEB-INF/view/book-detail.jsp").forward(request, response);
         } else {
             String query = request.getParameter("query");
+            String catParam = request.getParameter("categoryId");
+            int categoryId = 0;
+            if (catParam != null && !catParam.isEmpty()) {
+                try {
+                    categoryId = Integer.parseInt(catParam);
+                } catch (NumberFormatException e) {
+                    categoryId = 0;
+                }
+            }
+
             int productsPerPage = 15;
             int currentPage = 1;
             String pageParam = request.getParameter("page");
@@ -56,7 +66,7 @@ public class ProductController extends HttpServlet {
                 }
             }
 
-            int totalProducts = productDAO.countSearchProducts(query, 0);
+            int totalProducts = productDAO.countSearchProducts(query, categoryId);
             int totalPages = (int) Math.ceil((double) totalProducts / productsPerPage);
             if (totalPages < 1) {
                 totalPages = 1;
@@ -66,10 +76,11 @@ public class ProductController extends HttpServlet {
             }
 
             int offset = (currentPage - 1) * productsPerPage;
-            List<Product> products = productDAO.searchProducts(query, 0, offset, productsPerPage);
+            List<Product> products = productDAO.searchProducts(query, categoryId, offset, productsPerPage);
 
             request.setAttribute("products", products);
             request.setAttribute("query", query == null ? "" : query.trim());
+            request.setAttribute("categoryId", categoryId);
             request.setAttribute("currentPage", currentPage);
             request.setAttribute("totalPages", totalPages);
             request.setAttribute("totalProducts", totalProducts);

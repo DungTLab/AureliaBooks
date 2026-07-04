@@ -308,6 +308,7 @@ INSERT INTO [dbo].[Categories] ([ParentId], [Name]) VALUES
 (3, N'Bút - Viết');               -- ID: 7
 GO
 
+
 -- 3. Chèn dữ liệu Suppliers
 INSERT INTO [dbo].[Suppliers] ([Name], [ContactEmail], [ContactPhone], [Address]) VALUES 
 (N'Công Ty Sách Fahasa', 'contact@fahasa.com', '02838225446', N'Nguyễn Huệ, Quận 1, TP. HCM'),
@@ -333,7 +334,13 @@ GO
 INSERT INTO [dbo].[Authors] ([FullName], [Biography]) VALUES 
 (N'Nguyễn Nhật Ánh', N'Nhà văn nổi tiếng của Việt Nam với các tác phẩm dành cho tuổi trẻ.'),
 (N'Dale Carnegie', N'Tác giả người Mỹ nổi tiếng với cuốn sách Đắc Nhân Tâm.'),
-(N'Haruki Murakami', N'Nhà văn Nhật Bản nổi tiếng thế giới.');
+(N'Haruki Murakami', N'Nhà văn Nhật Bản nổi tiếng thế giới.'),
+(N'Vũ Trọng Phụng', N'Nhà văn, nhà báo nổi tiếng của Việt Nam vào đầu thế kỷ 20, ông nổi tiếng với lối văn tả thực châm biếm sâu cay.'),
+(N'Rosie Nguyễn', N'Tác giả tự do, người viết sách chuyên về phong cách sống và phát triển bản thân của giới trẻ Việt Nam.'),
+(N'Paulo Coelho', N'Tiểu thuyết gia người Brazil nổi tiếng trên toàn thế giới, tác giả của tiểu thuyết kinh điển Nhà Giả Kim.'),
+(N'J.K. Rowling', N'Nữ nhà văn nổi tiếng người Anh, tác giả của bộ sách huyền thoại Harry Potter.'),
+(N'Harper Lee', N'Nữ nhà văn người Mỹ nổi tiếng thế giới qua tác phẩm kinh điển Giết con chim nhại.'),
+(N'Robin Sharma', N'Một trong những chuyên gia hàng đầu thế giới về kỹ năng lãnh đạo và phát triển bản thân, tác giả cuốn sách Đời ngắn đừng ngủ dài.');
 GO
 
 -- 7. Chèn dữ liệu Discounts
@@ -343,14 +350,24 @@ INSERT INTO [dbo].[Discounts] ([Code], [DiscountPercent], [MaxDiscountAmount], [
 GO
 
 -- 8. Chèn dữ liệu Products (Base)
--- Tổng 5 sản phẩm (3 sách, 2 dụng cụ học tập)
 SET IDENTITY_INSERT [dbo].[Products] ON;
 INSERT INTO [dbo].[Products] ([Id], [CategoryId], [SupplierId], [Title], [Description], [Price], [Sku], [Image_URL], [IsActive]) VALUES 
 (1, 4, 1, N'Mắt Biếc', N'Tác phẩm truyện dài tiêu biểu của nhà văn Nguyễn Nhật Ánh.', 110000.00, 'B-MB-001', 'images/mat-biec.jpg', 1),
 (2, 5, 1, N'Đắc Nhân Tâm', N'Cuốn sách kỹ năng sống bán chạy nhất mọi thời đại.', 86000.00, 'B-DNT-002', 'images/dac-nhan-tam.jpg', 1),
 (3, 6, 2, N'Norwegian Wood', N'Tác phẩm Rừng Na Uy bằng tiếng Anh của Haruki Murakami.', 250000.00, 'B-NW-003', 'images/norwegian-wood.jpg', 1),
 (4, 7, 3, N'Bút Bi Thiên Long FO-024', N'Bút bi viết êm, mực đều, thích hợp cho học sinh.', 4500.00, 'S-TL-004', 'images/but-tl.jpg', 1),
-(5, 7, 3, N'Bút Chì Kim Pentel AX105', N'Bút chì kim ngòi 0.5mm nhập khẩu Nhật Bản.', 18000.00, 'S-PT-005', 'images/but-chi-pentel.jpg', 1);
+(5, 7, 3, N'Bút Chì Kim Pentel AX105', N'Bút chì kim ngòi 0.5mm nhập khẩu Nhật Bản.', 18000.00, 'S-PT-005', 'images/but-chi-pentel.jpg', 1),
+(6, 4, 1, N'Số Đỏ', N'Tác phẩm văn học hiện thực xuất sắc châm biếm xã hội của nhà văn Vũ Trọng Phụng.', 65000.00, 'B-SD-006', 'images/so-do.jpg', 1),
+(7, 5, 1, N'Tuổi Trẻ Đáng Giá Bao Nhiêu', N'Cuốn sách truyền cảm hứng và định hướng phong cách sống cho giới trẻ Việt Nam của tác giả Rosie Nguyễn.', 75000.00, 'B-TTD-007', 'images/tuoi-tre.jpg', 1),
+(8, 5, 2, N'Nhà Giả Kim', N'Tiểu thuyết huyền thoại về hành trình đi tìm kho báu của cậu bé chăn cừu Santiago, tác phẩm dịch tiếng Việt.', 89000.00, 'B-NGK-008', 'images/nha-gia-kim.jpg', 1),
+(9, 4, 1, N'Cho Tôi Xin Một Vé Đi Tuổi Thơ', N'Truyện dài nổi tiếng của Nguyễn Nhật Ánh, đưa người đọc trở về thời niên thiếu hồn nhiên, tươi đẹp.', 85000.00, 'B-VT-009', 'images/ve-tuoi-tho.jpg', 1),
+(10, 5, 1, N'Đời Ngắn Đừng Ngủ Dài', N'Tập hợp những lời khuyên, bài học cuộc sống sâu sắc và thực tế từ Robin Sharma giúp phát huy tiềm năng cá nhân.', 70000.00, 'B-DND-010', 'images/doi-ngan.jpg', 1),
+(11, 6, 2, N'The Alchemist (English Edition)', N'The masterpiece novel by Paulo Coelho in original English translation.', 180000.00, 'B-AL-011', 'images/the-alchemist.jpg', 1),
+(12, 6, 2, N'Harry Potter and the Philosopher''s Stone', N'The first book in J.K. Rowling''s legendary wizarding series in English.', 295000.00, 'B-HP1-012', 'images/harry-potter-1.jpg', 1),
+(13, 6, 2, N'To Kill a Mockingbird', N'Harper Lee''s Pulitzer Prize-winning classic novel of warmth and humor.', 220000.00, 'B-TKM-013', 'images/to-kill-mockingbird.jpg', 1),
+(14, 7, 3, N'Sổ Tay Kẻ Sọc Faber-Castell A5', N'Sổ tay ghi chép kẻ sọc ngang thương hiệu Faber-Castell chất lượng cao.', 25000.00, 'S-FC-014', 'images/so-tay-fc.jpg', 1),
+(15, 7, 3, N'Bút Màu Sáp Faber-Castell 12 Màu', N'Bút màu sáp trơn mượt, an toàn, không chứa chất độc hại cho trẻ em.', 42000.00, 'S-FC-015', 'images/sap-mau-fc.jpg', 1),
+(16, 7, 3, N'Gôm Tẩy Faber-Castell Dust-Free', N'Gôm tẩy bút chì cao cấp, tẩy sạch bụi và không làm rách giấy.', 12000.00, 'S-FC-016', 'images/gom-fc.jpg', 1);
 SET IDENTITY_INSERT [dbo].[Products] OFF;
 GO
 
@@ -358,20 +375,39 @@ GO
 INSERT INTO [dbo].[Books] ([ProductId], [PublisherId], [Translator], [PublicationYear], [NumberOfPages], [CoverType], [Language], [Weight], [Dimensions]) VALUES 
 (1, 1, NULL, 2019, 290, N'Bìa mềm', N'Tiếng Việt', 250.00, '13 x 20 cm'),
 (2, 1, N'Nguyễn Văn A', 2021, 320, N'Bìa mềm', N'Tiếng Việt', 300.00, '14 x 20.5 cm'),
-(3, 3, N'Jay Rubin', 2015, 380, N'Bìa cứng', N'Tiếng Anh', 400.00, '15 x 23 cm');
+(3, 3, N'Jay Rubin', 2015, 380, N'Bìa cứng', N'Tiếng Anh', 400.00, '15 x 23 cm'),
+(6, 1, NULL, 2020, 250, N'Bìa mềm', N'Tiếng Việt', 200.00, '13 x 19 cm'),
+(7, 1, NULL, 2021, 280, N'Bìa mềm', N'Tiếng Việt', 240.00, '14 x 20 cm'),
+(8, 1, N'Lê Chu Cầu', 2020, 220, N'Bìa mềm', N'Tiếng Việt', 180.00, '13 x 20.5 cm'),
+(9, 1, NULL, 2018, 210, N'Bìa mềm', N'Tiếng Việt', 190.00, '13 x 20 cm'),
+(10, 1, N'Phạm Anh Tuấn', 2019, 260, N'Bìa mềm', N'Tiếng Việt', 210.00, '13.5 x 20.5 cm'),
+(11, 3, NULL, 2014, 208, N'Bìa mềm', N'Tiếng Anh', 170.00, '13.5 x 20.3 cm'),
+(12, 3, NULL, 2017, 352, N'Bìa mềm', N'Tiếng Anh', 320.00, '13 x 20 cm'),
+(13, 3, NULL, 2015, 376, N'Bìa mềm', N'Tiếng Anh', 310.00, '14 x 21 cm');
 GO
 
 -- 10. Chèn dữ liệu Stationeries (Con)
 INSERT INTO [dbo].[Stationeries] ([ProductId], [BrandId], [Origin], [Material], [Color], [Weight], [Dimensions], [Specifications], [Warning]) VALUES 
 (4, 1, N'Việt Nam', N'Nhựa', N'Xanh', 10.00, '14 cm', N'Hộp 20 cây', N'Tránh xa tầm tay trẻ em dưới 3 tuổi'),
-(5, 2, N'Nhật Bản', N'Nhựa và kim loại', N'Đen', 15.00, '14.5 cm', N'Ngòi chì 0.5mm', N'Không ấn ngòi quá mạnh');
+(5, 2, N'Nhật Bản', N'Nhựa và kim loại', N'Đen', 15.00, '14.5 cm', N'Ngòi chì 0.5mm', N'Không ấn ngòi quá mạnh'),
+(14, 3, N'Đức', N'Giấy và da', N'Nâu', 120.00, '15 x 21 cm', N'120 trang, 80gsm', N'Tránh tiếp xúc nguồn nước'),
+(15, 3, N'Đức', N'Sáp màu', N'Đa sắc', 80.00, '12 cm', N'Hộp 12 cây', N'Không thích hợp trẻ dưới 3 tuổi'),
+(16, 3, N'Đức', N'Cao su tổng hợp', N'Xanh dương', 25.00, '4 x 2 cm', N'Sản phẩm đơn chiếc', N'Không được nuốt');
 GO
 
 -- 11. Chèn dữ liệu Contributor
 INSERT INTO [dbo].[Contributor] ([ProductId], [AuthorId]) VALUES 
 (1, 1), -- Mắt Biếc của Nguyễn Nhật Ánh
 (2, 2), -- Đắc Nhân Tâm của Dale Carnegie
-(3, 3); -- Rừng Na Uy của Haruki Murakami
+(3, 3), -- Rừng Na Uy của Haruki Murakami
+(6, 4), -- Số Đỏ - Vũ Trọng Phụng
+(7, 5), -- Tuổi Trẻ Đáng Giá Bao Nhiêu - Rosie Nguyễn
+(8, 6), -- Nhà Giả Kim - Paulo Coelho
+(9, 1), -- Cho Tôi Xin Một Vé Đi Tuổi Thơ - Nguyễn Nhật Ánh
+(10, 9), -- Đời Ngắn Đừng Ngủ Dài - Robin Sharma
+(11, 6), -- The Alchemist - Paulo Coelho
+(12, 7), -- Harry Potter 1 - J.K. Rowling
+(13, 8); -- To Kill a Mockingbird - Harper Lee
 GO
 
 -- 12. Chèn dữ liệu Users (Mật khẩu mẫu ở đây tương trưng, khi code sinh viên sẽ dùng BCrypt băm)
@@ -404,7 +440,18 @@ INSERT INTO [dbo].[Inventory] ([ProductId], [QuantityInStock], [WarehouseLocatio
 (2, 150, N'Kệ B-02', GETDATE()),
 (3, 30, N'Kệ Ngoại Văn C-01', GETDATE()),
 (4, 1000, N'Hộp Phụ Phẩm E-05', GETDATE()),
-(5, 200, N'Kệ Dụng Cụ D-02', GETDATE());
+(5, 200, N'Kệ Dụng Cụ D-02', GETDATE()),
+(6, 80, N'Kệ A-03', GETDATE()),
+(7, 120, N'Kệ B-04', GETDATE()),
+(8, 90, N'Kệ B-05', GETDATE()),
+(9, 110, N'Kệ A-02', GETDATE()),
+(10, 150, N'Kệ B-01', GETDATE()),
+(11, 40, N'Kệ Ngoại Văn C-02', GETDATE()),
+(12, 25, N'Kệ Ngoại Văn C-03', GETDATE()),
+(13, 15, N'Kệ Ngoại Văn C-04', GETDATE()),
+(14, 300, N'Kệ Dụng Cụ D-03', GETDATE()),
+(15, 180, N'Kệ Dụng Cụ D-04', GETDATE()),
+(16, 500, N'Kệ Dụng Cụ D-05', GETDATE());
 GO
 
 -- 15. Chèn dữ liệu Orders & OrderItems (Thao tác thống kê mẫu)

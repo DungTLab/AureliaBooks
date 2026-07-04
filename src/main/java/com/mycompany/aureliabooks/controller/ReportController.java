@@ -37,8 +37,15 @@ public class ReportController extends HttpServlet {
             }
         }
 
-        Map<String, Double> revenueData = orderDAO.getRevenueReport(type);
-        List<Map<String, Object>> bestSellingData = orderDAO.getBestSellingReport(type);
+        Map<String, Double> revenueData = new java.util.LinkedHashMap<>();
+        List<Map<String, Object>> bestSellingData = new java.util.ArrayList<>();
+        try {
+            revenueData = orderDAO.getRevenueReport(type);
+            bestSellingData = orderDAO.getBestSellingReport(type);
+        } catch (java.sql.SQLException e) {
+            e.printStackTrace();
+            request.setAttribute("error", "Lỗi truy xuất báo cáo: " + e.getMessage());
+        }
 
         request.setAttribute("reportType", type);
         request.setAttribute("revenueData", revenueData);

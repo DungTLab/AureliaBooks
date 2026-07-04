@@ -15,7 +15,8 @@
     <div class="container mt-3">
 
         <div class=" container d-flex rounded-3 justify-content-between align-items-center pt-3 pb-3 bg-light">
-            <label class="h2"><i class="bi bi-graph-up-arrow btn btn-danger disabled"></i> Xu Hướng Mua Sắm</label>
+            <label class="h2 mb-0"><i class="bi bi-graph-up-arrow btn btn-danger disabled"></i> Xu Hướng Mua Sắm</label>
+            <a href="${pageContext.request.contextPath}/products" class="btn btn-danger fw-bold shadow-sm"><i class="bi bi-collection-fill me-1"></i> Xem tất cả sản phẩm</a>
         </div>
 
         <div class="container rounded-3 bg-white pt-3">
@@ -36,7 +37,7 @@
                                             <span class="text-danger fw-bold h5 mb-0">
                                                 <fmt:formatNumber value="${product.price}" type="number" groupingUsed="true"/>đ
                                             </span>
-                                            <a href="#" class="btn btn-primary px-4"> <i class="bi bi-cart"></i> Add to cart</a>
+                                            <a href="${pageContext.request.contextPath}/cart?action=add&productId=${product.id}" class="btn btn-primary px-4"> <i class="bi bi-cart"></i> Add to cart</a>
                                         </div>
                                     </div>
                                 </div>
