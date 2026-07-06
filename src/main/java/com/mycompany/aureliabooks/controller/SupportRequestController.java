@@ -52,6 +52,10 @@ public class SupportRequestController extends HttpServlet {
                     request.setAttribute("adminSupportRequests", adminSupportRequests);
                     request.getRequestDispatcher("/WEB-INF/support/list.jsp").forward(request, response);
                 }
+            } catch (NumberFormatException e) {
+                LOGGER.log(Level.WARNING, "Invalid ticket ID format in GET", e);
+                request.setAttribute("errorMessage", "Định dạng ID yêu cầu hỗ trợ không hợp lệ.");
+                request.getRequestDispatcher("/WEB-INF/error/400.jsp").forward(request, response);
             } catch (Exception e) {
                 LOGGER.log(Level.SEVERE, "Unexpected critical error in SupportRequestController Admin (GET)", e);
                 request.setAttribute("errorMessage", "Đã xảy ra lỗi hệ thống khi tải trang Admin. Vui lòng thử lại sau.");
@@ -128,6 +132,10 @@ public class SupportRequestController extends HttpServlet {
                     response.sendRedirect(request.getContextPath() + "/admin/support?action=reply&id=" + ticketId);
                 }
                 
+            } catch (NumberFormatException e) {
+                LOGGER.log(Level.WARNING, "Invalid ticket ID format in POST", e);
+                request.setAttribute("errorMessage", "Định dạng ID yêu cầu hỗ trợ không hợp lệ.");
+                request.getRequestDispatcher("/WEB-INF/error/400.jsp").forward(request, response);
             } catch (Exception e) {
                 LOGGER.log(Level.SEVERE, "Unexpected critical error in SupportRequestController Admin (POST)", e);
                 request.setAttribute("errorMessage", "Đã xảy ra lỗi hệ thống khi xử lý phản hồi. Vui lòng thử lại sau.");
