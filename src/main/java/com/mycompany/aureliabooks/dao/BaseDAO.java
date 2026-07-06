@@ -16,7 +16,7 @@ import java.sql.SQLException;
 public class BaseDAO {
     private static final String DB_URL = "jdbc:sqlserver://localhost:1433;databaseName=AureliaBooks;encrypt=true;trustServerCertificate=true;";
     private static final String USER = "sa";
-    private static final String PASS = "123456";
+    private static final String PASS = "12341234";
 
     protected Connection getConnection() throws SQLException, ClassNotFoundException {
         Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
