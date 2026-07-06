@@ -253,7 +253,7 @@ public class ProductDAO extends BaseDAO {
                 + "JOIN [dbo].[Books] b ON p.[Id] = b.[ProductId] "
                 + "LEFT JOIN [dbo].[Publishers] pub ON b.[PublisherId] = pub.[Id] "
                 + "LEFT JOIN [dbo].[Suppliers] sup ON p.[SupplierId] = sup.[Id] "
-                + "WHERE p.[Id] = ?";
+                + "WHERE p.[Id] = ? AND p.[IsActive] = 1";
 
         try (Connection conn = this.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sqlBook)) {
@@ -295,7 +295,7 @@ public class ProductDAO extends BaseDAO {
                 + "JOIN [dbo].[Stationeries] s ON p.[Id] = s.[ProductId] "
                 + "LEFT JOIN [dbo].[Brands] br ON s.[BrandId] = br.[Id] "
                 + "LEFT JOIN [dbo].[Suppliers] sup ON p.[SupplierId] = sup.[Id] "
-                + "WHERE p.[Id] = ?";
+                + "WHERE p.[Id] = ? AND p.[IsActive] = 1";
 
         try (Connection conn = this.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sqlStationery)) {
@@ -303,7 +303,7 @@ public class ProductDAO extends BaseDAO {
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     map.put("productType", "Stationery");
-                    map.put("Stationeryid", rs.getInt("Id"));
+                    map.put("id", rs.getInt("Id"));
                     map.put("categoryId", rs.getInt("CategoryId"));
                     map.put("supplierId", rs.getObject("SupplierId"));
                     map.put("supplierName", rs.getString("SupplierName"));
