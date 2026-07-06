@@ -35,7 +35,7 @@
                                 <tr>
                                     <td>
                                         <div class="d-flex align-items-center">
-                                            <img src="${item.product.imageUrl}" class="img-thumbnail me-3" style="width: 50px;" alt="...">
+                                            <img src="${pageContext.request.contextPath}/assets/images/book-image/${item.product.imageUrl}" class="img-thumbnail me-3" style="width: 50px;" alt="${item.product.title}">
                                             <span>${item.product.title}</span>
                                         </div>
                                     </td>

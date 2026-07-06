@@ -30,6 +30,12 @@
                         </div>
                         <button type="submit" class="btn btn-primary w-100">Đăng Nhập</button>
                     </form>
+                    
+                    <div class="text-center my-3 text-secondary">Hoặc</div>
+                    <a href="${pageContext.request.contextPath}/login-google" class="btn btn-outline-danger w-100">
+                        <i class="bi bi-google me-2"></i> Đăng nhập bằng Google
+                    </a>
+                    
                     <div class="text-center mt-3">
                         Chưa có tài khoản? <a href="${pageContext.request.contextPath}/auth?action=register">Đăng ký ngay</a>
                     </div>

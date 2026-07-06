@@ -352,22 +352,22 @@ GO
 -- 8. Chèn dữ liệu Products (Base)
 SET IDENTITY_INSERT [dbo].[Products] ON;
 INSERT INTO [dbo].[Products] ([Id], [CategoryId], [SupplierId], [Title], [Description], [Price], [Sku], [Image_URL], [IsActive]) VALUES 
-(1, 4, 1, N'Mắt Biếc', N'Tác phẩm truyện dài tiêu biểu của nhà văn Nguyễn Nhật Ánh.', 110000.00, 'B-MB-001', 'images/mat-biec.jpg', 1),
-(2, 5, 1, N'Đắc Nhân Tâm', N'Cuốn sách kỹ năng sống bán chạy nhất mọi thời đại.', 86000.00, 'B-DNT-002', 'images/dac-nhan-tam.jpg', 1),
-(3, 6, 2, N'Norwegian Wood', N'Tác phẩm Rừng Na Uy bằng tiếng Anh của Haruki Murakami.', 250000.00, 'B-NW-003', 'images/norwegian-wood.jpg', 1),
-(4, 7, 3, N'Bút Bi Thiên Long FO-024', N'Bút bi viết êm, mực đều, thích hợp cho học sinh.', 4500.00, 'S-TL-004', 'images/but-tl.jpg', 1),
-(5, 7, 3, N'Bút Chì Kim Pentel AX105', N'Bút chì kim ngòi 0.5mm nhập khẩu Nhật Bản.', 18000.00, 'S-PT-005', 'images/but-chi-pentel.jpg', 1),
-(6, 4, 1, N'Số Đỏ', N'Tác phẩm văn học hiện thực xuất sắc châm biếm xã hội của nhà văn Vũ Trọng Phụng.', 65000.00, 'B-SD-006', 'images/so-do.jpg', 1),
-(7, 5, 1, N'Tuổi Trẻ Đáng Giá Bao Nhiêu', N'Cuốn sách truyền cảm hứng và định hướng phong cách sống cho giới trẻ Việt Nam của tác giả Rosie Nguyễn.', 75000.00, 'B-TTD-007', 'images/tuoi-tre.jpg', 1),
-(8, 5, 2, N'Nhà Giả Kim', N'Tiểu thuyết huyền thoại về hành trình đi tìm kho báu của cậu bé chăn cừu Santiago, tác phẩm dịch tiếng Việt.', 89000.00, 'B-NGK-008', 'images/nha-gia-kim.jpg', 1),
-(9, 4, 1, N'Cho Tôi Xin Một Vé Đi Tuổi Thơ', N'Truyện dài nổi tiếng của Nguyễn Nhật Ánh, đưa người đọc trở về thời niên thiếu hồn nhiên, tươi đẹp.', 85000.00, 'B-VT-009', 'images/ve-tuoi-tho.jpg', 1),
-(10, 5, 1, N'Đời Ngắn Đừng Ngủ Dài', N'Tập hợp những lời khuyên, bài học cuộc sống sâu sắc và thực tế từ Robin Sharma giúp phát huy tiềm năng cá nhân.', 70000.00, 'B-DND-010', 'images/doi-ngan.jpg', 1),
-(11, 6, 2, N'The Alchemist (English Edition)', N'The masterpiece novel by Paulo Coelho in original English translation.', 180000.00, 'B-AL-011', 'images/the-alchemist.jpg', 1),
-(12, 6, 2, N'Harry Potter and the Philosopher''s Stone', N'The first book in J.K. Rowling''s legendary wizarding series in English.', 295000.00, 'B-HP1-012', 'images/harry-potter-1.jpg', 1),
-(13, 6, 2, N'To Kill a Mockingbird', N'Harper Lee''s Pulitzer Prize-winning classic novel of warmth and humor.', 220000.00, 'B-TKM-013', 'images/to-kill-mockingbird.jpg', 1),
-(14, 7, 3, N'Sổ Tay Kẻ Sọc Faber-Castell A5', N'Sổ tay ghi chép kẻ sọc ngang thương hiệu Faber-Castell chất lượng cao.', 25000.00, 'S-FC-014', 'images/so-tay-fc.jpg', 1),
-(15, 7, 3, N'Bút Màu Sáp Faber-Castell 12 Màu', N'Bút màu sáp trơn mượt, an toàn, không chứa chất độc hại cho trẻ em.', 42000.00, 'S-FC-015', 'images/sap-mau-fc.jpg', 1),
-(16, 7, 3, N'Gôm Tẩy Faber-Castell Dust-Free', N'Gôm tẩy bút chì cao cấp, tẩy sạch bụi và không làm rách giấy.', 12000.00, 'S-FC-016', 'images/gom-fc.jpg', 1);
+(1, 4, 1, N'Mắt Biếc', N'Tác phẩm truyện dài tiêu biểu của nhà văn Nguyễn Nhật Ánh.', 110000.00, 'B-MB-001', 'matBiec.jpg', 1),
+(2, 5, 1, N'Đắc Nhân Tâm', N'Cuốn sách kỹ năng sống bán chạy nhất mọi thời đại.', 86000.00, 'B-DNT-002', 'dacNhanTam.jpg', 1),
+(3, 6, 2, N'Norwegian Wood', N'Tác phẩm Rừng Na Uy bằng tiếng Anh của Haruki Murakami.', 250000.00, 'B-NW-003', 'norwegianWood.webp', 1),
+(4, 7, 3, N'Bút Bi Thiên Long FO-024', N'Bút bi viết êm, mực đều, thích hợp cho học sinh.', 4500.00, 'S-TL-004', N'Bút Bi Thiên Long FO-024.webp', 1),
+(5, 7, 3, N'Bút Chì Kim Pentel AX105', N'Bút chì kim ngòi 0.5mm nhập khẩu Nhật Bản.', 18000.00, 'S-PT-005', N'Bút Chì Kim Pentel AX105.webp', 1),
+(6, 4, 1, N'Số Đỏ', N'Tác phẩm văn học hiện thực xuất sắc châm biếm xã hội của nhà văn Vũ Trọng Phụng.', 65000.00, 'B-SD-006', 'soDo.webp', 1),
+(7, 5, 1, N'Tuổi Trẻ Đáng Giá Bao Nhiêu', N'Cuốn sách truyền cảm hứng và định hướng phong cách sống cho giới trẻ Việt Nam của tác giả Rosie Nguyễn.', 75000.00, 'B-TTD-007', 'tuoiTreDangGiaBaoNhieu.webp', 1),
+(8, 5, 2, N'Nhà Giả Kim', N'Tiểu thuyết huyền thoại về hành trình đi tìm kho báu của cậu bé chăn cừu Santiago, tác phẩm dịch tiếng Việt.', 89000.00, 'B-NGK-008', 'nhaGiaKim.webp', 1),
+(9, 4, 1, N'Cho Tôi Xin Một Vé Đi Tuổi Thơ', N'Truyện dài nổi tiếng của Nguyễn Nhật Ánh, đưa người đọc trở về thời niên thiếu hồn nhiên, tươi đẹp.', 85000.00, 'B-VT-009', 'choToiXinMotVeDiTuoiTho.webp', 1),
+(10, 5, 1, N'Đời Ngắn Đừng Ngủ Dài', N'Tập hợp những lời khuyên, bài học cuộc sống sâu sắc và thực tế từ Robin Sharma giúp phát huy tiềm năng cá nhân.', 70000.00, 'B-DND-010', 'doiNganDungNguDai.webp', 1),
+(11, 6, 2, N'The Alchemist (English Edition)', N'The masterpiece novel by Paulo Coelho in original English translation.', 180000.00, 'B-AL-011', 'theAlchemist(English Edition).webp', 1),
+(12, 6, 2, N'Harry Potter and the Philosopher''s Stone', N'The first book in J.K. Rowling''s legendary wizarding series in English.', 295000.00, 'B-HP1-012', N'Harry Potter and the Philosopher''s Stone.webp', 1),
+(13, 6, 2, N'To Kill a Mockingbird', N'Harper Lee''s Pulitzer Prize-winning classic novel of warmth and humor.', 220000.00, 'B-TKM-013', 'To Kill a Mockingbird.webp', 1),
+(14, 7, 3, N'Sổ Tay Kẻ Sọc Faber-Castell A5', N'Sổ tay ghi chép kẻ sọc ngang thương hiệu Faber-Castell chất lượng cao.', 25000.00, 'S-FC-014', N'Sổ Tay Kẻ Sọc Faber-Castell A5.webp', 1),
+(15, 7, 3, N'Bút Màu Sáp Faber-Castell 12 Màu', N'Bút màu sáp trơn mượt, an toàn, không chứa chất độc hại cho trẻ em.', 42000.00, 'S-FC-015', N'Bút Màu Sáp Faber-Castell 12 Màu.webp', 1),
+(16, 7, 3, N'Gôm Tẩy Faber-Castell Dust-Free', N'Gôm tẩy bút chì cao cấp, tẩy sạch bụi và không làm rách giấy.', 12000.00, 'S-FC-016', N'Gôm Tẩy Faber-Castell Dust-Free.webp', 1);
 SET IDENTITY_INSERT [dbo].[Products] OFF;
 GO
 
