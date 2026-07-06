@@ -207,4 +207,31 @@ public class UserDAO extends BaseDAO {
         }
         return false; // Trả về false nếu sai mật khẩu cũ hoặc lỗi kết nối
     }
+
+    public User getUserByEmail(String email) {
+        String sql = "SELECT u.Id, u.RoleId, r.Name AS RoleName, u.Username, u.Email, u.IsActive, u.AuthProvider FROM Users u JOIN Roles r ON u.RoleId = r.Id WHERE u.Email = ? AND u.IsActive = 1";
+
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, email);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    User user = new User();
+                    user.setId(rs.getInt("Id"));
+                    user.setRoleId(rs.getInt("RoleId"));
+                    user.setRoleName(rs.getString("RoleName"));
+                    user.setUsername(rs.getString("Username"));
+                    user.setEmail(rs.getString("Email"));
+                    user.setIsActive(rs.getBoolean("IsActive"));
+                    user.setAuthProvider(rs.getString("AuthProvider"));
+                    return user;
+
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
 }
