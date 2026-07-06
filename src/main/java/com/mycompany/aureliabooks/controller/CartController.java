@@ -130,6 +130,9 @@ public class CartController extends HttpServlet {
                     // Redirect back to the cart view to refresh the data
                     response.sendRedirect(request.getContextPath() + "/cart");
                 }
+            } catch (NumberFormatException e) {
+                request.setAttribute("errorMessage", "Định dạng ID hoặc số lượng không hợp lệ.");
+                request.getRequestDispatcher("/WEB-INF/error/400.jsp").forward(request, response);
             } catch (Exception e) {
                 e.printStackTrace();
                 request.setAttribute("errorMessage", "Đã xảy ra lỗi trong quá trình xử lý giỏ hàng: " + e.getMessage());
