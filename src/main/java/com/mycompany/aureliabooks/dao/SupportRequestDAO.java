@@ -15,11 +15,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Data Access Object (DA0) for Support Request persistence and management.
+ * Data Access Object (DAO) for Support Request persistence and management.
  * Handles all database operations related to customer support tickets,
  * including retrieval, updates, and creation
  *
- * DESIGN HIGHLIGHTS: - Exception Propagation: Throes SQLException to the
+ * DESIGN HIGHLIGHTS: - Exception Propagation: Throws SQLException to the
  * Controller layer. - SQL Injection Prevention: User Parameterized Queries
  * (PreparedStatement). - Code Reusability: Utilizes an centralized ResultSet
  * mapping utility.
@@ -56,7 +56,7 @@ public class SupportRequestDAO extends BaseDAO {
     }
 
     /**
-     * Insert a new support request into the database. The default statys for a
+     * Insert a new support request into the database. The default status for a
      * newly created request is 'OPEN'.
      *
      * @param request the SupportRequest object containing ticket details
@@ -78,9 +78,8 @@ public class SupportRequestDAO extends BaseDAO {
             return rowsAffected > 0;
 
         } catch (ClassNotFoundException e) {
-            LOGGER.log(Level.SEVERE, "Database driver not found while inserting support request", e
-            );
-            throw new SQLException("Database drive missing in classpath", e);
+            LOGGER.log(Level.SEVERE, "Database driver not found while inserting support request", e);
+            throw new SQLException("Database driver missing in classpath", e);
         }
     }
 
@@ -108,23 +107,38 @@ public class SupportRequestDAO extends BaseDAO {
             }
 
         } catch (ClassNotFoundException e) {
-            LOGGER.log(Level.SEVERE, "Database driver not found while retrieving user support requests", e
-            );
-            throw new SQLException("Database drive missing in classpath", e);
+            LOGGER.log(Level.SEVERE, "Database driver not found while retrieving user support requests", e);
+            throw new SQLException("Database driver missing in classpath", e);
         }
 
         return list;
     }
 
     /**
-     * Retriveves all support request in the system.
+     * Retrieves all support requests in the system.
      *
      * @return a list of all SupportRequest objects
      * @throws SQLException if a database access error occurs
      */
-    public List<SupportRequest> getAllSupportRequests() {
-        // Empty skeleton for Sprint 3 (To be implemented by Dev 2)
-        return null;
+    public List<SupportRequest> getAllSupportRequests() throws SQLException {
+        List<SupportRequest> list = new ArrayList<>();
+        String sql = "SELECT * FROM SupportRequests ORDER BY CreatedAt DESC";
+
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            
+            try (ResultSet rs = ps.executeQuery()) {
+                // Iterate through the result set and map data to objects
+                while (rs.next()) {
+                    list.add(mapResultSetToSupportRequest(rs));
+                }
+            }
+
+        } catch (ClassNotFoundException e) {
+            LOGGER.log(Level.SEVERE, "Database driver not found while retrieving all support requests", e);
+            throw new SQLException("Database driver missing in classpath", e);
+        }
+
+        return list;
     }
 
     /**
@@ -156,16 +170,31 @@ public class SupportRequestDAO extends BaseDAO {
     }
 
     /**
-     * Updates a support request with a reply message and assigns the handler.
+     * Updates a support request with a reply message, status and assigns the handler.
      *
      * @param id the unique identifier of the support request
      * @param replyMessage the response message from the admin/staff
+     * @param status the new status of the ticket
      * @param handledByUserId the ID of the admin/staff handling the request
-     * @return true if the reply was successfully update, false otherwise
-     * @throws SQLException if an database error occurs or transaction fails
+     * @return true if the reply was successfully updated, false otherwise
+     * @throws SQLException if a database error occurs or transaction fails
      */
-    public boolean replySupportRequest(int id, String replyMessage, int handledByUserId) {
-        // Empty skeleton for Sprint 3 (To be implemented by Dev 2)
-        return false;
+    public boolean replySupportRequest(int id, String replyMessage, String status, int handledByUserId) throws SQLException {
+        String sql = "UPDATE SupportRequests SET ReplyMessage = ?, Status = ?, HandledByUserId = ? WHERE Id = ?";
+
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            
+            ps.setString(1, replyMessage);
+            ps.setString(2, status);
+            ps.setInt(3, handledByUserId);
+            ps.setInt(4, id);
+
+            int rowsAffected = ps.executeUpdate();
+            return rowsAffected > 0;
+
+        } catch (ClassNotFoundException e) {
+            LOGGER.log(Level.SEVERE, "Database driver not found while replying to support request", e);
+            throw new SQLException("Database driver missing in classpath", e);
+        }
     }
 }
