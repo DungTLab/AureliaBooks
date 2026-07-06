@@ -43,6 +43,9 @@ public class ProductController extends HttpServlet {
                 
                 request.setAttribute("product", product);
                 request.getRequestDispatcher("/WEB-INF/view/book-detail.jsp").forward(request, response);
+            } catch (NumberFormatException e) {
+                request.setAttribute("errorMessage", "Định dạng ID sản phẩm không hợp lệ.");
+                request.getRequestDispatcher("/WEB-INF/error/400.jsp").forward(request, response);
             } catch (Exception e) {
                 e.printStackTrace();
                 request.setAttribute("errorMessage", "Đã xảy ra lỗi khi lấy thông tin sản phẩm: " + e.getMessage());
