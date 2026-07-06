@@ -44,33 +44,39 @@ public class CartController extends HttpServlet {
             // Default to 'view' action if no specific action parameter is provided
             if (action == null || action.equals("view")) {
 
-                CartDAO cartDAO = new CartDAO();
-                // Fetch the user's cart items from the database
-                List<CartItem> cartItems = cartDAO.findAll(loggedUser.getId());
-                // Calculate the total price of all items in the cart
-                BigDecimal cartTotal = BigDecimal.ZERO;
-                for (CartItem item : cartItems) {
-                    BigDecimal itemTotal = item.getProduct().getPrice().multiply(new BigDecimal(item.getQuantity()));
-                    cartTotal = cartTotal.add(itemTotal);
+                try {
+                    CartDAO cartDAO = new CartDAO();
+                    // Fetch the user's cart items from the database
+                    List<CartItem> cartItems = cartDAO.findAll(loggedUser.getId());
+                    // Calculate the total price of all items in the cart
+                    BigDecimal cartTotal = BigDecimal.ZERO;
+                    for (CartItem item : cartItems) {
+                        BigDecimal itemTotal = item.getProduct().getPrice().multiply(new BigDecimal(item.getQuantity()));
+                        cartTotal = cartTotal.add(itemTotal);
+                    }
+
+                    // Retrieve the user's phone number and address to pre-fill the checkout form
+                    String userInfoStr = cartDAO.getUserInfo(loggedUser.getId());
+                    String defaultPhone = "";
+                    String defaultAddress = "";
+                    if (userInfoStr != null && userInfoStr.contains("/")) {
+                        String[] parts = userInfoStr.split("/", 2);
+                        defaultPhone = parts.length > 0 ? parts[0] : "";
+                        defaultAddress = parts.length > 1 ? parts[1] : "";
+                    }
+
+                    request.setAttribute("cartItems", cartItems);
+                    request.setAttribute("cartTotal", cartTotal);
+                    request.setAttribute("defaultPhone", defaultPhone);
+                    request.setAttribute("defaultAddress", defaultAddress);
+
+                    // Forward the attributes to the JSP view for rendering
+                    request.getRequestDispatcher("/WEB-INF/cart/cart.jsp").forward(request, response);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    request.setAttribute("errorMessage", "Đã xảy ra lỗi khi tải giỏ hàng: " + e.getMessage());
+                    request.getRequestDispatcher("/WEB-INF/error/500.jsp").forward(request, response);
                 }
-
-                // Retrieve the user's phone number and address to pre-fill the checkout form
-                String userInfoStr = cartDAO.getUserInfo(loggedUser.getId());
-                String defaultPhone = "";
-                String defaultAddress = "";
-                if (userInfoStr != null && userInfoStr.contains("/")) {
-                    String[] parts = userInfoStr.split("/", 2);
-                    defaultPhone = parts.length > 0 ? parts[0] : "";
-                    defaultAddress = parts.length > 1 ? parts[1] : "";
-                }
-
-                request.setAttribute("cartItems", cartItems);
-                request.setAttribute("cartTotal", cartTotal);
-                request.setAttribute("defaultPhone", defaultPhone);
-                request.setAttribute("defaultAddress", defaultAddress);
-
-                // Forward the attributes to the JSP view for rendering
-                request.getRequestDispatcher("/WEB-INF/cart/cart.jsp").forward(request, response);
             } else {
                 // Route any GET requests with modification actions (e.g., from link tags) to doPost
                 doPost(request, response);
@@ -91,37 +97,43 @@ public class CartController extends HttpServlet {
             // Protect POST actions from unauthenticated access
             response.sendRedirect(request.getContextPath() + "/auth?action=login");
         } else {
-            if ("add".equals(action)) {
-                // Handle adding a new product to the cart
-                int productId = Integer.parseInt(request.getParameter("productId"));
+            try {
+                if ("add".equals(action)) {
+                    // Handle adding a new product to the cart
+                    int productId = Integer.parseInt(request.getParameter("productId"));
 
-                // Handle quantity parameter, defaulting to 1 if it's missing (e.g., when called from an <a> tag)
-                String quantityStr = request.getParameter("quantity");
-                int quantity = (quantityStr != null && !quantityStr.isEmpty()) ? Integer.parseInt(quantityStr) : 1;
+                    // Handle quantity parameter, defaulting to 1 if it's missing (e.g., when called from an <a> tag)
+                    String quantityStr = request.getParameter("quantity");
+                    int quantity = (quantityStr != null && !quantityStr.isEmpty()) ? Integer.parseInt(quantityStr) : 1;
 
-                int cartId = cartDAO.getCartIdByUserId(loggedUser.getId());
-                if (cartId != -1) {
-                    cartDAO.addItem(cartId, productId, quantity);
+                    int cartId = cartDAO.getCartIdByUserId(loggedUser.getId());
+                    if (cartId != -1) {
+                        cartDAO.addItem(cartId, productId, quantity);
+                    }
+
+                    // Redirect back to the cart view to reflect the changes
+                    response.sendRedirect(request.getContextPath() + "/cart");
+
+                } else if ("update".equals(action)) {
+                    // Handle updating the quantity of a specific cart item
+                    int itemId = Integer.parseInt(request.getParameter("itemId"));
+                    int quantity = Integer.parseInt(request.getParameter("quantity"));
+                    cartDAO.updateQuantity(itemId, quantity);
+
+                    // Redirect back to the cart view to refresh the data
+                    response.sendRedirect(request.getContextPath() + "/cart");
+                } else if ("delete".equals(action)) {
+                    // Handle removing an item entirely from the cart
+                    int itemId = Integer.parseInt(request.getParameter("itemId"));
+                    cartDAO.deleteItem(itemId);
+
+                    // Redirect back to the cart view to refresh the data
+                    response.sendRedirect(request.getContextPath() + "/cart");
                 }
-
-                // Redirect back to the cart view to reflect the changes
-                response.sendRedirect(request.getContextPath() + "/cart");
-
-            } else if (action.equals("update")) {
-                // Handle updating the quantity of a specific cart item
-                int itemId = Integer.parseInt(request.getParameter("itemId"));
-                int quantity = Integer.parseInt(request.getParameter("quantity"));
-                cartDAO.updateQuantity(itemId, quantity);
-
-                // Redirect back to the cart view to refresh the data
-                response.sendRedirect(request.getContextPath() + "/cart");
-            } else if (action.equals("delete")) {
-                // Handle removing an item entirely from the cart
-                int itemId = Integer.parseInt(request.getParameter("itemId"));
-                cartDAO.deleteItem(itemId);
-
-                // Redirect back to the cart view to refresh the data
-                response.sendRedirect(request.getContextPath() + "/cart");
+            } catch (Exception e) {
+                e.printStackTrace();
+                request.setAttribute("errorMessage", "Đã xảy ra lỗi trong quá trình xử lý giỏ hàng: " + e.getMessage());
+                request.getRequestDispatcher("/WEB-INF/error/500.jsp").forward(request, response);
             }
         }
     }

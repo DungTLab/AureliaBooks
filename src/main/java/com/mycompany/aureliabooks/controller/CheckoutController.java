@@ -49,32 +49,38 @@ public class CheckoutController extends HttpServlet {
             return;
         }
         
-        // Extract shipping details submitted via the checkout form
-        String shippingAddress = request.getParameter("shippingAddress");
-        String contactPhone = request.getParameter("contactPhone");
+        try {
+            // Extract shipping details submitted via the checkout form
+            String shippingAddress = request.getParameter("shippingAddress");
+            String contactPhone = request.getParameter("contactPhone");
 
-        CartDAO cartDAO = new CartDAO();
-        List<CartItem> cartItems = cartDAO.findAll(loggedUser.getId());
-        
-        // Calculate the total amount for the order
-        BigDecimal totalAmount = BigDecimal.ZERO;
-        for (CartItem item : cartItems) {
-            BigDecimal itemTotal = item.getProduct().getPrice().multiply(new BigDecimal(item.getQuantity()));
-            totalAmount = totalAmount.add(itemTotal);
-        }
-
-        // Only proceed if the cart is not empty and has a positive total
-        if (totalAmount.compareTo(BigDecimal.ZERO) > 0) {
-            // Attempt to create the order and clear the cart in a single transaction
-            boolean success = cartDAO.createOrder(loggedUser.getId(), shippingAddress, contactPhone, totalAmount);
-            if (success) {
-                // Redirect back to the cart with a success indicator
-                response.sendRedirect(request.getContextPath() + "/cart?checkout=success");
-                return;
+            CartDAO cartDAO = new CartDAO();
+            List<CartItem> cartItems = cartDAO.findAll(loggedUser.getId());
+            
+            // Calculate the total amount for the order
+            BigDecimal totalAmount = BigDecimal.ZERO;
+            for (CartItem item : cartItems) {
+                BigDecimal itemTotal = item.getProduct().getPrice().multiply(new BigDecimal(item.getQuantity()));
+                totalAmount = totalAmount.add(itemTotal);
             }
+
+            // Only proceed if the cart is not empty and has a positive total
+            if (totalAmount.compareTo(BigDecimal.ZERO) > 0) {
+                // Attempt to create the order and clear the cart in a single transaction
+                boolean success = cartDAO.createOrder(loggedUser.getId(), shippingAddress, contactPhone, totalAmount);
+                if (success) {
+                    // Redirect back to the cart with a success indicator
+                    response.sendRedirect(request.getContextPath() + "/cart?checkout=success");
+                    return;
+                }
+            }
+            
+            // Redirect back to the cart with a failure indicator if order creation fails or cart is empty
+            response.sendRedirect(request.getContextPath() + "/cart?checkout=failed");
+        } catch (Exception e) {
+            e.printStackTrace();
+            request.setAttribute("errorMessage", "Đã xảy ra lỗi trong quá trình thanh toán: " + e.getMessage());
+            request.getRequestDispatcher("/WEB-INF/error/500.jsp").forward(request, response);
         }
-        
-        // Redirect back to the cart with a failure indicator if order creation fails or cart is empty
-        response.sendRedirect(request.getContextPath() + "/cart?checkout=failed");
     }
 }

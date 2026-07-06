@@ -61,66 +61,78 @@ public class AuthController extends HttpServlet {
 
     private void handlelogin(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        String username = request.getParameter("username").trim();
-        String password = request.getParameter("password");
-        if (username.isEmpty() || password.isEmpty()) {
-            request.setAttribute("error", "Tài khoản và mật khẩu không được để trống!");
-            request.getRequestDispatcher("/WEB-INF/auth/login.jsp").forward(request, response);
-            return;
-        }
+        try {
+            String username = request.getParameter("username").trim();
+            String password = request.getParameter("password");
+            if (username.isEmpty() || password.isEmpty()) {
+                request.setAttribute("error", "Tài khoản và mật khẩu không được để trống!");
+                request.getRequestDispatcher("/WEB-INF/auth/login.jsp").forward(request, response);
+                return;
+            }
 
-        User loggedInUser = userDAO.checkLogin(username, password);
-        if (loggedInUser != null) {
-            HttpSession session = request.getSession(true);
-            session.setAttribute("user", loggedInUser);
-            // Chuyển hướng về trang chủ
-            response.sendRedirect(request.getContextPath() + "/");
-        } else {
-            // Đăng nhập thất bại -> quay lại trang login kèm thông báo lỗi
-            request.setAttribute("error", "Tài khoản hoặc mật khẩu không chính xác!");
-            request.getRequestDispatcher("/WEB-INF/auth/login.jsp").forward(request, response);
+            User loggedInUser = userDAO.checkLogin(username, password);
+            if (loggedInUser != null) {
+                HttpSession session = request.getSession(true);
+                session.setAttribute("user", loggedInUser);
+                // Chuyển hướng về trang chủ
+                response.sendRedirect(request.getContextPath() + "/");
+            } else {
+                // Đăng nhập thất bại -> quay lại trang login kèm thông báo lỗi
+                request.setAttribute("error", "Tài khoản hoặc mật khẩu không chính xác!");
+                request.getRequestDispatcher("/WEB-INF/auth/login.jsp").forward(request, response);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            request.setAttribute("errorMessage", "Lỗi hệ thống trong quá trình đăng nhập: " + e.getMessage());
+            request.getRequestDispatcher("/WEB-INF/error/500.jsp").forward(request, response);
         }
     }
 
     private void handleRegister(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        String username = request.getParameter("username").trim();
-        String email = request.getParameter("email").trim();
-        String fullName = request.getParameter("fullName").trim();
-        String password = request.getParameter("password").trim();
+        try {
+            String username = request.getParameter("username").trim();
+            String email = request.getParameter("email").trim();
+            String fullName = request.getParameter("fullName").trim();
+            String password = request.getParameter("password").trim();
 
-        if (username.isEmpty() || email.isEmpty() || fullName.isEmpty() || password.isEmpty()) {
-            request.setAttribute("error", "Vui lòng nhập đầy đủ các trường thông tin");
-            request.getRequestDispatcher("/WEB-INF/auth/register.jsp").forward(request, response);
-            return;
-        }
+            if (username.isEmpty() || email.isEmpty() || fullName.isEmpty() || password.isEmpty()) {
+                request.setAttribute("error", "Vui lòng nhập đầy đủ các trường thông tin");
+                request.getRequestDispatcher("/WEB-INF/auth/register.jsp").forward(request, response);
+                return;
+            }
 
-        if (password.length() < 6) {
-            request.setAttribute("error", "Mật khẩu phải có độ dài từ 6 ký tự trở lên!");
-            request.getRequestDispatcher("/WEB-INF/auth/register.jsp").forward(request, response);
-            return;
-        }
+            if (password.length() < 6) {
+                request.setAttribute("error", "Mật khẩu phải có độ dài từ 6 ký tự trở lên!");
+                request.getRequestDispatcher("/WEB-INF/auth/register.jsp").forward(request, response);
+                return;
+            }
 
-        String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
+            String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
 
-        User user = new User();
-        user.setUsername(username);
-        user.setEmail(email);
-        user.setRoleId(3);
-        user.setPasswordHash(hashedPassword);
-        user.setAuthProvider("local");
+            User user = new User();
+            user.setUsername(username);
+            user.setEmail(email);
+            user.setRoleId(3);
+            user.setPasswordHash(hashedPassword);
+            user.setAuthProvider("local");
 
-        UserProfile profile = new UserProfile();
-        profile.setFullName(fullName);
+            UserProfile profile = new UserProfile();
+            profile.setFullName(fullName);
 
-        boolean isSuccess = userDAO.registerUser(user, profile);
+            boolean isSuccess = userDAO.registerUser(user, profile);
 
-        if (isSuccess) {
-            request.setAttribute("success", "Đăng ký tài khoản thành công! Vui lòng đăng nhập.");
-            request.getRequestDispatcher("/WEB-INF/auth/login.jsp").forward(request, response);
-        } else {
-            request.setAttribute("error", "Đăng ký thất bại! Tài khoản hoặc Email có thể đã tồn tại.");
-            request.getRequestDispatcher("/WEB-INF/auth/register.jsp").forward(request, response);
+            if (isSuccess) {
+                request.setAttribute("success", "Đăng ký tài khoản thành công! Vui lòng đăng nhập.");
+                request.getRequestDispatcher("/WEB-INF/auth/login.jsp").forward(request, response);
+            } else {
+                request.setAttribute("error", "Đăng ký thất bại! Tài khoản hoặc Email có thể đã tồn tại.");
+                request.getRequestDispatcher("/WEB-INF/auth/register.jsp").forward(request, response);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            request.setAttribute("errorMessage", "Lỗi hệ thống trong quá trình đăng ký: " + e.getMessage());
+            request.getRequestDispatcher("/WEB-INF/error/500.jsp").forward(request, response);
         }
     }
 }

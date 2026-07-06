@@ -56,12 +56,18 @@ public class ProfileController extends HttpServlet {
         }
         // -------------------------------------------------------------
 
-        // 2. Lấy thông tin UserProfile mới nhất từ DB
-        UserProfile profile = userDAO.getUserProfile(loggedInUser.getId());
-        session.setAttribute("userProfile", profile);
+        try {
+            // 2. Lấy thông tin UserProfile mới nhất từ DB
+            UserProfile profile = userDAO.getUserProfile(loggedInUser.getId());
+            session.setAttribute("userProfile", profile);
 
-        // 3. Hiển thị trang profile.jsp
-        request.getRequestDispatcher("/WEB-INF/user/profile.jsp").forward(request, response);
+            // 3. Hiển thị trang profile.jsp
+            request.getRequestDispatcher("/WEB-INF/user/profile.jsp").forward(request, response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            request.setAttribute("errorMessage", "Lỗi tải thông tin hồ sơ: " + e.getMessage());
+            request.getRequestDispatcher("/WEB-INF/error/500.jsp").forward(request, response);
+        }
     }
 
     @Override
@@ -86,34 +92,40 @@ public class ProfileController extends HttpServlet {
             return;
         }
 
-        String fullName = request.getParameter("fullName").trim();
-        String phone = request.getParameter("phone").trim();
-        String address = request.getParameter("address").trim();
+        try {
+            String fullName = request.getParameter("fullName").trim();
+            String phone = request.getParameter("phone").trim();
+            String address = request.getParameter("address").trim();
 
-        if (fullName.isEmpty()) {
-            session.setAttribute("profileError", "Họ và tên không được để trống!");
+            if (fullName.isEmpty()) {
+                session.setAttribute("profileError", "Họ và tên không được để trống!");
+                response.sendRedirect(request.getContextPath() + "/profile");
+                return;
+            }
+
+            UserProfile newProfile = userDAO.getUserProfile(loggedInUser.getId());
+            if (newProfile == null) {
+                newProfile = new UserProfile();
+                newProfile.setUserId(loggedInUser.getId());
+            }
+            newProfile.setFullName(fullName);
+            newProfile.setPhone(phone);
+            newProfile.setAddress(address);
+
+            boolean isSuccess = userDAO.updateUserProfile(newProfile);
+
+            if (isSuccess) {
+                session.setAttribute("profileSuccess", "Cập nhật thông tin cá nhân thành công!");
+            } else {
+                session.setAttribute("profileError", "Cập nhật thất bại. Vui lòng thử lại!");
+            }
+
             response.sendRedirect(request.getContextPath() + "/profile");
-            return;
+        } catch (Exception e) {
+            e.printStackTrace();
+            request.setAttribute("errorMessage", "Lỗi khi cập nhật hồ sơ: " + e.getMessage());
+            request.getRequestDispatcher("/WEB-INF/error/500.jsp").forward(request, response);
         }
-
-        UserProfile newProfile = userDAO.getUserProfile(loggedInUser.getId());
-        if (newProfile == null) {
-            newProfile = new UserProfile();
-            newProfile.setUserId(loggedInUser.getId());
-        }
-        newProfile.setFullName(fullName);
-        newProfile.setPhone(phone);
-        newProfile.setAddress(address);
-
-        boolean isSuccess = userDAO.updateUserProfile(newProfile);
-
-        if (isSuccess) {
-            session.setAttribute("profileSuccess", "Cập nhật thông tin cá nhân thành công!");
-        } else {
-            session.setAttribute("profileError", "Cập nhật thất bại. Vui lòng thử lại!");
-        }
-
-        response.sendRedirect(request.getContextPath() + "/profile");
     }
 
     private void handleChangePassword(HttpServletRequest request, HttpServletResponse response)
@@ -127,29 +139,35 @@ public class ProfileController extends HttpServlet {
             return;
         }
 
-        String oldPassword = request.getParameter("oldPassword");
-        String newPassword = request.getParameter("newPassword");
+        try {
+            String oldPassword = request.getParameter("oldPassword");
+            String newPassword = request.getParameter("newPassword");
 
-        if (oldPassword.isEmpty() || newPassword.isEmpty()) {
-            session.setAttribute("passwordError", "Vui lòng nhập đầy đủ mật khẩu cũ và mới!");
+            if (oldPassword.isEmpty() || newPassword.isEmpty()) {
+                session.setAttribute("passwordError", "Vui lòng nhập đầy đủ mật khẩu cũ và mới!");
+                response.sendRedirect(request.getContextPath() + "/profile");
+                return;
+            }
+
+            if (newPassword.length() < 6) {
+                session.setAttribute("passwordError", "Mật khẩu mới phải từ 6 ký tự trở lên!");
+                response.sendRedirect(request.getContextPath() + "/profile");
+                return;
+            }
+
+            boolean isSuccess = userDAO.changePassword(loggedInUser.getId(), oldPassword, newPassword);
+
+            if (isSuccess) {
+                session.setAttribute("passwordSuccess", "Đổi mật khẩu thành công!");
+            } else {
+                session.setAttribute("passwordError", "Đổi mật khẩu thất bại. Mật khẩu cũ không chính xác!");
+            }
+
             response.sendRedirect(request.getContextPath() + "/profile");
-            return;
+        } catch (Exception e) {
+            e.printStackTrace();
+            request.setAttribute("errorMessage", "Lỗi khi đổi mật khẩu: " + e.getMessage());
+            request.getRequestDispatcher("/WEB-INF/error/500.jsp").forward(request, response);
         }
-
-        if (newPassword.length() < 6) {
-            session.setAttribute("passwordError", "Mật khẩu mới phải từ 6 ký tự trở lên!");
-            response.sendRedirect(request.getContextPath() + "/profile");
-            return;
-        }
-
-        boolean isSuccess = userDAO.changePassword(loggedInUser.getId(), oldPassword, newPassword);
-
-        if (isSuccess) {
-            session.setAttribute("passwordSuccess", "Đổi mật khẩu thành công!");
-        } else {
-            session.setAttribute("passwordError", "Đổi mật khẩu thất bại. Mật khẩu cũ không chính xác!");
-        }
-
-        response.sendRedirect(request.getContextPath() + "/profile");
     }
 }
