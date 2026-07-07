@@ -9,6 +9,7 @@ import com.mycompany.aureliabooks.model.Product;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 import java.math.BigDecimal;
@@ -185,10 +186,12 @@ public class CartDAO extends BaseDAO {
      * @param shippingAddress The delivery address.
      * @param contactPhone    The contact phone number.
      * @param totalAmount     The total calculated price of the order.
+     * @param discountId      The applied discount ID, or null if no voucher is used.
      * @return true if the order is successfully created and cart cleared, false otherwise.
      */
-    public boolean createOrder(int userId, String shippingAddress, String contactPhone, BigDecimal totalAmount) {
-        String insertOrderSql = "INSERT INTO Orders (UserId, TotalAmount, Status, ShippingAddress, ContactPhone) VALUES (?, ?, 'PENDING', ?, ?)";
+    public boolean createOrder(int userId, String shippingAddress, String contactPhone,
+            BigDecimal totalAmount, Integer discountId) {
+        String insertOrderSql = "INSERT INTO Orders (UserId, DiscountId, TotalAmount, Status, ShippingAddress, ContactPhone) VALUES (?, ?, ?, 'PENDING', ?, ?)";
         String insertOrderItemSql = "INSERT INTO OrderItems (OrderId, ProductId, Quantity, UnitPrice, SubTotal) "
                 + "SELECT ?, ci.ProductId, ci.Quantity, p.Price, (ci.Quantity * p.Price) "
                 + "FROM CartItems ci JOIN Products p ON ci.ProductId = p.Id "
@@ -202,15 +205,21 @@ public class CartDAO extends BaseDAO {
 
             int cartId = getCartIdByUserId(userId);
             if (cartId == -1) {
+                conn.rollback();
                 return false;
             }
 
             int orderId = -1;
             try (PreparedStatement psOrder = conn.prepareStatement(insertOrderSql, java.sql.Statement.RETURN_GENERATED_KEYS)) {
                 psOrder.setInt(1, userId);
-                psOrder.setBigDecimal(2, totalAmount);
-                psOrder.setString(3, shippingAddress);
-                psOrder.setString(4, contactPhone);
+                if (discountId == null) {
+                    psOrder.setNull(2, Types.INTEGER);
+                } else {
+                    psOrder.setInt(2, discountId);
+                }
+                psOrder.setBigDecimal(3, totalAmount);
+                psOrder.setString(4, shippingAddress);
+                psOrder.setString(5, contactPhone);
                 psOrder.executeUpdate();
 
                 try (ResultSet rs = psOrder.getGeneratedKeys()) {
