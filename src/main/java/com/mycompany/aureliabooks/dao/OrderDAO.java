@@ -1,5 +1,6 @@
 package com.mycompany.aureliabooks.dao;
 
+import com.mycompany.aureliabooks.model.CartItem;
 import com.mycompany.aureliabooks.model.Order;
 import com.mycompany.aureliabooks.model.OrderItem;
 import com.mycompany.aureliabooks.model.Product;
@@ -150,7 +151,7 @@ public class OrderDAO extends BaseDAO {
      */
     private void restoreInventory(Connection conn, int orderId) throws SQLException {
         String sqlGetItems = "SELECT ProductId, Quantity FROM OrderItems WHERE OrderId = ?";
-        String sqlUpdateProduct = "UPDATE Products SET Quantity = Quantity + ? WHERE Id = ?";
+        String sqlUpdateProduct = "UPDATE Inventory SET QuantityInStock = QuantityInStock + ? WHERE ProductId = ?";
 
         try (PreparedStatement psGetItems = conn.prepareStatement(sqlGetItems)) {
             psGetItems.setInt(1, orderId);
@@ -301,7 +302,7 @@ public class OrderDAO extends BaseDAO {
         String sqlCheckOrder = "SELECT UserId, [Status] FROM Orders WHERE Id = ?";
         String sqlUpdateOrder = "UPDATE Orders SET [Status] = 'RETURNED', ReturnReason = ? WHERE Id = ?";
         String sqlGetItems = "SELECT ProductId, Quantity FROM OrderItems WHERE OrderId = ?";
-        String sqlUpdateProduct = "UPDATE Products SET Quantity = Quantity + ? WHERE Id = ?";
+        String sqlUpdateProduct = "UPDATE Inventory SET QuantityInStock = QuantityInStock + ? WHERE ProductId = ?";
         String sqlInsertStockTrans = "INSERT INTO StockTransactions (ProductId, HandledByUserId, TransactionType, Quantity, TransactionDate) VALUES (?, ?, 'RETURN_IN', ?, CURRENT_TIMESTAMP)";
 
         Connection conn = null;
@@ -395,9 +396,105 @@ public class OrderDAO extends BaseDAO {
      * @return true if insertion succeeded, false otherwise
      * @throws SQLException if a database access error occurs
      */
-    public boolean insertOrder(Order order) throws SQLException {
-        // TODO: Implement checkout flow (Insert Order -> Insert OrderItems -> Update
-        // Inventory)
+    public boolean insertOrder(Order order, List<CartItem> checkoutItems) throws SQLException {
+        if (checkoutItems == null || checkoutItems.isEmpty()) {
+            return false;
+        }
+
+        String insertOrderSql = "INSERT INTO Orders (UserId, DiscountId, TotalAmount, Status, ShippingAddress, ContactPhone) VALUES (?, ?, ?, 'PENDING', ?, ?)";
+        String insertOrderItemSql = "INSERT INTO OrderItems (OrderId, ProductId, Quantity, UnitPrice, SubTotal) VALUES (?, ?, ?, ?, ?)";
+        String clearCartItemSql = "DELETE FROM CartItems WHERE Id = ?";
+        String deductInventorySql = "UPDATE Inventory SET QuantityInStock = QuantityInStock - ? WHERE ProductId = ?";
+        String insertStockTransSql = "INSERT INTO StockTransactions (ProductId, HandledByUserId, TransactionType, Quantity, TransactionDate) VALUES (?, ?, 'EXPORT', ?, CURRENT_TIMESTAMP)";
+
+        Connection conn = null;
+        try {
+            conn = getConnection();
+            conn.setAutoCommit(false);
+
+            int orderId = -1;
+            try (PreparedStatement psOrder = conn.prepareStatement(insertOrderSql, java.sql.Statement.RETURN_GENERATED_KEYS)) {
+                psOrder.setInt(1, order.getUserId());
+                if (order.getDiscountId() != null) {
+                    psOrder.setInt(2, order.getDiscountId());
+                } else {
+                    psOrder.setNull(2, java.sql.Types.INTEGER);
+                }
+                psOrder.setBigDecimal(3, order.getTotalAmount());
+                psOrder.setString(4, order.getShippingAddress());
+                psOrder.setString(5, order.getContactPhone());
+                psOrder.executeUpdate();
+
+                try (ResultSet rs = psOrder.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        orderId = rs.getInt(1);
+                    }
+                }
+            }
+
+            if (orderId == -1) {
+                conn.rollback();
+                return false;
+            }
+
+            try (PreparedStatement psItems = conn.prepareStatement(insertOrderItemSql);
+                 PreparedStatement psClear = conn.prepareStatement(clearCartItemSql);
+                 PreparedStatement psDeduct = conn.prepareStatement(deductInventorySql);
+                 PreparedStatement psTrans = conn.prepareStatement(insertStockTransSql)) {
+                
+                for (CartItem item : checkoutItems) {
+                    // Insert into OrderItems
+                    psItems.setInt(1, orderId);
+                    psItems.setInt(2, item.getProductId());
+                    psItems.setInt(3, item.getQuantity());
+                    psItems.setBigDecimal(4, item.getProduct().getPrice());
+                    psItems.setBigDecimal(5, item.getProduct().getPrice().multiply(new java.math.BigDecimal(item.getQuantity())));
+                    psItems.addBatch();
+
+                    // Queue delete from DB Cart if applicable
+                    if (item.getId() > 0) {
+                        psClear.setInt(1, item.getId());
+                        psClear.addBatch();
+                    }
+                    
+                    // Deduct Inventory
+                    psDeduct.setInt(1, item.getQuantity());
+                    psDeduct.setInt(2, item.getProductId());
+                    psDeduct.addBatch();
+
+                    // Log Stock Transaction
+                    psTrans.setInt(1, item.getProductId());
+                    psTrans.setInt(2, order.getUserId());
+                    psTrans.setInt(3, item.getQuantity());
+                    psTrans.addBatch();
+                }
+                psItems.executeBatch();
+                psClear.executeBatch();
+                psDeduct.executeBatch();
+                psTrans.executeBatch();
+            }
+
+            conn.commit();
+            return true;
+        } catch (Exception e) {
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+            e.printStackTrace();
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        }
         return false;
     }
 

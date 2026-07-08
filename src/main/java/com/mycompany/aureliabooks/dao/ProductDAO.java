@@ -243,6 +243,23 @@ public class ProductDAO extends BaseDAO {
 
         return null;
     }
+
+    public int getProductStock(int id) {
+        String sql = "SELECT QuantityInStock FROM [dbo].[Inventory] WHERE [ProductId] = ?";
+        try (Connection conn = this.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("QuantityInStock");
+                }
+            }
+        } catch (SQLException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return 0; // Default to 0 if not found or error
+    }
+    
     public HashMap<String, Object> getProductFullInformationById(int id) {
         HashMap<String, Object> map = new HashMap<>();
 

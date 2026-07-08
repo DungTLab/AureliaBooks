@@ -98,6 +98,11 @@
                                                     <i class="bi bi-list-ul me-2"></i>Quản lý Danh mục
                                                 </a>
                                             </li>
+                                            <li>
+                                                <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/discounts">
+                                                    <i class="bi bi-ticket-perforated me-2"></i>Quản lý Voucher
+                                                </a>
+                                            </li>
                                             <li><hr class="dropdown-divider"></li>
                                             <li>
                                                 <a class="dropdown-item text-danger fw-bold" href="${pageContext.request.contextPath}/admin/orders">
@@ -157,6 +162,11 @@
                                             <li>
                                                 <a class="dropdown-item py-2" href="${pageContext.request.contextPath}/admin/categories">
                                                     <i class="bi bi-list-ul me-2 text-secondary"></i>Quản lý Danh mục
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item py-2" href="${pageContext.request.contextPath}/admin/discounts">
+                                                    <i class="bi bi-ticket-perforated me-2 text-secondary"></i>Quản lý Voucher
                                                 </a>
                                             </li>
                                             <li>

@@ -45,29 +45,22 @@ public class CartController extends HttpServlet {
             if (action == null || action.equals("view")) {
 
                 CartDAO cartDAO = new CartDAO();
+                com.mycompany.aureliabooks.dao.ProductDAO productDAO = new com.mycompany.aureliabooks.dao.ProductDAO();
+                
                 // Fetch the user's cart items from the database
                 List<CartItem> cartItems = cartDAO.findAll(loggedUser.getId());
                 // Calculate the total price of all items in the cart
                 BigDecimal cartTotal = BigDecimal.ZERO;
+                java.util.Map<Integer, Integer> stockMap = new java.util.HashMap<>();
                 for (CartItem item : cartItems) {
                     BigDecimal itemTotal = item.getProduct().getPrice().multiply(new BigDecimal(item.getQuantity()));
                     cartTotal = cartTotal.add(itemTotal);
-                }
-
-                // Retrieve the user's phone number and address to pre-fill the checkout form
-                String userInfoStr = cartDAO.getUserInfo(loggedUser.getId());
-                String defaultPhone = "";
-                String defaultAddress = "";
-                if (userInfoStr != null && userInfoStr.contains("/")) {
-                    String[] parts = userInfoStr.split("/", 2);
-                    defaultPhone = parts.length > 0 ? parts[0] : "";
-                    defaultAddress = parts.length > 1 ? parts[1] : "";
+                    stockMap.put(item.getProductId(), productDAO.getProductStock(item.getProductId()));
                 }
 
                 request.setAttribute("cartItems", cartItems);
                 request.setAttribute("cartTotal", cartTotal);
-                request.setAttribute("defaultPhone", defaultPhone);
-                request.setAttribute("defaultAddress", defaultAddress);
+                request.setAttribute("stockMap", stockMap);
 
                 // Forward the attributes to the JSP view for rendering
                 request.getRequestDispatcher("/WEB-INF/cart/cart.jsp").forward(request, response);
