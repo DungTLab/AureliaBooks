@@ -17,7 +17,7 @@
         <%-- Navigation Bar --%>
         <nav class="navbar navbar-expand bg-white border-bottom py-2 shadow-sm flex-column">
             <div class="container flex-column flex-lg-row gap-1 gap-lg-0"> 
-                
+
                 <!-- ROW 1 (Mobile only): Logo centered -->
                 <div class="d-flex d-lg-none w-100 justify-content-center mb-2">
                     <a href="${pageContext.request.contextPath}/" class="navbar-brand mx-auto">
@@ -27,7 +27,7 @@
 
                 <!-- MAIN NAVBAR CONTENT ROW -->
                 <div class="d-flex w-100 align-items-center justify-content-between gap-2 gap-lg-4">
-                    
+
                     <!-- Desktop Logo (Visible only on lg and above) -->
                     <div class="d-none d-lg-flex align-items-center order-1">
                         <a href="${pageContext.request.contextPath}/" class="navbar-brand me-0">
@@ -76,7 +76,7 @@
                             <span class="small d-none d-xl-inline">Thông báo</span>
                         </a>
 
-                        <a href="<%= request.getContextPath() %>/cart?action=view" class="nav-link d-flex align-items-center gap-2 text-secondary py-2 text-dark">
+                        <a href="<%= request.getContextPath()%>/cart?action=view" class="nav-link d-flex align-items-center gap-2 text-secondary py-2 text-dark">
                             <i class="bi bi-cart fs-5"></i>
                             <span class="small d-none d-xl-inline">Giỏ hàng</span>
                         </a>
@@ -98,6 +98,13 @@
                                                     <i class="bi bi-list-ul me-2"></i>Quản lý Danh mục
                                                 </a>
                                             </li>
+                                            <c:if test="${sessionScope.user.roleName eq 'ADMIN'}">
+                                                <li>
+                                                    <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/reports">
+                                                        <i class="bi bi-bar-chart-line me-2"></i>Báo cáo thống kê
+                                                    </a>
+                                                </li>
+                                            </c:if>
                                             <li><hr class="dropdown-divider"></li>
                                             <li>
                                                 <a class="dropdown-item text-danger fw-bold" href="${pageContext.request.contextPath}/admin/orders">
@@ -137,7 +144,7 @@
                     <!-- Mobile Right-side Menu (Visible only below lg, styled like Fahasa with Cart and Profile Dropdown) -->
                     <div class="d-flex d-lg-none align-items-center gap-1 order-3">
                         <!-- Cart Link -->
-                        <a href="<%= request.getContextPath() %>/cart?action=view" class="nav-link text-dark p-2" title="Cart">
+                        <a href="<%= request.getContextPath()%>/cart?action=view" class="nav-link text-dark p-2" title="Cart">
                             <i class="bi bi-cart fs-4"></i>
                         </a>
 
@@ -152,13 +159,24 @@
                                         <li class="dropdown-header border-bottom pb-2 mb-1">Tài khoản: ${sessionScope.user.username}</li>
                                         <li><a class="dropdown-item py-2" href="${pageContext.request.contextPath}/profile"><i class="bi bi-person me-2 text-secondary"></i>Hồ sơ cá nhân</a></li>
                                         <li><a class="dropdown-item py-2" href="${pageContext.request.contextPath}/orders"><i class="bi bi-receipt me-2 text-secondary"></i>Đơn hàng của tôi</a></li>
-                                        
+
                                         <c:if test="${sessionScope.user.roleName eq 'ADMIN' or sessionScope.user.roleName eq 'EMPLOYEE'}">
                                             <li>
                                                 <a class="dropdown-item py-2" href="${pageContext.request.contextPath}/admin/categories">
                                                     <i class="bi bi-list-ul me-2 text-secondary"></i>Quản lý Danh mục
                                                 </a>
                                             </li>
+
+
+                                            <c:if test="${sessionScope.user.roleName eq 'ADMIN'}">
+                                                <li>
+                                                    <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/reports">
+                                                        <i class="bi bi-bar-chart-line me-2"></i>Báo cáo thống kê
+                                                    </a>
+                                                </li>
+                                            </c:if>
+
+
                                             <li>
                                                 <a class="dropdown-item text-danger fw-bold py-2" href="${pageContext.request.contextPath}/admin/orders">
                                                     <i class="bi bi-speedometer2 me-2"></i>
@@ -171,11 +189,11 @@
                                         </c:if>
                                         <li><hr class="dropdown-divider my-1"></li>
                                         <li><a class="dropdown-item py-2" href="${pageContext.request.contextPath}/auth?action=logout"><i class="bi bi-box-arrow-right me-2 text-secondary"></i>Đăng xuất</a></li>
-                                    </c:when>
-                                    <c:otherwise>
+                                        </c:when>
+                                        <c:otherwise>
                                         <li><a class="dropdown-item py-2 fw-bold" href="${pageContext.request.contextPath}/auth?action=login"><i class="bi bi-box-arrow-in-right me-2 text-secondary"></i>Đăng nhập</a></li>
-                                    </c:otherwise>
-                                </c:choose>
+                                        </c:otherwise>
+                                    </c:choose>
                                 <li><hr class="dropdown-divider my-1"></li>
                                 <li class="dropdown-header">Ngôn ngữ</li>
                                 <li><a class="dropdown-item py-1" href="#">VI - Tiếng Việt</a></li>
