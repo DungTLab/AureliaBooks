@@ -29,36 +29,42 @@ public class HomeController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        ProductDAO productDAO = new ProductDAO();
+        try {
+            ProductDAO productDAO = new ProductDAO();
 
-        // 3. Xử lý phân trang: 3 sản phẩm/trang ( hàng, mỗi hàng 1 sản phẩm)
-        int productsPerPage = 3;
-        int currentPage = 1;
-        String pageParam = request.getParameter("page");
-        if (pageParam != null && !pageParam.isEmpty()) {
-            try {
-                currentPage = Integer.parseInt(pageParam);
-                if (currentPage < 1) currentPage = 1;
-            } catch (NumberFormatException e) {
-                currentPage = 1;
+            // 3. Xử lý phân trang: 3 sản phẩm/trang ( hàng, mỗi hàng 1 sản phẩm)
+            int productsPerPage = 3;
+            int currentPage = 1;
+            String pageParam = request.getParameter("page");
+            if (pageParam != null && !pageParam.isEmpty()) {
+                try {
+                    currentPage = Integer.parseInt(pageParam);
+                    if (currentPage < 1) currentPage = 1;
+                } catch (NumberFormatException e) {
+                    currentPage = 1;
+                }
             }
+            int offset = (currentPage - 1) * productsPerPage;
+
+            // 4. Đếm tổng số sản phẩm đang bán (tất cả category) để tính số trang
+            int totalBooks = productDAO.countTopSellingProductsOfMonth();
+            int totalPages = (int) Math.ceil((double) totalBooks / productsPerPage);
+            if (totalPages < 1) totalPages = 1;
+            if (currentPage > totalPages) currentPage = totalPages;
+
+            // 5. Tải danh sách sản phẩm bán chạy nhất trong tháng (không phân biệt category)
+            List<HashMap<String, Object>> listTopSaleProducts = productDAO.getTopSellingProductsOfMonth(offset, productsPerPage);
+            request.setAttribute("listTopSaleProducts", listTopSaleProducts);
+            request.setAttribute("currentPage", currentPage);
+            request.setAttribute("totalPages", totalPages);
+
+            // Chuyển tiếp yêu cầu sang trang hiển thị index.jsp
+            request.getRequestDispatcher("/index.jsp").forward(request, response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            request.setAttribute("errorMessage", "Lỗi tải dữ liệu trang chủ: " + e.getMessage());
+            request.getRequestDispatcher("/WEB-INF/error/500.jsp").forward(request, response);
         }
-        int offset = (currentPage - 1) * productsPerPage;
-
-        // 4. Đếm tổng số sản phẩm đang bán (tất cả category) để tính số trang
-        int totalBooks = productDAO.countTopSellingProductsOfMonth();
-        int totalPages = (int) Math.ceil((double) totalBooks / productsPerPage);
-        if (totalPages < 1) totalPages = 1;
-        if (currentPage > totalPages) currentPage = totalPages;
-
-        // 5. Tải danh sách sản phẩm bán chạy nhất trong tháng (không phân biệt category)
-        List<HashMap<String, Object>> listTopSaleProducts = productDAO.getTopSellingProductsOfMonth(offset, productsPerPage);
-        request.setAttribute("listTopSaleProducts", listTopSaleProducts);
-        request.setAttribute("currentPage", currentPage);
-        request.setAttribute("totalPages", totalPages);
-
-        // Chuyển tiếp yêu cầu sang trang hiển thị index.jsp
-        request.getRequestDispatcher("/index.jsp").forward(request, response);
     }
 
     @Override

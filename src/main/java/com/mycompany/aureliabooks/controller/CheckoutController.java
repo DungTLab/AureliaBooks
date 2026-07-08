@@ -74,7 +74,8 @@ public class CheckoutController extends HttpServlet {
         
         if (appliedDiscount != null) {
             if (subTotal.compareTo(appliedDiscount.getMinOrderValue()) >= 0) {
-                BigDecimal calculatedDiscount = subTotal.multiply(appliedDiscount.getDiscountPercent()).divide(new BigDecimal("100"));
+                BigDecimal calculatedDiscount = subTotal.multiply(appliedDiscount.getDiscountPercent())
+                        .divide(new BigDecimal("100"), 2, java.math.RoundingMode.HALF_UP);
                 if (calculatedDiscount.compareTo(appliedDiscount.getMaxDiscountAmount()) > 0) {
                     discountAmount = appliedDiscount.getMaxDiscountAmount();
                 } else {
@@ -99,6 +100,13 @@ public class CheckoutController extends HttpServlet {
 
         UserDAO userDAO = new UserDAO();
         UserProfile profile = userDAO.getUserProfile(loggedUser.getId());
+
+        // Read and clear voucher error from session (Flash Attribute)
+        String sessionVoucherError = (String) session.getAttribute("voucherError");
+        if (sessionVoucherError != null) {
+            request.setAttribute("voucherError", sessionVoucherError);
+            session.removeAttribute("voucherError");
+        }
 
         request.setAttribute("checkoutItems", checkoutItems);
         request.setAttribute("subTotal", subTotal);
@@ -128,78 +136,90 @@ public class CheckoutController extends HttpServlet {
             return;
         }
 
-        String action = request.getParameter("action");
-        if ("buyNow".equals(action)) {
-            handleBuyNow(request, response, session);
-            return;
-        } else if ("update".equals(action)) {
-            handleUpdate(request, response, session);
-            return;
-        } else if ("delete".equals(action)) {
-            handleDelete(request, response, session);
-            return;
-        } else if ("applyVoucher".equals(action)) {
-            handleApplyVoucher(request, response, session);
-            return;
-        } else if ("removeVoucher".equals(action)) {
-            session.removeAttribute("appliedDiscount");
-            response.sendRedirect(request.getContextPath() + "/checkout");
-            return;
-        }
-
-        // Process Submit
-        String shippingAddress = request.getParameter("shippingAddress");
-        String contactPhone = request.getParameter("contactPhone");
-
-        List<CartItem> checkoutItems = (List<CartItem>) session.getAttribute("checkoutItems");
-        if (checkoutItems == null || checkoutItems.isEmpty()) {
-            response.sendRedirect(request.getContextPath() + "/cart");
-            return;
-        }
-
-        BigDecimal subTotal = BigDecimal.ZERO;
-        for (CartItem item : checkoutItems) {
-            BigDecimal itemTotal = item.getProduct().getPrice().multiply(new BigDecimal(item.getQuantity()));
-            subTotal = subTotal.add(itemTotal);
-        }
-
-        // Voucher logic during submit
-        Discount appliedDiscount = (Discount) session.getAttribute("appliedDiscount");
-        BigDecimal discountAmount = BigDecimal.ZERO;
-        if (appliedDiscount != null && subTotal.compareTo(appliedDiscount.getMinOrderValue()) >= 0) {
-            BigDecimal calculatedDiscount = subTotal.multiply(appliedDiscount.getDiscountPercent()).divide(new BigDecimal("100"));
-            if (calculatedDiscount.compareTo(appliedDiscount.getMaxDiscountAmount()) > 0) {
-                discountAmount = appliedDiscount.getMaxDiscountAmount();
-            } else {
-                discountAmount = calculatedDiscount;
-            }
-        } else if (appliedDiscount != null) {
-            session.removeAttribute("appliedDiscount");
-            appliedDiscount = null;
-        }
-
-        BigDecimal subTotalAfterDiscount = subTotal.subtract(discountAmount);
-        if (subTotalAfterDiscount.compareTo(BigDecimal.ZERO) < 0) {
-            subTotalAfterDiscount = BigDecimal.ZERO;
-        }
-
-        BigDecimal shippingCost = new BigDecimal("30000");
-        BigDecimal tax = subTotalAfterDiscount.multiply(new BigDecimal("0.08"));
-        BigDecimal totalAmount = subTotalAfterDiscount.add(shippingCost).add(tax);
-
-        if (totalAmount.compareTo(BigDecimal.ZERO) > 0) {
-            OrderDAO orderDAO = new OrderDAO();
-            Order order = new Order();
-            order.setUserId(loggedUser.getId());
-            order.setShippingAddress(shippingAddress);
-            order.setContactPhone(contactPhone);
-            order.setTotalAmount(totalAmount);
-            if (appliedDiscount != null) {
-                order.setDiscountId(appliedDiscount.getId());
+        try {
+            String action = request.getParameter("action");
+            if ("buyNow".equals(action)) {
+                handleBuyNow(request, response, session);
+                return;
+            } else if ("update".equals(action)) {
+                handleUpdate(request, response, session);
+                return;
+            } else if ("delete".equals(action)) {
+                handleDelete(request, response, session);
+                return;
+            } else if ("applyVoucher".equals(action)) {
+                handleApplyVoucher(request, response, session);
+                return;
+            } else if ("removeVoucher".equals(action)) {
+                session.removeAttribute("appliedDiscount");
+                response.sendRedirect(request.getContextPath() + "/checkout");
+                return;
             }
 
-            try {
-                // We need to pass checkoutItems to insertOrder to insert specific items and delete from DB Cart
+            // Process Submit Order
+            String shippingAddress = request.getParameter("shippingAddress");
+            String contactPhone = request.getParameter("contactPhone");
+
+            List<CartItem> checkoutItems = (List<CartItem>) session.getAttribute("checkoutItems");
+            if (checkoutItems == null || checkoutItems.isEmpty()) {
+                response.sendRedirect(request.getContextPath() + "/cart");
+                return;
+            }
+
+            // Validate inventory availability before inserting the order
+            ProductDAO productDAO = new ProductDAO();
+            for (CartItem item : checkoutItems) {
+                int stock = productDAO.getProductStock(item.getProductId());
+                if (item.getQuantity() > stock) {
+                    session.setAttribute("voucherError", "Không thể đặt hàng. Sản phẩm '" + item.getProduct().getTitle() + "' không đủ hàng trong kho (Hiện có: " + stock + ")");
+                    response.sendRedirect(request.getContextPath() + "/checkout");
+                    return;
+                }
+            }
+
+            BigDecimal subTotal = BigDecimal.ZERO;
+            for (CartItem item : checkoutItems) {
+                BigDecimal itemTotal = item.getProduct().getPrice().multiply(new BigDecimal(item.getQuantity()));
+                subTotal = subTotal.add(itemTotal);
+            }
+
+            // Voucher logic during submit
+            Discount appliedDiscount = (Discount) session.getAttribute("appliedDiscount");
+            BigDecimal discountAmount = BigDecimal.ZERO;
+            if (appliedDiscount != null && subTotal.compareTo(appliedDiscount.getMinOrderValue()) >= 0) {
+                BigDecimal calculatedDiscount = subTotal.multiply(appliedDiscount.getDiscountPercent())
+                        .divide(new BigDecimal("100"), 2, java.math.RoundingMode.HALF_UP);
+                if (calculatedDiscount.compareTo(appliedDiscount.getMaxDiscountAmount()) > 0) {
+                    discountAmount = appliedDiscount.getMaxDiscountAmount();
+                } else {
+                    discountAmount = calculatedDiscount;
+                }
+            } else if (appliedDiscount != null) {
+                session.removeAttribute("appliedDiscount");
+                appliedDiscount = null;
+            }
+
+            BigDecimal subTotalAfterDiscount = subTotal.subtract(discountAmount);
+            if (subTotalAfterDiscount.compareTo(BigDecimal.ZERO) < 0) {
+                subTotalAfterDiscount = BigDecimal.ZERO;
+            }
+
+            BigDecimal shippingCost = new BigDecimal("30000");
+            BigDecimal tax = subTotalAfterDiscount.multiply(new BigDecimal("0.08"));
+            BigDecimal totalAmount = subTotalAfterDiscount.add(shippingCost).add(tax);
+
+            if (totalAmount.compareTo(BigDecimal.ZERO) > 0) {
+                OrderDAO orderDAO = new OrderDAO();
+                Order order = new Order();
+                order.setUserId(loggedUser.getId());
+                order.setShippingAddress(shippingAddress);
+                order.setContactPhone(contactPhone);
+                order.setTotalAmount(totalAmount);
+                if (appliedDiscount != null) {
+                    order.setDiscountId(appliedDiscount.getId());
+                }
+
+                // Thực hiện lưu đơn hàng và xóa các item tương ứng trong DB Cart
                 boolean success = orderDAO.insertOrder(order, checkoutItems);
                 if (success) {
                     session.removeAttribute("checkoutItems");
@@ -207,12 +227,16 @@ public class CheckoutController extends HttpServlet {
                     response.sendRedirect(request.getContextPath() + "/orders?action=view");
                     return;
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
             }
-        }
 
-        response.sendRedirect(request.getContextPath() + "/cart?checkout=failed");
+            // Nếu không thành công hoặc totalAmount <= 0
+            response.sendRedirect(request.getContextPath() + "/cart?checkout=failed");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            request.setAttribute("errorMessage", "Đã xảy ra lỗi trong quá trình thanh toán: " + e.getMessage());
+            request.getRequestDispatcher("/WEB-INF/error/500.jsp").forward(request, response);
+        }
     }
 
     private void handleApplyVoucher(HttpServletRequest request, HttpServletResponse response, HttpSession session) throws IOException {

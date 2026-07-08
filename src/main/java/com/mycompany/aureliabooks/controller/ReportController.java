@@ -1,11 +1,12 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
- */
 package com.mycompany.aureliabooks.controller;
 
 import com.mycompany.aureliabooks.dao.OrderDAO;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import jakarta.servlet.ServletException;
@@ -16,8 +17,6 @@ import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Admin Statistics & Report Dashboard Controller.
- * Created like NetBeans Maven template.
- * @author DungLT
  */
 @WebServlet(name = "ReportController", urlPatterns = {"/admin/reports"})
 public class ReportController extends HttpServlet {
@@ -28,26 +27,32 @@ public class ReportController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         String type = request.getParameter("type");
+        String selectedPeriod = request.getParameter("period");
         if (type == null || type.trim().isEmpty()) {
             type = "DAY";
-        } else {
-            type = type.trim().toUpperCase();
-            if (!type.equals("DAY") && !type.equals("MONTH") && !type.equals("QUARTER")) {
-                type = "DAY";
-            }
         }
 
-        Map<String, Double> revenueData = new java.util.LinkedHashMap<>();
-        List<Map<String, Object>> bestSellingData = new java.util.ArrayList<>();
+        Map<String, Double> revenueData = new LinkedHashMap<>();
+        Map<String, Object> revenueSummary = createEmptyRevenueSummary();
+        List<Map<String, Object>> bestSellingData = new ArrayList<>();
+
         try {
             revenueData = orderDAO.getRevenueReport(type);
-            bestSellingData = orderDAO.getBestSellingReport(type);
-        } catch (java.sql.SQLException e) {
+            revenueSummary = orderDAO.getRevenueSummary();
+            if ((selectedPeriod == null || selectedPeriod.trim().isEmpty()) && !revenueData.isEmpty()) {
+                selectedPeriod = revenueData.keySet().iterator().next();
+            }
+            bestSellingData = orderDAO.getBestSellingReport(type, selectedPeriod);
+        } catch (SQLException e) {
             e.printStackTrace();
-            request.setAttribute("error", "Lỗi truy xuất báo cáo: " + e.getMessage());
+            request.setAttribute("errorMessage", "Lỗi truy xuất báo cáo: " + e.getMessage());
+            request.getRequestDispatcher("/WEB-INF/error/500.jsp").forward(request, response);
+            return;
         }
 
         request.setAttribute("reportType", type);
+        request.setAttribute("selectedPeriod", selectedPeriod);
+        request.setAttribute("revenueSummary", revenueSummary);
         request.setAttribute("revenueData", revenueData);
         request.setAttribute("bestSellingData", bestSellingData);
 
@@ -58,5 +63,14 @@ public class ReportController extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         doGet(request, response);
+    }
+
+    private Map<String, Object> createEmptyRevenueSummary() {
+        Map<String, Object> summary = new HashMap<>();
+        summary.put("totalRevenue", BigDecimal.ZERO);
+        summary.put("totalOrders", 0);
+        summary.put("averageOrderValue", BigDecimal.ZERO);
+        summary.put("totalSoldQuantity", 0);
+        return summary;
     }
 }
