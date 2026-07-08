@@ -45,7 +45,9 @@ public class ReportController extends HttpServlet {
             bestSellingData = orderDAO.getBestSellingReport(type, selectedPeriod);
         } catch (SQLException e) {
             e.printStackTrace();
-            request.setAttribute("error", "Lỗi truy xuất báo cáo: " + e.getMessage());
+            request.setAttribute("errorMessage", "Lỗi truy xuất báo cáo: " + e.getMessage());
+            request.getRequestDispatcher("/WEB-INF/error/500.jsp").forward(request, response);
+            return;
         }
 
         request.setAttribute("reportType", type);

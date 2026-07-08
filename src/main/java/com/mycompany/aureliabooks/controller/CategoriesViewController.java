@@ -27,23 +27,29 @@ public class CategoriesViewController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        List<Category> allCategories = categoryDAO.getAllCategories();
-        
-        List<Category> parents = new ArrayList<>();
-        Map<Integer, List<Category>> childrenMap = new HashMap<>();
+        try {
+            List<Category> allCategories = categoryDAO.getAllCategories();
+            
+            List<Category> parents = new ArrayList<>();
+            Map<Integer, List<Category>> childrenMap = new HashMap<>();
 
-        for (Category c : allCategories) {
-            if (c.getParentId() == null) {
-                parents.add(c);
-            } else {
-                childrenMap.computeIfAbsent(c.getParentId(), k -> new ArrayList<>()).add(c);
+            for (Category c : allCategories) {
+                if (c.getParentId() == null) {
+                    parents.add(c);
+                } else {
+                    childrenMap.computeIfAbsent(c.getParentId(), k -> new ArrayList<>()).add(c);
+                }
             }
+
+            request.setAttribute("parentCategories", parents);
+            request.setAttribute("childrenMap", childrenMap);
+
+            request.getRequestDispatcher("/WEB-INF/product/categories.jsp").forward(request, response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            request.setAttribute("errorMessage", "Lỗi khi tải danh sách danh mục: " + e.getMessage());
+            request.getRequestDispatcher("/WEB-INF/error/500.jsp").forward(request, response);
         }
-
-        request.setAttribute("parentCategories", parents);
-        request.setAttribute("childrenMap", childrenMap);
-
-        request.getRequestDispatcher("/WEB-INF/product/categories.jsp").forward(request, response);
     }
 
     @Override

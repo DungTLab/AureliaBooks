@@ -34,11 +34,23 @@ public class ProductController extends HttpServlet {
             try {
                 int id = Integer.parseInt(request.getParameter("id"));
                 HashMap<String, Object> product = productDAO.getProductFullInformationById(id);
+                
+                if (product == null || product.isEmpty()) {
+                    request.setAttribute("errorMessage", "Không tìm thấy thông tin cho sản phẩm này.");
+                    request.getRequestDispatcher("/WEB-INF/error/404.jsp").forward(request, response);
+                    return;
+                }
+                
                 request.setAttribute("product", product);
+                request.getRequestDispatcher("/WEB-INF/view/book-detail.jsp").forward(request, response);
+            } catch (NumberFormatException e) {
+                request.setAttribute("errorMessage", "Định dạng ID sản phẩm không hợp lệ.");
+                request.getRequestDispatcher("/WEB-INF/error/400.jsp").forward(request, response);
             } catch (Exception e) {
                 e.printStackTrace();
+                request.setAttribute("errorMessage", "Đã xảy ra lỗi khi lấy thông tin sản phẩm: " + e.getMessage());
+                request.getRequestDispatcher("/WEB-INF/error/500.jsp").forward(request, response);
             }
-            request.getRequestDispatcher("/WEB-INF/view/book-detail.jsp").forward(request, response);
         } else {
             String query = request.getParameter("query");
             String catParam = request.getParameter("categoryId");
