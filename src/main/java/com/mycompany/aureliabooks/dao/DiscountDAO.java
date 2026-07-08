@@ -21,7 +21,8 @@ public class DiscountDAO extends BaseDAO {
     public List<Discount> findAll() {
         List<Discount> list = new java.util.ArrayList<>();
         String sql = "SELECT * FROM Discounts ORDER BY Id DESC";
-        try (PreparedStatement statement = getConnection().prepareStatement(sql);
+        try (Connection conn = getConnection();
+             PreparedStatement statement = conn.prepareStatement(sql);
              ResultSet rs = statement.executeQuery()) {
             while (rs.next()) {
                 Discount d = new Discount();
@@ -43,7 +44,8 @@ public class DiscountDAO extends BaseDAO {
 
     public Discount getDiscountById(int id) {
         String sql = "SELECT * FROM Discounts WHERE Id = ?";
-        try (PreparedStatement statement = getConnection().prepareStatement(sql)) {
+        try (Connection conn = getConnection();
+             PreparedStatement statement = conn.prepareStatement(sql)) {
             statement.setInt(1, id);
             try (ResultSet rs = statement.executeQuery()) {
                 if (rs.next()) {
@@ -67,7 +69,8 @@ public class DiscountDAO extends BaseDAO {
 
     public Discount getDiscountByCode(String code) {
         String sql = "SELECT * FROM Discounts WHERE Code = ? AND IsActive = 1 AND GETDATE() BETWEEN StartDate AND EndDate";
-        try (PreparedStatement statement = getConnection().prepareStatement(sql)) {
+        try (Connection conn = getConnection();
+             PreparedStatement statement = conn.prepareStatement(sql)) {
             statement.setString(1, code);
             try (java.sql.ResultSet rs = statement.executeQuery()) {
                 if (rs.next()) {
@@ -91,7 +94,8 @@ public class DiscountDAO extends BaseDAO {
 
     public boolean insertDiscount(Discount discount) {
         String sql = "INSERT INTO Discounts (Code, DiscountPercent, MaxDiscountAmount, MinOrderValue, StartDate, EndDate, IsActive) VALUES (?, ?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement statement = getConnection().prepareStatement(sql)) {
+        try (Connection conn = getConnection();
+             PreparedStatement statement = conn.prepareStatement(sql)) {
             statement.setString(1, discount.getCode());
             statement.setBigDecimal(2, discount.getDiscountPercent());
             statement.setBigDecimal(3, discount.getMaxDiscountAmount());
@@ -108,7 +112,8 @@ public class DiscountDAO extends BaseDAO {
 
     public boolean updateDiscount(Discount discount) {
         String sql = "UPDATE Discounts SET Code=?, DiscountPercent=?, MaxDiscountAmount=?, MinOrderValue=?, StartDate=?, EndDate=?, IsActive=? WHERE Id=?";
-        try (PreparedStatement statement = getConnection().prepareStatement(sql)) {
+        try (Connection conn = getConnection();
+             PreparedStatement statement = conn.prepareStatement(sql)) {
             statement.setString(1, discount.getCode());
             statement.setBigDecimal(2, discount.getDiscountPercent());
             statement.setBigDecimal(3, discount.getMaxDiscountAmount());

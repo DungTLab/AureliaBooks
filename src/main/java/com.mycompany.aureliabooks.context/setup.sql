@@ -19,11 +19,10 @@ USE [AureliaBooks];
 GO
 
 -- =========================================================================
--- KỊCH BẢN KHỞI TẠO CƠ SỞ DỮ LIỆU DỰ ÁN "AURELIA BOOKS" (SQL Server)
--- Đã chuẩn hóa đặt tên trong ngoặc vuông [] chống đụng độ Keyword
+-- DATABASE INITIALIZATION SCRIPT FOR "AURELIA BOOKS" (SQL Server)
 -- =========================================================================
 
--- XÓA BẢNG NẾU ĐÃ TỒN TẠI (Theo thứ tự ràng buộc từ khóa ngoại từ thấp đến cao)
+-- Drop tables if they exist (ordered by foreign key dependencies from child to parent)
 IF OBJECT_ID('dbo.SupportRequests', 'U') IS NOT NULL DROP TABLE dbo.SupportRequests;
 IF OBJECT_ID('dbo.OrderItems', 'U') IS NOT NULL DROP TABLE dbo.OrderItems;
 IF OBJECT_ID('dbo.Orders', 'U') IS NOT NULL DROP TABLE dbo.Orders;
@@ -47,24 +46,24 @@ IF OBJECT_ID('dbo.Discounts', 'U') IS NOT NULL DROP TABLE dbo.Discounts;
 GO
 
 -- =========================================================================
--- GIAI ĐOẠN 1: TẠO CÁC BẢNG ĐỘC LẬP (LEVEL 0)
+-- PHASE 1: CREATE INDEPENDENT TABLES (LEVEL 0)
 -- =========================================================================
 
--- 1. Bảng Vai trò (Roles)
+-- 1. Roles table
 CREATE TABLE [dbo].[Roles] (
     [Id] INT PRIMARY KEY IDENTITY(1,1),
     [Name] NVARCHAR(50) NOT NULL UNIQUE,
     [Description] NVARCHAR(255) NULL
 );
 
--- 2. Bảng Danh mục Sản phẩm (Categories)
+-- 2. Categories table
 CREATE TABLE [dbo].[Categories] (
     [Id] INT PRIMARY KEY IDENTITY(1,1),
     [ParentId] INT NULL FOREIGN KEY REFERENCES [dbo].[Categories]([Id]),
     [Name] NVARCHAR(100) NOT NULL
 );
 
--- 3. Bảng Nhà cung cấp (Suppliers)
+-- 3. Suppliers table
 CREATE TABLE [dbo].[Suppliers] (
     [Id] INT PRIMARY KEY IDENTITY(1,1),
     [Name] NVARCHAR(255) NOT NULL,
@@ -74,7 +73,7 @@ CREATE TABLE [dbo].[Suppliers] (
     [CreatedAt] DATETIME DEFAULT GETDATE()
 );
 
--- 4. Bảng Nhà xuất bản (Publishers)
+-- 4. Publishers table
 CREATE TABLE [dbo].[Publishers] (
     [Id] INT PRIMARY KEY IDENTITY(1,1),
     [Name] NVARCHAR(255) NOT NULL,
@@ -82,7 +81,7 @@ CREATE TABLE [dbo].[Publishers] (
     [CreatedAt] DATETIME DEFAULT GETDATE()
 );
 
--- 5. Bảng Thương hiệu Văn phòng phẩm (Brands)
+-- 5. Brands table
 CREATE TABLE [dbo].[Brands] (
     [Id] INT PRIMARY KEY IDENTITY(1,1),
     [Name] NVARCHAR(255) NOT NULL,
@@ -90,7 +89,7 @@ CREATE TABLE [dbo].[Brands] (
     [CreatedAt] DATETIME DEFAULT GETDATE()
 );
 
--- 6. Bảng Tác giả (Authors)
+-- 6. Authors table
 CREATE TABLE [dbo].[Authors] (
     [AuthorId] INT PRIMARY KEY IDENTITY(1,1),
     [FullName] NVARCHAR(255) NOT NULL,
@@ -98,7 +97,7 @@ CREATE TABLE [dbo].[Authors] (
     [CreatedAt] DATETIME DEFAULT GETDATE()
 );
 
--- 7. Bảng Mã giảm giá (Discounts)
+-- 7. Discounts table
 CREATE TABLE [dbo].[Discounts] (
     [Id] INT PRIMARY KEY IDENTITY(1,1),
     [Code] NVARCHAR(50) NOT NULL UNIQUE,
@@ -112,10 +111,10 @@ CREATE TABLE [dbo].[Discounts] (
 );
 
 -- =========================================================================
--- GIAI ĐOẠN 2: TẠO CÁC BẢNG SẢN PHẨM (TPT INHERITANCE)
+-- PHASE 2: CREATE PRODUCT TABLES (TPT INHERITANCE)
 -- =========================================================================
 
--- 8. Bảng Sản phẩm chung (Products) - BẢNG CHA CỐT LÕI
+-- 8. Core Products table (Parent)
 CREATE TABLE [dbo].[Products] (
     [Id] INT PRIMARY KEY IDENTITY(1,1),
     [CategoryId] INT NOT NULL FOREIGN KEY REFERENCES [dbo].[Categories]([Id]),
@@ -129,7 +128,7 @@ CREATE TABLE [dbo].[Products] (
     [CreatedAt] DATETIME DEFAULT GETDATE()
 );
 
--- 9. Bảng Sách (Books) - BẢNG CON (Quan hệ 1-1 với Products)
+-- 9. Books table (Child - 1-1 with Products)
 CREATE TABLE [dbo].[Books] (
     [ProductId] INT PRIMARY KEY FOREIGN KEY REFERENCES [dbo].[Products]([Id]) ON DELETE CASCADE,
     [PublisherId] INT NULL FOREIGN KEY REFERENCES [dbo].[Publishers]([Id]),
@@ -142,7 +141,7 @@ CREATE TABLE [dbo].[Books] (
     [Dimensions] NVARCHAR(100) NULL
 );
 
--- 10. Bảng Văn phòng phẩm (Stationeries) - BẢNG CON (Quan hệ 1-1 với Products)
+-- 10. Stationeries table (Child - 1-1 with Products)
 CREATE TABLE [dbo].[Stationeries] (
     [ProductId] INT PRIMARY KEY FOREIGN KEY REFERENCES [dbo].[Products]([Id]) ON DELETE CASCADE,
     [BrandId] INT NULL FOREIGN KEY REFERENCES [dbo].[Brands]([Id]),
@@ -155,7 +154,7 @@ CREATE TABLE [dbo].[Stationeries] (
     [Warning] NVARCHAR(500) NULL
 );
 
--- 11. Bảng Trung gian Tác giả - Sách (Contributor - Quan hệ n-n)
+-- 11. Contributor junction table (n-n relationship)
 CREATE TABLE [dbo].[Contributor] (
     [ProductId] INT FOREIGN KEY REFERENCES [dbo].[Products]([Id]) ON DELETE CASCADE,
     [AuthorId] INT FOREIGN KEY REFERENCES [dbo].[Authors]([AuthorId]) ON DELETE CASCADE,
@@ -163,10 +162,10 @@ CREATE TABLE [dbo].[Contributor] (
 );
 
 -- =========================================================================
--- GIAI ĐOẠN 3: TẠO CÁC BẢNG NGƯỜI DÙNG (USERS & SECURITY)
+-- PHASE 3: CREATE USER TABLES (USERS & SECURITY)
 -- =========================================================================
 
--- 12. Bảng Tài khoản (Users)
+-- 12. Users table
 CREATE TABLE [dbo].[Users] (
     [Id] INT PRIMARY KEY IDENTITY(1,1),
     [RoleId] INT NOT NULL FOREIGN KEY REFERENCES [dbo].[Roles]([Id]),
@@ -178,7 +177,7 @@ CREATE TABLE [dbo].[Users] (
     [IsActive] BIT DEFAULT 1
 );
 
--- 13. Bảng Hồ sơ chi tiết (UserProfiles - Quan hệ 1-1 với Users)
+-- 13. UserProfiles table (1-1 with Users)
 CREATE TABLE [dbo].[UserProfiles] (
     [Id] INT PRIMARY KEY IDENTITY(1,1),
     [UserId] INT NOT NULL UNIQUE FOREIGN KEY REFERENCES [dbo].[Users]([Id]) ON DELETE CASCADE,
@@ -189,10 +188,10 @@ CREATE TABLE [dbo].[UserProfiles] (
 );
 
 -- =========================================================================
--- GIAI ĐOẠN 4: QUẢN LÝ KHO HÀNG (INVENTORY)
+-- PHASE 4: INVENTORY MANAGEMENT
 -- =========================================================================
 
--- 14. Bảng Tồn kho (Inventory)
+-- 14. Inventory table
 CREATE TABLE [dbo].[Inventory] (
     [ProductId] INT PRIMARY KEY FOREIGN KEY REFERENCES [dbo].[Products]([Id]) ON DELETE CASCADE,
     [QuantityInStock] INT NOT NULL DEFAULT 0 CHECK ([QuantityInStock] >= 0),
@@ -200,7 +199,7 @@ CREATE TABLE [dbo].[Inventory] (
     [LastUpdated] DATETIME DEFAULT GETDATE()
 );
 
--- 15. Bảng Giao dịch Nhập/Xuất kho (StockTransactions)
+-- 15. StockTransactions table
 CREATE TABLE [dbo].[StockTransactions] (
     [Id] INT PRIMARY KEY IDENTITY(1,1),
     [ProductId] INT NOT NULL FOREIGN KEY REFERENCES [dbo].[Products]([Id]),
@@ -212,10 +211,10 @@ CREATE TABLE [dbo].[StockTransactions] (
 );
 
 -- =========================================================================
--- GIAI ĐOẠN 5: GIỎ HÀNG & ĐƠN HÀNG (CARTS, ORDERS & TRANSACTIONS)
+-- PHASE 5: CARTS, ORDERS & TRANSACTIONS
 -- =========================================================================
 
--- 16. Bảng Giỏ hàng (Carts)
+-- 16. Carts table
 CREATE TABLE [dbo].[Carts] (
     [Id] INT PRIMARY KEY IDENTITY(1,1),
     [UserId] INT NULL FOREIGN KEY REFERENCES [dbo].[Users]([Id]) ON DELETE CASCADE,
@@ -223,7 +222,7 @@ CREATE TABLE [dbo].[Carts] (
     [CreatedAt] DATETIME DEFAULT GETDATE()
 );
 
--- 17. Bảng Chi tiết Giỏ hàng (CartItems)
+-- 17. CartItems table
 CREATE TABLE [dbo].[CartItems] (
     [Id] INT PRIMARY KEY IDENTITY(1,1),
     [CartId] INT NOT NULL FOREIGN KEY REFERENCES [dbo].[Carts]([Id]) ON DELETE CASCADE,
@@ -232,7 +231,7 @@ CREATE TABLE [dbo].[CartItems] (
     [AddedAt] DATETIME DEFAULT GETDATE()
 );
 
--- 18. Bảng Đơn hàng (Orders)
+-- 18. Orders table
 CREATE TABLE [dbo].[Orders] (
     [Id] INT PRIMARY KEY IDENTITY(1,1),
     [UserId] INT NOT NULL FOREIGN KEY REFERENCES [dbo].[Users]([Id]),
@@ -247,7 +246,7 @@ CREATE TABLE [dbo].[Orders] (
     [CreatedAt] DATETIME DEFAULT GETDATE()
 );
 
--- 19. Bảng Chi tiết Đơn hàng (OrderItems)
+-- 19. OrderItems table
 CREATE TABLE [dbo].[OrderItems] (
     [Id] INT PRIMARY KEY IDENTITY(1,1),
     [OrderId] INT NOT NULL FOREIGN KEY REFERENCES [dbo].[Orders]([Id]) ON DELETE CASCADE,
@@ -257,7 +256,7 @@ CREATE TABLE [dbo].[OrderItems] (
     [SubTotal] DECIMAL(18,2) NOT NULL CHECK ([SubTotal] >= 0)
 );
 
--- 20. Bảng Yêu cầu hỗ trợ (SupportRequests)
+-- 20. SupportRequests table
 CREATE TABLE [dbo].[SupportRequests] (
     [Id] INT PRIMARY KEY IDENTITY(1,1),
     [UserId] INT NOT NULL FOREIGN KEY REFERENCES [dbo].[Users]([Id]) ON DELETE CASCADE,
@@ -271,31 +270,31 @@ CREATE TABLE [dbo].[SupportRequests] (
 GO
 
 -- =========================================================================
--- GIAI ĐOẠN 6: TẠO CÁC CHỈ MỤC (INDEX) HỖ TRỢ TRUY VẤN & BÁO CÁO NHANH
+-- PHASE 6: CREATE INDEXES FOR FAST QUERYING & REPORTING
 -- =========================================================================
 
--- Hỗ trợ xem danh sách sản phẩm theo Category (Trang chủ/Tìm kiếm)
+-- Index for Category-based product listing (Homepage/Search)
 CREATE INDEX IX_Products_CategoryId ON [dbo].[Products]([CategoryId]);
 
--- Hỗ trợ tìm kiếm nhanh theo tiêu đề sách
+-- Index for fast searching by product title
 CREATE INDEX IX_Products_Title ON [dbo].[Products]([Title]);
 
--- Hỗ trợ truy vấn thống kê doanh thu theo ngày & trạng thái
+-- Index for fast revenue reports by date & status
 CREATE INDEX IX_Orders_CreatedAt_Status ON [dbo].[Orders]([CreatedAt], [Status]);
 GO
 
 -- =========================================================================
--- GIAI ĐOẠN 7: DỮ LIỆU MẪU CHUẨN (MOCK DATA FOR TESTING)
+-- PHASE 7: MOCK DATA FOR TESTING
 -- =========================================================================
 
--- 1. Chèn dữ liệu Roles
+-- 1. Insert Roles data
 INSERT INTO [dbo].[Roles] ([Name], [Description]) VALUES 
 ('ADMIN', N'Quản trị viên toàn bộ hệ thống'),
 ('EMPLOYEE', N'Nhân viên bán hàng và hỗ trợ khách hàng'),
 ('CUSTOMER', N'Khách hàng mua hàng trực tuyến');
 GO
 
--- 2. Chèn dữ liệu Categories
+-- 2. Insert Categories data
 INSERT INTO [dbo].[Categories] ([ParentId], [Name]) VALUES 
 (NULL, N'Sách Tiếng Việt'),       -- ID: 1
 (NULL, N'Sách Ngoại Văn'),        -- ID: 2
@@ -308,29 +307,28 @@ INSERT INTO [dbo].[Categories] ([ParentId], [Name]) VALUES
 (3, N'Bút - Viết');               -- ID: 7
 GO
 
-
--- 3. Chèn dữ liệu Suppliers
+-- 3. Insert Suppliers data
 INSERT INTO [dbo].[Suppliers] ([Name], [ContactEmail], [ContactPhone], [Address]) VALUES 
 (N'Công Ty Sách Fahasa', 'contact@fahasa.com', '02838225446', N'Nguyễn Huệ, Quận 1, TP. HCM'),
 (N'Nhà Sách Phương Nam', 'info@phuongnam.com', '19006656', N'Quận Hải Châu, Đà Nẵng'),
 (N'Thiên Long Group', 'sales@thienlong.com', '02837505555', N'Bình Tân, TP. HCM');
 GO
 
--- 4. Chèn dữ liệu Publishers
+-- 4. Insert Publishers data
 INSERT INTO [dbo].[Publishers] ([Name], [Address]) VALUES 
 (N'NXB Trẻ', N'Quận 3, TP. Hồ Chí Minh'),
 (N'NXB Kim Đồng', N'Quận Hai Bà Trưng, Hà Nội'),
 (N'HarperCollins', N'New York, USA');
 GO
 
--- 5. Chèn dữ liệu Brands
+-- 5. Insert Brands data
 INSERT INTO [dbo].[Brands] ([Name], [OriginCountry]) VALUES 
 (N'Thiên Long', N'Việt Nam'),
 (N'Pentel', N'Nhật Bản'),
 (N'Faber-Castell', N'Đức');
 GO
 
--- 6. Chèn dữ liệu Authors
+-- 6. Insert Authors data
 INSERT INTO [dbo].[Authors] ([FullName], [Biography]) VALUES 
 (N'Nguyễn Nhật Ánh', N'Nhà văn nổi tiếng của Việt Nam với các tác phẩm dành cho tuổi trẻ.'),
 (N'Dale Carnegie', N'Tác giả người Mỹ nổi tiếng với cuốn sách Đắc Nhân Tâm.'),
@@ -343,13 +341,13 @@ INSERT INTO [dbo].[Authors] ([FullName], [Biography]) VALUES
 (N'Robin Sharma', N'Một trong những chuyên gia hàng đầu thế giới về kỹ năng lãnh đạo và phát triển bản thân, tác giả cuốn sách Đời ngắn đừng ngủ dài.');
 GO
 
--- 7. Chèn dữ liệu Discounts
+-- 7. Insert Discounts data
 INSERT INTO [dbo].[Discounts] ([Code], [DiscountPercent], [MaxDiscountAmount], [MinOrderValue], [StartDate], [EndDate], [IsActive]) VALUES 
 ('HE2026', 10.00, 50000.00, 200000.00, '2026-06-01', '2026-08-31', 1),
 ('WELCOME', 20.00, 30000.00, 0.00, '2026-01-01', '2026-12-31', 1);
 GO
 
--- 8. Chèn dữ liệu Products (Base)
+-- 8. Insert Products data (Base)
 SET IDENTITY_INSERT [dbo].[Products] ON;
 INSERT INTO [dbo].[Products] ([Id], [CategoryId], [SupplierId], [Title], [Description], [Price], [Sku], [Image_URL], [IsActive]) VALUES 
 (1, 4, 1, N'Mắt Biếc', N'Tác phẩm truyện dài tiêu biểu của nhà văn Nguyễn Nhật Ánh.', 110000.00, 'B-MB-001', 'matBiec.jpg', 1),
@@ -371,7 +369,7 @@ INSERT INTO [dbo].[Products] ([Id], [CategoryId], [SupplierId], [Title], [Descri
 SET IDENTITY_INSERT [dbo].[Products] OFF;
 GO
 
--- 9. Chèn dữ liệu Books (Con)
+-- 9. Insert Books data (Child)
 INSERT INTO [dbo].[Books] ([ProductId], [PublisherId], [Translator], [PublicationYear], [NumberOfPages], [CoverType], [Language], [Weight], [Dimensions]) VALUES 
 (1, 1, NULL, 2019, 290, N'Bìa mềm', N'Tiếng Việt', 250.00, '13 x 20 cm'),
 (2, 1, N'Nguyễn Văn A', 2021, 320, N'Bìa mềm', N'Tiếng Việt', 300.00, '14 x 20.5 cm'),
@@ -386,7 +384,7 @@ INSERT INTO [dbo].[Books] ([ProductId], [PublisherId], [Translator], [Publicatio
 (13, 3, NULL, 2015, 376, N'Bìa mềm', N'Tiếng Anh', 310.00, '14 x 21 cm');
 GO
 
--- 10. Chèn dữ liệu Stationeries (Con)
+-- 10. Insert Stationeries data (Child)
 INSERT INTO [dbo].[Stationeries] ([ProductId], [BrandId], [Origin], [Material], [Color], [Weight], [Dimensions], [Specifications], [Warning]) VALUES 
 (4, 1, N'Việt Nam', N'Nhựa', N'Xanh', 10.00, '14 cm', N'Hộp 20 cây', N'Tránh xa tầm tay trẻ em dưới 3 tuổi'),
 (5, 2, N'Nhật Bản', N'Nhựa và kim loại', N'Đen', 15.00, '14.5 cm', N'Ngòi chì 0.5mm', N'Không ấn ngòi quá mạnh'),
@@ -395,46 +393,44 @@ INSERT INTO [dbo].[Stationeries] ([ProductId], [BrandId], [Origin], [Material], 
 (16, 3, N'Đức', N'Cao su tổng hợp', N'Xanh dương', 25.00, '4 x 2 cm', N'Sản phẩm đơn chiếc', N'Không được nuốt');
 GO
 
--- 11. Chèn dữ liệu Contributor
+-- 11. Insert Contributor data
 INSERT INTO [dbo].[Contributor] ([ProductId], [AuthorId]) VALUES 
-(1, 1), -- Mắt Biếc của Nguyễn Nhật Ánh
-(2, 2), -- Đắc Nhân Tâm của Dale Carnegie
-(3, 3), -- Rừng Na Uy của Haruki Murakami
-(6, 4), -- Số Đỏ - Vũ Trọng Phụng
-(7, 5), -- Tuổi Trẻ Đáng Giá Bao Nhiêu - Rosie Nguyễn
-(8, 6), -- Nhà Giả Kim - Paulo Coelho
-(9, 1), -- Cho Tôi Xin Một Vé Đi Tuổi Thơ - Nguyễn Nhật Ánh
-(10, 9), -- Đời Ngắn Đừng Ngủ Dài - Robin Sharma
+(1, 1), -- Mat Biec by Nguyen Nhat Anh
+(2, 2), -- Dac Nhan Tam by Dale Carnegie
+(3, 3), -- Norwegian Wood by Haruki Murakami
+(6, 4), -- So Do - Vu Trong Phung
+(7, 5), -- Tuoi Tre Dang Gia Bao Nhieu - Rosie Nguyen
+(8, 6), -- Nha Gia Kim - Paulo Coelho
+(9, 1), -- Cho Toi Xin Mot Ve Di Tuoi Tho - Nguyen Nhat Anh
+(10, 9), -- Doi Ngan Dung Ngu Dai - Robin Sharma
 (11, 6), -- The Alchemist - Paulo Coelho
 (12, 7), -- Harry Potter 1 - J.K. Rowling
 (13, 8); -- To Kill a Mockingbird - Harper Lee
 GO
 
--- 12. Chèn dữ liệu Users (Mật khẩu mẫu ở đây tương trưng, khi code sinh viên sẽ dùng BCrypt băm)
+-- 12. Insert Users data
 INSERT INTO [dbo].[Users] ([RoleId], [Username], [PasswordHash], [Email], [AuthProvider], [IsActive]) VALUES 
-(1, 'admin', '$2a$10$oQWb3bZ8vcAbTlWumFtMNeNoMGAa3AyHZnuTutYco4BZMD8mBIz02', 'admin@minifahasa.com', 'local', 1),
+(1, 'admin', '$2a$10$asF2urAUZb0VnxsyC6DHMOvCztuCiBs55CBVlLWrNFmGOVYIV58R6', 'admin@minifahasa.com', 'local', 1),
 (2, 'dunglt', '$2a$10$4cKNr/Wh2GRVb/c5CKZhC.wwexcJP0w6Xi4CdLE.ky7mgW6IMTn0.', 'emp1@minifahasa.com', 'local', 1),
 (2, 'giacth', '$2a$10$yo7zXNy/77M3vRXSudLD1.CSL4U8JEVIXLH4ccKnTjX5QlKHygscG', 'emp2@minifahasa.com', 'local', 1),
 (2, 'duyhn', '$2a$10$JO1dBx0rh8YDRr3MbDuSAO5j5D.iAEyupOlKY8sAWAilvmNoC40Qa', 'emp3@minifahasa.com', 'local', 1),
 (2, 'anhntd', '$2a$10$ibaL/gWTaAsrvmZDNKOFe.BzwxItTdVYp0VZhBSrv/6qR./JRTycS', 'emp4@minifahasa.com', 'local', 1),
 (2, 'trongnp', '$2a$10$Bw8wJmP2mAtjYYrEdfDYkuTNc4vkdZwb45KKCvfrUNOh9KWzWsCIi', 'emp5@minifahasa.com', 'local', 1),
-(3, 'customer1', 'cust123_hashed', 'customer1@gmail.com', 'local', 1),
-(3, 'customer2', 'cust456_hashed', 'customer2@gmail.com', 'google', 1);
+(3, 'democustomer', '$2a$10$4lu9H6z0Y4k3V1kQLsWwLuB6jUfgzqyv6TB5yVwhxK15bufb9N3l2', 'democustomer@minifahasa.com', 'local', 1);
 GO
 
--- 13. Chèn dữ liệu UserProfiles
+-- 13. Insert UserProfiles data
 INSERT INTO [dbo].[UserProfiles] ([UserId], [FullName], [Phone], [Address], [AvatarUrl]) VALUES 
-(1, N'Trần Văn Quản Trị', '0901234567', N'123 Nguyễn Văn Cừ, Quận 5, TP. HCM', 'avatars/admin.jpg'),
+(1, N'Administrator', '0901234567', N'123 Nguyễn Văn Cừ, Quận 5, TP. HCM', 'avatars/admin.jpg'),
 (2, N'Lê Tiến Dũng', '0907654321', N'456 Lê Lợi, Quận 1, TP. HCM', 'avatars/emp1.jpg'),
 (3, N'Trần Huỳnh Giác', '0907654322', N'456 Lê Lợi, Quận 1, TP. HCM', 'avatars/emp2.jpg'),
 (4, N'Nguyễn Nhật Duy', '0907654323', N'456 Lê Lợi, Quận 1, TP. HCM', 'avatars/emp3.jpg'),
 (5, N'Nguyễn Trần Đức Anh', '0907654324', N'456 Lê Lợi, Quận 1, TP. HCM', 'avatars/emp4.jpg'),
 (6, N'Nguyễn Phú Trọng', '0907654325', N'456 Lê Lợi, Quận 1, TP. HCM', 'avatars/emp5.jpg'),
-(7, N'Lê Minh Khách Hàng 1', '0911112222', N'789 Cách Mạng Tháng Tám, Tân Bình, TP. HCM', 'avatars/cust1.jpg'),
-(8, N'Phạm Hoàng Khách Hàng 2', '0933334444', N'101 Điện Biên Phủ, Bình Thạnh, TP. HCM', 'avatars/cust2.jpg');
+(7, N'Demo Customer', '0987654321', N'789 Nguyễn Trãi, Quận 5, TP. HCM', 'avatars/customer.jpg');
 GO
 
--- 14. Chèn dữ liệu Inventory (Số lượng tồn ban đầu)
+-- 14. Insert Inventory data
 INSERT INTO [dbo].[Inventory] ([ProductId], [QuantityInStock], [WarehouseLocation], [LastUpdated]) VALUES 
 (1, 100, N'Kệ A-01', GETDATE()),
 (2, 150, N'Kệ B-02', GETDATE()),
@@ -454,19 +450,19 @@ INSERT INTO [dbo].[Inventory] ([ProductId], [QuantityInStock], [WarehouseLocatio
 (16, 500, N'Kệ Dụng Cụ D-05', GETDATE());
 GO
 
--- 15. Chèn dữ liệu Orders & OrderItems (Thao tác thống kê mẫu)
--- Đơn hàng 1: Hoàn thành (Dùng để chạy thử thống kê và nút Trả Hàng)
+-- 15. Insert Orders & OrderItems data
+-- Order 1: Completed
 INSERT INTO [dbo].[Orders] ([UserId], [DiscountId], [TotalAmount], [Status], [ShippingAddress], [ContactPhone], [ProcessedByUserId], [CreatedAt]) VALUES 
-(7, NULL, 196000.00, 'COMPLETED', N'789 Cách Mạng Tháng Tám, Tân Bình, TP. HCM', '0911112222', 2, '2026-06-10 14:30:00');
+(7, NULL, 196000.00, 'COMPLETED', N'789 Nguyễn Trãi, Quận 5, TP. HCM', '0987654321', 2, '2026-06-10 14:30:00');
 
 INSERT INTO [dbo].[OrderItems] ([OrderId], [ProductId], [Quantity], [UnitPrice], [SubTotal]) VALUES 
-(1, 1, 1, 110000.00, 110000.00), -- 1 cuốn Mắt Biếc
-(1, 2, 1, 86000.00, 86000.00);    -- 1 cuốn Đắc Nhân Tâm
+(1, 1, 1, 110000.00, 110000.00), -- 1 copy of Mat Biec
+(1, 2, 1, 86000.00, 86000.00);    -- 1 copy of Dac Nhan Tam
 
--- Đơn hàng 2: Đang chờ xử lý
+-- Order 2: Pending
 INSERT INTO [dbo].[Orders] ([UserId], [DiscountId], [TotalAmount], [Status], [ShippingAddress], [ContactPhone], [ProcessedByUserId], [CreatedAt]) VALUES 
-(8, 1, 225000.00, 'PENDING', N'101 Điện Biên Phủ, Bình Thạnh, TP. HCM', '0933334444', NULL, '2026-06-15 09:15:00');
+(7, 1, 225000.00, 'PENDING', N'789 Nguyễn Trãi, Quận 5, TP. HCM', '0987654321', NULL, '2026-06-15 09:15:00');
 
 INSERT INTO [dbo].[OrderItems] ([OrderId], [ProductId], [Quantity], [UnitPrice], [SubTotal]) VALUES 
-(2, 3, 1, 250000.00, 250000.00); -- 1 cuốn Rừng Na Uy (Có áp mã discount)
+(2, 3, 1, 250000.00, 250000.00); -- 1 copy of Norwegian Wood (with discount)
 GO

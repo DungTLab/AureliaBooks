@@ -34,17 +34,17 @@ public class SecurityFilter implements Filter {
         
         String requestURI = httpRequest.getRequestURI();
         
-        // 1. Cho phép các static assets đi qua không cần check
+        // 1. Allow static assets and authentication paths without checks
         if (requestURI.contains("/assets/") || requestURI.endsWith("login.jsp") 
             || requestURI.endsWith("register.jsp") || requestURI.contains("/auth")) {
             chain.doFilter(request, response);
             return;
         }
 
-        // 2. Lấy thông tin User
+        // 2. Get logged in User info
         User loggedInUser = (session != null) ? (User) session.getAttribute("user") : null;
 
-        // 3. Chặn Admin/Employee thực hiện mua hàng (giỏ hàng, thanh toán, xem đơn hàng cá nhân)
+        // 3. Block Admin and Employee accounts from purchasing (cart, checkout, personal orders)
         if (requestURI.contains("/cart") || requestURI.contains("/checkout") || requestURI.equals(httpRequest.getContextPath() + "/orders")) {
             if (loggedInUser != null && ("ADMIN".equals(loggedInUser.getRoleName()) || "EMPLOYEE".equals(loggedInUser.getRoleName()))) {
                 httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN, "Access Denied - Admin/Staff cannot place orders.");
@@ -52,7 +52,7 @@ public class SecurityFilter implements Filter {
             }
         }
 
-        // 4. Phân quyền Admin & Employee (Nhân viên)
+        // 4. Role-based authorization for Admin and Employee sections
         if (requestURI.contains("/admin/")) {
             if (loggedInUser == null) {
                 httpResponse.sendRedirect(httpRequest.getContextPath() + "/auth?action=login");
@@ -61,7 +61,7 @@ public class SecurityFilter implements Filter {
             
             String role = loggedInUser.getRoleName();
             
-            // Các phân hệ chỉ dành riêng cho ADMIN: Báo cáo thống kê, Quản lý tài khoản, Quản lý Voucher
+            // Admin-only sections: reports, user management, discounts
             if (requestURI.contains("/admin/reports") 
                 || requestURI.contains("/admin/users") 
                 || requestURI.contains("/admin/discounts")) {
@@ -70,7 +70,7 @@ public class SecurityFilter implements Filter {
                     return;
                 }
             } 
-            // Các phân hệ dùng chung cho ADMIN và EMPLOYEE: Đơn hàng, Thể loại, Sản phẩm, Hỗ trợ (Tickets)
+            // Shared sections for Admin and Employee: orders, categories, products, support tickets
             else {
                 if (!"ADMIN".equals(role) && !"EMPLOYEE".equals(role)) {
                     httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN, "Access Denied");

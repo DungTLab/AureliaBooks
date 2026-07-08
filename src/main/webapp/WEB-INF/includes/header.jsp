@@ -92,9 +92,9 @@
                                     </a>
                                     <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                                         <li><a class="dropdown-item" href="${pageContext.request.contextPath}/profile"><i class="bi bi-person me-2"></i>Hồ sơ cá nhân</a></li>
-                                        <c:if test="${sessionScope.user.roleName eq 'CUSTOMER'}">
+                                            <c:if test="${sessionScope.user.roleName eq 'CUSTOMER'}">
                                             <li><a class="dropdown-item" href="${pageContext.request.contextPath}/orders"><i class="bi bi-receipt me-2"></i>Đơn hàng của tôi</a></li>
-                                        </c:if>
+                                            </c:if>
 
                                         <c:if test="${sessionScope.user.roleName eq 'ADMIN' or sessionScope.user.roleName eq 'EMPLOYEE'}">
                                             <li>
@@ -111,6 +111,11 @@
                                                 <li>
                                                     <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/reports">
                                                         <i class="bi bi-bar-chart-line me-2"></i>Báo cáo thống kê
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/users">
+                                                        <i class="bi bi-people me-2"></i>Quản lý tài khoản
                                                     </a>
                                                 </li>
                                             </c:if>
@@ -139,15 +144,7 @@
                             </c:otherwise>
                         </c:choose>
 
-                        <div class="dropdown">
-                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle py-1" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                VI
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-end text-dark">
-                                <li><a class="dropdown-item" href="">EN</a></li>
-                                <li><a class="dropdown-item" href="#">VI</a></li>
-                            </ul>
-                        </div>
+
                     </div>
 
                     <!-- Mobile Right-side Menu (Visible only below lg, styled like Fahasa with Cart and Profile Dropdown) -->
@@ -169,9 +166,9 @@
                                     <c:when test="${not empty sessionScope.user}">
                                         <li class="dropdown-header border-bottom pb-2 mb-1">Tài khoản: ${sessionScope.user.username}</li>
                                         <li><a class="dropdown-item py-2" href="${pageContext.request.contextPath}/profile"><i class="bi bi-person me-2 text-secondary"></i>Hồ sơ cá nhân</a></li>
-                                        <c:if test="${sessionScope.user.roleName eq 'CUSTOMER'}">
+                                            <c:if test="${sessionScope.user.roleName eq 'CUSTOMER'}">
                                             <li><a class="dropdown-item py-2" href="${pageContext.request.contextPath}/orders"><i class="bi bi-receipt me-2 text-secondary"></i>Đơn hàng của tôi</a></li>
-                                        </c:if>
+                                            </c:if>
 
                                         <c:if test="${sessionScope.user.roleName eq 'ADMIN' or sessionScope.user.roleName eq 'EMPLOYEE'}">
                                             <li>
@@ -188,6 +185,11 @@
                                                 <li>
                                                     <a class="dropdown-item py-2" href="${pageContext.request.contextPath}/admin/reports">
                                                         <i class="bi bi-bar-chart-line me-2 text-secondary"></i>Báo cáo thống kê
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item py-2" href="${pageContext.request.contextPath}/admin/users">
+                                                        <i class="bi bi-people me-2 text-secondary"></i>Quản lý tài khoản
                                                     </a>
                                                 </li>
                                             </c:if>
@@ -208,10 +210,6 @@
                                         <li><a class="dropdown-item py-2 fw-bold" href="${pageContext.request.contextPath}/auth?action=login"><i class="bi bi-box-arrow-in-right me-2 text-secondary"></i>Đăng nhập</a></li>
                                         </c:otherwise>
                                     </c:choose>
-                                <li><hr class="dropdown-divider my-1"></li>
-                                <li class="dropdown-header">Ngôn ngữ</li>
-                                <li><a class="dropdown-item py-1" href="#">VI - Tiếng Việt</a></li>
-                                <li><a class="dropdown-item py-1" href="#">EN - English</a></li>
                             </ul>
                         </div>
                     </div>
