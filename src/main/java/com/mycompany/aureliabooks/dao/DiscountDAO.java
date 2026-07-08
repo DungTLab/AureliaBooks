@@ -5,6 +5,10 @@
 package com.mycompany.aureliabooks.dao;
 
 import com.mycompany.aureliabooks.model.Discount;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 
 /**
@@ -14,33 +18,121 @@ import java.util.List;
  */
 public class DiscountDAO extends BaseDAO {
 
-    public List<Discount> getAllDiscounts() {
-        // Empty skeleton for Sprint 3 (To be implemented by Dev 4)
-        return null;
+    public List<Discount> findAll() {
+        List<Discount> list = new java.util.ArrayList<>();
+        String sql = "SELECT * FROM Discounts ORDER BY Id DESC";
+        try (PreparedStatement statement = getConnection().prepareStatement(sql);
+             ResultSet rs = statement.executeQuery()) {
+            while (rs.next()) {
+                Discount d = new Discount();
+                d.setId(rs.getInt("Id"));
+                d.setCode(rs.getString("Code"));
+                d.setDiscountPercent(rs.getBigDecimal("DiscountPercent"));
+                d.setMaxDiscountAmount(rs.getBigDecimal("MaxDiscountAmount"));
+                d.setMinOrderValue(rs.getBigDecimal("MinOrderValue"));
+                d.setStartDate(rs.getTimestamp("StartDate"));
+                d.setEndDate(rs.getTimestamp("EndDate"));
+                d.setIsActive(rs.getBoolean("IsActive"));
+                list.add(d);
+            }
+        } catch (SQLException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return list;
     }
 
     public Discount getDiscountById(int id) {
-        // Empty skeleton for Sprint 3 (To be implemented by Dev 4)
+        String sql = "SELECT * FROM Discounts WHERE Id = ?";
+        try (PreparedStatement statement = getConnection().prepareStatement(sql)) {
+            statement.setInt(1, id);
+            try (ResultSet rs = statement.executeQuery()) {
+                if (rs.next()) {
+                    Discount d = new Discount();
+                    d.setId(rs.getInt("Id"));
+                    d.setCode(rs.getString("Code"));
+                    d.setDiscountPercent(rs.getBigDecimal("DiscountPercent"));
+                    d.setMaxDiscountAmount(rs.getBigDecimal("MaxDiscountAmount"));
+                    d.setMinOrderValue(rs.getBigDecimal("MinOrderValue"));
+                    d.setStartDate(rs.getTimestamp("StartDate"));
+                    d.setEndDate(rs.getTimestamp("EndDate"));
+                    d.setIsActive(rs.getBoolean("IsActive"));
+                    return d;
+                }
+            }
+        } catch (SQLException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
         return null;
     }
 
     public Discount getDiscountByCode(String code) {
-        // Empty skeleton for Sprint 3 (To be implemented by Dev 3)
+        String sql = "SELECT * FROM Discounts WHERE Code = ? AND IsActive = 1 AND GETDATE() BETWEEN StartDate AND EndDate";
+        try (PreparedStatement statement = getConnection().prepareStatement(sql)) {
+            statement.setString(1, code);
+            try (java.sql.ResultSet rs = statement.executeQuery()) {
+                if (rs.next()) {
+                    Discount d = new Discount();
+                    d.setId(rs.getInt("Id"));
+                    d.setCode(rs.getString("Code"));
+                    d.setDiscountPercent(rs.getBigDecimal("DiscountPercent"));
+                    d.setMaxDiscountAmount(rs.getBigDecimal("MaxDiscountAmount"));
+                    d.setMinOrderValue(rs.getBigDecimal("MinOrderValue"));
+                    d.setStartDate(rs.getTimestamp("StartDate"));
+                    d.setEndDate(rs.getTimestamp("EndDate"));
+                    d.setIsActive(rs.getBoolean("IsActive"));
+                    return d;
+                }
+            }
+        } catch (SQLException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
         return null;
     }
 
     public boolean insertDiscount(Discount discount) {
-        // Empty skeleton for Sprint 3 (To be implemented by Dev 4)
+        String sql = "INSERT INTO Discounts (Code, DiscountPercent, MaxDiscountAmount, MinOrderValue, StartDate, EndDate, IsActive) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement statement = getConnection().prepareStatement(sql)) {
+            statement.setString(1, discount.getCode());
+            statement.setBigDecimal(2, discount.getDiscountPercent());
+            statement.setBigDecimal(3, discount.getMaxDiscountAmount());
+            statement.setBigDecimal(4, discount.getMinOrderValue());
+            statement.setTimestamp(5, discount.getStartDate());
+            statement.setTimestamp(6, discount.getEndDate());
+            statement.setBoolean(7, discount.isIsActive());
+            return statement.executeUpdate() > 0;
+        } catch (SQLException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
         return false;
     }
 
     public boolean updateDiscount(Discount discount) {
-        // Empty skeleton for Sprint 3 (To be implemented by Dev 4)
+        String sql = "UPDATE Discounts SET Code=?, DiscountPercent=?, MaxDiscountAmount=?, MinOrderValue=?, StartDate=?, EndDate=?, IsActive=? WHERE Id=?";
+        try (PreparedStatement statement = getConnection().prepareStatement(sql)) {
+            statement.setString(1, discount.getCode());
+            statement.setBigDecimal(2, discount.getDiscountPercent());
+            statement.setBigDecimal(3, discount.getMaxDiscountAmount());
+            statement.setBigDecimal(4, discount.getMinOrderValue());
+            statement.setTimestamp(5, discount.getStartDate());
+            statement.setTimestamp(6, discount.getEndDate());
+            statement.setBoolean(7, discount.isIsActive());
+            statement.setInt(8, discount.getId());
+            return statement.executeUpdate() > 0;
+        } catch (SQLException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
         return false;
     }
 
     public boolean deleteDiscount(int id) {
-        // Empty skeleton for Sprint 3 (To be implemented by Dev 4)
+        String sql = "DELETE FROM Discounts WHERE Id = ?";
+        try (java.sql.Connection conn = getConnection();
+             java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            return ps.executeUpdate() > 0;
+        } catch (java.sql.SQLException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
         return false;
     }
 }

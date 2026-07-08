@@ -231,26 +231,25 @@
         var quantity = document.getElementById('quantityInput').value;
         var contextPath = "${pageContext.request.contextPath}";
         
-        var url = contextPath + "/cart?action=add&productId=" + productId + "&quantity=" + quantity;
+        var url = "";
+        if (redirect) {
+            url = contextPath + "/checkout?action=buyNow&productId=" + productId + "&quantity=" + quantity;
+        } else {
+            url = contextPath + "/cart?action=add&productId=" + productId + "&quantity=" + quantity;
+        }
         
         fetch(url, {
             method: 'POST'
         }).then(response => {
-            if (response.redirected) {
+            if (response.redirected && response.url.includes("login")) {
                 window.location.href = response.url;
-            } else if (response.ok) {
+            } else {
                 if (redirect) {
-                    window.location.href = contextPath + "/cart";
+                    window.location.href = contextPath + "/checkout";
                 } else {
                     var toastEl = document.getElementById('cartToast');
                     var toast = new bootstrap.Toast(toastEl);
                     toast.show();
-                }
-            } else {
-                if (response.url && response.url.includes("login")) {
-                    window.location.href = contextPath + "/auth?action=login";
-                } else {
-                    alert("Có lỗi xảy ra khi thêm vào giỏ hàng!");
                 }
             }
         }).catch(error => {

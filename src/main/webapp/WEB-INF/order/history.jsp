@@ -5,6 +5,22 @@
 <div class="container my-5">
     <h2 class="mb-4">Lịch Sử Mua Hàng</h2>
     
+    <c:if test="${not empty sessionScope.successMessage}">
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            ${sessionScope.successMessage}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <c:remove var="successMessage" scope="session" />
+    </c:if>
+
+    <c:if test="${not empty sessionScope.errorMessage}">
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            ${sessionScope.errorMessage}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <c:remove var="errorMessage" scope="session" />
+    </c:if>
+    
     <!-- Lịch sử đơn (Skeleton để Dev 4 triển khai) -->
     <c:choose>
         <c:when test="${empty orders}">
@@ -24,7 +40,7 @@
                 </thead>
                 <tbody>
                     <c:forEach var="order" items="${orders}">
-                        <tr>
+                        <tr style="cursor: pointer;" onclick="if(event.target.tagName !== 'BUTTON' && event.target.tagName !== 'A' && event.target.closest('.modal') == null) { window.location.href='${pageContext.request.contextPath}/orders?action=detail&id=${order.id}'; }">
                             <td>#${order.id}</td>
                             <td>${order.createdAt}</td>
                             <td>${order.shippingAddress}</td>
@@ -42,7 +58,7 @@
                                     <button class="btn btn-sm btn-danger ms-2" data-bs-toggle="modal" data-bs-target="#returnModal${order.id}">Yêu cầu trả hàng</button>
                                     
                                     <!-- Modal Yêu cầu Trả hàng -->
-                                    <div class="modal fade" id="returnModal${order.id}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal fade" id="returnModal${order.id}" tabindex="-1" aria-hidden="true" onclick="event.stopPropagation();">
                                         <div class="modal-dialog">
                                             <div class="modal-content">
                                                 <form action="${pageContext.request.contextPath}/orders?action=return" method="POST">

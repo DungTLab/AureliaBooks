@@ -102,6 +102,11 @@
                                                     <i class="bi bi-list-ul me-2"></i>Quản lý Danh mục
                                                 </a>
                                             </li>
+                                            <li>
+                                                <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/discounts">
+                                                    <i class="bi bi-ticket-perforated me-2"></i>Quản lý Voucher
+                                                </a>
+                                            </li>
                                             <c:if test="${sessionScope.user.roleName eq 'ADMIN'}">
                                                 <li>
                                                     <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/reports">
@@ -174,17 +179,18 @@
                                                     <i class="bi bi-list-ul me-2 text-secondary"></i>Quản lý Danh mục
                                                 </a>
                                             </li>
-
-
+                                            <li>
+                                                <a class="dropdown-item py-2" href="${pageContext.request.contextPath}/admin/discounts">
+                                                    <i class="bi bi-ticket-perforated me-2 text-secondary"></i>Quản lý Voucher
+                                                </a>
+                                            </li>
                                             <c:if test="${sessionScope.user.roleName eq 'ADMIN'}">
                                                 <li>
-                                                    <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/reports">
-                                                        <i class="bi bi-bar-chart-line me-2"></i>Báo cáo thống kê
+                                                    <a class="dropdown-item py-2" href="${pageContext.request.contextPath}/admin/reports">
+                                                        <i class="bi bi-bar-chart-line me-2 text-secondary"></i>Báo cáo thống kê
                                                     </a>
                                                 </li>
                                             </c:if>
-
-
                                             <li>
                                                 <a class="dropdown-item text-danger fw-bold py-2" href="${pageContext.request.contextPath}/admin/orders">
                                                     <i class="bi bi-speedometer2 me-2"></i>
