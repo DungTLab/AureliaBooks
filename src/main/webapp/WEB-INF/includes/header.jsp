@@ -76,10 +76,12 @@
                             <span class="small d-none d-xl-inline">Thông báo</span>
                         </a>
 
-                        <a href="<%= request.getContextPath()%>/cart?action=view" class="nav-link d-flex align-items-center gap-2 text-secondary py-2 text-dark">
-                            <i class="bi bi-cart fs-5"></i>
-                            <span class="small d-none d-xl-inline">Giỏ hàng</span>
-                        </a>
+                        <c:if test="${empty sessionScope.user or sessionScope.user.roleName eq 'CUSTOMER'}">
+                            <a href="<%= request.getContextPath()%>/cart?action=view" class="nav-link d-flex align-items-center gap-2 text-secondary py-2 text-dark">
+                                <i class="bi bi-cart fs-5"></i>
+                                <span class="small d-none d-xl-inline">Giỏ hàng</span>
+                            </a>
+                        </c:if>
 
                         <c:choose>
                             <c:when test="${not empty sessionScope.user}">
@@ -90,7 +92,9 @@
                                     </a>
                                     <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                                         <li><a class="dropdown-item" href="${pageContext.request.contextPath}/profile"><i class="bi bi-person me-2"></i>Hồ sơ cá nhân</a></li>
-                                        <li><a class="dropdown-item" href="${pageContext.request.contextPath}/orders"><i class="bi bi-receipt me-2"></i>Đơn hàng của tôi</a></li>
+                                        <c:if test="${sessionScope.user.roleName eq 'CUSTOMER'}">
+                                            <li><a class="dropdown-item" href="${pageContext.request.contextPath}/orders"><i class="bi bi-receipt me-2"></i>Đơn hàng của tôi</a></li>
+                                        </c:if>
 
                                         <c:if test="${sessionScope.user.roleName eq 'ADMIN' or sessionScope.user.roleName eq 'EMPLOYEE'}">
                                             <li>
@@ -144,9 +148,11 @@
                     <!-- Mobile Right-side Menu (Visible only below lg, styled like Fahasa with Cart and Profile Dropdown) -->
                     <div class="d-flex d-lg-none align-items-center gap-1 order-3">
                         <!-- Cart Link -->
-                        <a href="<%= request.getContextPath()%>/cart?action=view" class="nav-link text-dark p-2" title="Cart">
-                            <i class="bi bi-cart fs-4"></i>
-                        </a>
+                        <c:if test="${empty sessionScope.user or sessionScope.user.roleName eq 'CUSTOMER'}">
+                            <a href="<%= request.getContextPath()%>/cart?action=view" class="nav-link text-dark p-2" title="Cart">
+                                <i class="bi bi-cart fs-4"></i>
+                            </a>
+                        </c:if>
 
                         <!-- User Profile Dropdown Toggle -->
                         <div class="dropdown">
@@ -158,7 +164,9 @@
                                     <c:when test="${not empty sessionScope.user}">
                                         <li class="dropdown-header border-bottom pb-2 mb-1">Tài khoản: ${sessionScope.user.username}</li>
                                         <li><a class="dropdown-item py-2" href="${pageContext.request.contextPath}/profile"><i class="bi bi-person me-2 text-secondary"></i>Hồ sơ cá nhân</a></li>
-                                        <li><a class="dropdown-item py-2" href="${pageContext.request.contextPath}/orders"><i class="bi bi-receipt me-2 text-secondary"></i>Đơn hàng của tôi</a></li>
+                                        <c:if test="${sessionScope.user.roleName eq 'CUSTOMER'}">
+                                            <li><a class="dropdown-item py-2" href="${pageContext.request.contextPath}/orders"><i class="bi bi-receipt me-2 text-secondary"></i>Đơn hàng của tôi</a></li>
+                                        </c:if>
 
                                         <c:if test="${sessionScope.user.roleName eq 'ADMIN' or sessionScope.user.roleName eq 'EMPLOYEE'}">
                                             <li>

@@ -37,7 +37,14 @@
                                             <span class="text-danger fw-bold h5 mb-0">
                                                 <fmt:formatNumber value="${product.price}" type="number" groupingUsed="true"/>đ
                                             </span>
-                                            <a href="${pageContext.request.contextPath}/cart?action=add&productId=${product.id}" class="btn btn-primary px-4"> <i class="bi bi-cart"></i> Add to cart</a>
+                                            <c:choose>
+                                                <c:when test="${sessionScope.user.roleName eq 'ADMIN' or sessionScope.user.roleName eq 'EMPLOYEE'}">
+                                                    <span class="badge bg-secondary py-2 px-3"><i class="bi bi-info-circle me-1"></i>Tài khoản Quản trị</span>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <a href="${pageContext.request.contextPath}/cart?action=add&productId=${product.id}" class="btn btn-primary px-4"> <i class="bi bi-cart"></i> Add to cart</a>
+                                                </c:otherwise>
+                                            </c:choose>
                                         </div>
                                     </div>
                                 </div>
