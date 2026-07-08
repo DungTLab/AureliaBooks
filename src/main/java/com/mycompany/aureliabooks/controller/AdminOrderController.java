@@ -134,6 +134,11 @@ public class AdminOrderController extends HttpServlet {
             // Forward to presentation layer
             request.getRequestDispatcher("/WEB-INF/order/admin_list.jsp").forward(request, response);
 
+        } catch (NumberFormatException e) {
+            LOGGER.log(Level.WARNING, "Invalid payload format for Order ID in GET", e);
+            request.setAttribute("errorMessage", "Tham số đường dẫn không hợp lệ.");
+            request.getRequestDispatcher("/WEB-INF/error/400.jsp").forward(request, response);
+            return;
         } catch (SQLException e) {
             // Log backend stack trace secretly; display generic 500 error page to user
             // securely
@@ -211,7 +216,8 @@ public class AdminOrderController extends HttpServlet {
                 return;
             } catch (NumberFormatException e) {
                 LOGGER.log(Level.WARNING, "Invalid payload format for Order ID", e);
-                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Malformed request payload.");
+                request.setAttribute("errorMessage", "Định dạng ID không hợp lệ.");
+                request.getRequestDispatcher("/WEB-INF/error/400.jsp").forward(request, response);
                 return;
             }
         } else {

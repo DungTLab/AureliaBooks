@@ -68,165 +68,177 @@ public class CategoryController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        String action = request.getParameter("action");
-        String ctx = request.getContextPath();
-        if ("create".equals(action)) {
-            request.setAttribute("parentCategories", categoryDAO.getAllCategories());
-            request.getRequestDispatcher("/WEB-INF/category/create.jsp").forward(request, response);
+        try {
+            String action = request.getParameter("action");
+            String ctx = request.getContextPath();
+            if ("create".equals(action)) {
+                request.setAttribute("parentCategories", categoryDAO.getAllCategories());
+                request.getRequestDispatcher("/WEB-INF/category/create.jsp").forward(request, response);
 
-        } else if ("update".equals(action)) {
-            Integer id;
-            try {
-                id = Integer.parseInt(request.getParameter("id"));
-            } catch (NumberFormatException | NullPointerException e) {
-                response.sendRedirect(ctx + "/admin/categories?error="
-                        + encodeParam("ID không hợp lệ."));
-                return;
+            } else if ("update".equals(action)) {
+                Integer id;
+                try {
+                    id = Integer.parseInt(request.getParameter("id"));
+                } catch (NumberFormatException | NullPointerException e) {
+                    response.sendRedirect(ctx + "/admin/categories?error="
+                            + encodeParam("ID không hợp lệ."));
+                    return;
+                }
+
+                // Kiem tra danh muc co ton tai hay ko
+                Category category = categoryDAO.getCategoryById(id);
+                if (category == null) {
+                    response.sendRedirect(ctx + "/admin/categories?error="
+                            + encodeParam("Danh mục không tồn tại."));
+                    return;
+
+                }
+                request.setAttribute("category", category);
+                request.setAttribute("parentCategories", categoryDAO.getAllCategories());
+
+                request.getRequestDispatcher("/WEB-INF/category/update.jsp").forward(request, response);
+
+            } else {
+                request.setAttribute("categories", categoryDAO.getAllCategories());
+                request.setAttribute("successMessage", request.getParameter("success"));
+                request.setAttribute("errorMessage", request.getParameter("error"));
+
+                request.getRequestDispatcher("/WEB-INF/category/list.jsp").forward(request, response);
             }
-
-            // Kiem tra danh muc co ton tai hay ko
-            Category category = categoryDAO.getCategoryById(id);
-            if (category == null) {
-                response.sendRedirect(ctx + "/admin/categories?error="
-                        + encodeParam("Danh mục không tồn tại."));
-                return;
-
-            }
-            request.setAttribute("category", category);
-            request.setAttribute("parentCategories", categoryDAO.getAllCategories());
-
-            request.getRequestDispatcher("/WEB-INF/category/update.jsp").forward(request, response);
-
-        } else {
-            request.setAttribute("categories", categoryDAO.getAllCategories());
-            request.setAttribute("successMessage", request.getParameter("success"));
-            request.setAttribute("errorMessage", request.getParameter("error"));
-
-            request.getRequestDispatcher("/WEB-INF/category/list.jsp").forward(request, response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            request.setAttribute("errorMessage", "Lỗi tải thông tin danh mục: " + e.getMessage());
+            request.getRequestDispatcher("/WEB-INF/error/500.jsp").forward(request, response);
         }
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        String action = request.getParameter("action");
-        String ctx = request.getContextPath();
+        try {
+            String action = request.getParameter("action");
+            String ctx = request.getContextPath();
 
-        if ("create".equals(action)) {
-            String name = request.getParameter("name");
-            String parentIdRaw = request.getParameter("parentId");
+            if ("create".equals(action)) {
+                String name = request.getParameter("name");
+                String parentIdRaw = request.getParameter("parentId");
 
-            String errorMessage = validateCategoryName(name);
-            Integer parentId = parseNullableInteger(parentIdRaw);
-            if (parentIdRaw != null && !parentIdRaw.isEmpty() && parentId == null) {
-                errorMessage = "Danh mục cha không hợp lệ.";
-            }
+                String errorMessage = validateCategoryName(name);
+                Integer parentId = parseNullableInteger(parentIdRaw);
+                if (parentIdRaw != null && !parentIdRaw.isEmpty() && parentId == null) {
+                    errorMessage = "Danh mục cha không hợp lệ.";
+                }
 
-            if (errorMessage != null) {
+                if (errorMessage != null) {
+                    Category category = new Category();
+                    category.setName(name == null ? "" : name.trim());
+                    category.setParentId(parentId);
+
+                    request.setAttribute("errorMessage", errorMessage);
+                    request.setAttribute("category", category);
+                    request.setAttribute("parentCategories", categoryDAO.getAllCategories());
+                    request.getRequestDispatcher("/WEB-INF/category/create.jsp").forward(request, response);
+                    return;
+                }
+
                 Category category = new Category();
+                category.setName(name.trim());
+                category.setParentId(parentId);
+
+                boolean success = categoryDAO.insertCategory(category);
+
+                if (success) {
+                    response.sendRedirect(ctx + "/admin/categories?success=" + encodeParam("Thêm danh mục thành công."));
+                } else {
+                    request.setAttribute("errorMessage", "Không thể thêm danh mục.");
+                    request.setAttribute("parentCategories", categoryDAO.getAllCategories());
+                    request.getRequestDispatcher("/WEB-INF/category/create.jsp").forward(request, response);
+                }
+            } else if ("update".equals(action)) {
+                // Check 
+                Integer id;
+                try {
+                    id = Integer.parseInt(request.getParameter("id"));
+
+                } catch (NumberFormatException | NullPointerException e) {
+                    response.sendRedirect(ctx + "/admin/categories?error=" + encodeParam("ID không hợp lệ"));
+                    return;
+                }
+
+                // Check category have already existed
+                Category existing = categoryDAO.getCategoryById(id);
+                System.out.println("CAtegory: " + existing);
+                if (existing == null) {
+                    response.sendRedirect(ctx + "/admin/categories?error=" + encodeParam("Danh mục không tồn tại"));
+                    return;
+                }
+                String name = request.getParameter("name");
+                String parentIdRaw = request.getParameter("parentId");
+
+                String errorMessage = validateCategoryName(name);
+                Integer parentId = parseNullableInteger(parentIdRaw);
+                if (parentIdRaw != null && !parentIdRaw.isEmpty() && parentId == null) {
+                    errorMessage = "Danh mục cha không hợp lệ.";
+                }
+                if (parentId != null && parentId == id) {
+                    errorMessage = "Danh mục cha không thể là chính danh mục này.";
+                }
+
+                Category category = new Category();
+                category.setId(id);
                 category.setName(name == null ? "" : name.trim());
                 category.setParentId(parentId);
 
-                request.setAttribute("errorMessage", errorMessage);
-                request.setAttribute("category", category);
-                request.setAttribute("parentCategories", categoryDAO.getAllCategories());
-                request.getRequestDispatcher("/WEB-INF/category/create.jsp").forward(request, response);
-                return;
-            }
-
-            Category category = new Category();
-            category.setName(name.trim());
-            category.setParentId(parentId);
-
-            boolean success = categoryDAO.insertCategory(category);
-
-            if (success) {
-                response.sendRedirect(ctx + "/admin/categories?success=" + encodeParam("Thêm danh mục thành công."));
-            } else {
-                request.setAttribute("errorMessage", "Không thể thêm danh mục.");
-                request.setAttribute("parentCategories", categoryDAO.getAllCategories());
-                request.getRequestDispatcher("/WEB-INF/category/create.jsp").forward(request, response);
-            }
-        } else if ("update".equals(action)) {
-            // Check 
-            Integer id;
-            try {
-                id = Integer.parseInt(request.getParameter("id"));
-
-            } catch (NumberFormatException | NullPointerException e) {
-                response.sendRedirect(ctx + "/admin/categories?error=" + encodeParam("ID không hợp lệ"));
-                return;
-            }
-
-            // Check category have already existed
-            Category existing = categoryDAO.getCategoryById(id);
-            System.out.println("CAtegory: " + existing);
-            if (existing == null) {
-                response.sendRedirect(ctx + "/admin/categories?error=" + encodeParam("Danh mục không tồn tại"));
-                return;
-            }
-            String name = request.getParameter("name");
-            String parentIdRaw = request.getParameter("parentId");
-
-            String errorMessage = validateCategoryName(name);
-            Integer parentId = parseNullableInteger(parentIdRaw);
-            if (parentIdRaw != null && !parentIdRaw.isEmpty() && parentId == null) {
-                errorMessage = "Danh mục cha không hợp lệ.";
-            }
-            if (parentId != null && parentId == id) {
-                errorMessage = "Danh mục cha không thể là chính danh mục này.";
-            }
-
-            Category category = new Category();
-            category.setId(id);
-            category.setName(name == null ? "" : name.trim());
-            category.setParentId(parentId);
-
-            if (errorMessage != null) {
-                request.setAttribute("errorMessage", errorMessage);
-                request.setAttribute("category", category);
-                request.setAttribute("parentCategories", categoryDAO.getAllCategories());
-                request.getRequestDispatcher("/WEB-INF/category/update.jsp").forward(request, response);
-                return;
-            }
-
-            boolean success = categoryDAO.updateCategory(category);
-
-            if (success) {
-                response.sendRedirect(ctx + "/admin/categories?success=" + encodeParam("Cập nhật danh mục thành công."));
-            } else {
-                request.setAttribute("errorMessage", "Không thể cập nhật danh mục.");
-                request.setAttribute("category", category);
-                request.setAttribute("parentCategories", categoryDAO.getAllCategories());
-                request.getRequestDispatcher("/WEB-INF/category/update.jsp").forward(request, response);
-            }
-        } else if ("delete".equals(action)) {
-            try {
-                int id = Integer.parseInt(request.getParameter("id"));
-                if (categoryDAO.hasChildCategory(id)) {
-                    response.sendRedirect(ctx + "/admin/categories?error="
-                            + encodeParam("Danh mục đang có danh mục con, không thể xóa."));
+                if (errorMessage != null) {
+                    request.setAttribute("errorMessage", errorMessage);
+                    request.setAttribute("category", category);
+                    request.setAttribute("parentCategories", categoryDAO.getAllCategories());
+                    request.getRequestDispatcher("/WEB-INF/category/update.jsp").forward(request, response);
                     return;
                 }
 
-                if (categoryDAO.hasProducts(id)) {
-                    response.sendRedirect(ctx + "/admin/categories?error="
-                            + encodeParam("Danh mục đang có sản phẩm, không thể xóa."));
-                    return;
-                }
-                boolean success = categoryDAO.deleteCategory(id);
+                boolean success = categoryDAO.updateCategory(category);
 
                 if (success) {
-                    response.sendRedirect(ctx + "/admin/categories?success=" + encodeParam("Xóa danh mục thành công."));
+                    response.sendRedirect(ctx + "/admin/categories?success=" + encodeParam("Cập nhật danh mục thành công."));
                 } else {
-                    response.sendRedirect(ctx + "/admin/categories?error=" + encodeParam("Không thể xóa danh mục."));
+                    request.setAttribute("errorMessage", "Không thể cập nhật danh mục.");
+                    request.setAttribute("category", category);
+                    request.setAttribute("parentCategories", categoryDAO.getAllCategories());
+                    request.getRequestDispatcher("/WEB-INF/category/update.jsp").forward(request, response);
                 }
-            } catch (NumberFormatException e) {
-                response.sendRedirect(ctx + "/admin/categories?error="
-                        + encodeParam("ID không hợp lệ."));
+            } else if ("delete".equals(action)) {
+                try {
+                    int id = Integer.parseInt(request.getParameter("id"));
+                    if (categoryDAO.hasChildCategory(id)) {
+                        response.sendRedirect(ctx + "/admin/categories?error="
+                                + encodeParam("Danh mục đang có danh mục con, không thể xóa."));
+                        return;
+                    }
+
+                    if (categoryDAO.hasProducts(id)) {
+                        response.sendRedirect(ctx + "/admin/categories?error="
+                                + encodeParam("Danh mục đang có sản phẩm, không thể xóa."));
+                        return;
+                    }
+                    boolean success = categoryDAO.deleteCategory(id);
+
+                    if (success) {
+                        response.sendRedirect(ctx + "/admin/categories?success=" + encodeParam("Xóa danh mục thành công."));
+                    } else {
+                        response.sendRedirect(ctx + "/admin/categories?error=" + encodeParam("Không thể xóa danh mục."));
+                    }
+                } catch (NumberFormatException e) {
+                    response.sendRedirect(ctx + "/admin/categories?error="
+                            + encodeParam("ID không hợp lệ."));
+                }
+            } else {
+                response.sendRedirect(ctx + "/admin/categories");
             }
-        } else {
-            response.sendRedirect(ctx + "/admin/categories");
+        } catch (Exception e) {
+            e.printStackTrace();
+            request.setAttribute("errorMessage", "Lỗi xử lý danh mục: " + e.getMessage());
+            request.getRequestDispatcher("/WEB-INF/error/500.jsp").forward(request, response);
         }
     }
 }
