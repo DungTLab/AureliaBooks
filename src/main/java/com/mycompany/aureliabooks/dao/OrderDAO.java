@@ -26,6 +26,8 @@ import java.util.Map;
  */
 public class OrderDAO extends BaseDAO {
 
+    private static final String REPORT_ORDER_STATUSES = "'CONFIRMED','SHIPPING','COMPLETED'";
+
     /**
      * Utility method to map a database row (ResultSet) to an Order entity.
      * Prevents code duplication across multiple SELECT query methods.
@@ -495,24 +497,20 @@ public class OrderDAO extends BaseDAO {
     }
 
     /**
-     * Builds a date filter SQL condition for best-selling report queries.
-     * Ensures the report only calculates data for the CURRENT day, month, or
-     * quarter.
+     * Builds a period filter SQL condition for best-selling report queries.
      *
      * @param type  the aggregation period type
-     * @param alias the SQL alias for the Date column to filter (e.g.,
-     *              "o.CreatedAt")
-     * @return the generated SQL condition string
+     * @param alias the SQL alias for the date column to filter
+     * @return the generated SQL condition string with one parameter placeholder
      */
-    private String buildBestSellerDateFilter(String type, String alias) {
+    private String buildBestSellerPeriodFilter(String type, String alias) {
         switch (normalizeReportType(type)) {
             case "MONTH":
-                return "YEAR(" + alias + ") = YEAR(GETDATE()) AND MONTH(" + alias + ") = MONTH(GETDATE())";
+                return "CONVERT(varchar(7), " + alias + ", 120) = ?";
             case "QUARTER":
-                return "YEAR(" + alias + ") = YEAR(GETDATE()) AND DATEPART(QUARTER, " + alias
-                        + ") = DATEPART(QUARTER, GETDATE())";
+                return "CONCAT(YEAR(" + alias + "), '-Q', DATEPART(QUARTER, " + alias + ")) = ?";
             default:
-                return "CAST(" + alias + " AS DATE) = CAST(GETDATE() AS DATE)";
+                return "CONVERT(varchar(10), " + alias + ", 23) = ?";
         }
     }
 
@@ -533,20 +531,20 @@ public class OrderDAO extends BaseDAO {
         if ("MONTH".equals(reportType)) {
             sql = "SELECT CONVERT(varchar(7), CreatedAt, 120) AS PeriodLabel, SUM(TotalAmount) AS Revenue "
                     + "FROM Orders "
-                    + "WHERE [Status] IN ('CONFIRMED','SHIPPED','DELIVERED','COMPLETED') "
+                    + "WHERE [Status] IN (" + REPORT_ORDER_STATUSES + ") "
                     + "GROUP BY CONVERT(varchar(7), CreatedAt, 120) "
                     + "ORDER BY PeriodLabel DESC";
         } else if ("QUARTER".equals(reportType)) {
             sql = "SELECT CONCAT(YEAR(CreatedAt), '-Q', DATEPART(QUARTER, CreatedAt)) AS PeriodLabel, "
                     + "SUM(TotalAmount) AS Revenue "
                     + "FROM Orders "
-                    + "WHERE [Status] IN ('CONFIRMED','SHIPPED','DELIVERED','COMPLETED') "
+                    + "WHERE [Status] IN (" + REPORT_ORDER_STATUSES + ") "
                     + "GROUP BY YEAR(CreatedAt), DATEPART(QUARTER, CreatedAt) "
                     + "ORDER BY PeriodLabel DESC";
         } else {
             sql = "SELECT CONVERT(varchar(10), CreatedAt, 23) AS PeriodLabel, SUM(TotalAmount) AS Revenue "
                     + "FROM Orders "
-                    + "WHERE [Status] IN ('CONFIRMED','SHIPPED','DELIVERED','COMPLETED') "
+                    + "WHERE [Status] IN (" + REPORT_ORDER_STATUSES + ") "
                     + "GROUP BY CONVERT(varchar(10), CreatedAt, 23) "
                     + "ORDER BY PeriodLabel DESC";
         }
@@ -566,41 +564,101 @@ public class OrderDAO extends BaseDAO {
     }
 
     /**
-     * Retrieves best-selling product statistics for the CURRENT day, month, or
+     * Retrieves high-level revenue KPIs for the Admin report dashboard.
+     *
+     * @return Map containing totalRevenue, totalOrders, averageOrderValue, and
+     *         totalSoldQuantity
+     * @throws SQLException if a database access error occurs
+     */
+    public Map<String, Object> getRevenueSummary() throws SQLException {
+        Map<String, Object> summary = new HashMap<>();
+        summary.put("totalRevenue", java.math.BigDecimal.ZERO);
+        summary.put("totalOrders", 0);
+        summary.put("averageOrderValue", java.math.BigDecimal.ZERO);
+        summary.put("totalSoldQuantity", 0);
+
+        String revenueSql = "SELECT "
+                + "COALESCE(SUM(TotalAmount), 0) AS TotalRevenue, "
+                + "COUNT(*) AS TotalOrders, "
+                + "COALESCE(AVG(TotalAmount), 0) AS AverageOrderValue "
+                + "FROM Orders "
+                + "WHERE [Status] IN (" + REPORT_ORDER_STATUSES + ")";
+
+        String soldQuantitySql = "SELECT COALESCE(SUM(oi.Quantity), 0) AS TotalSoldQuantity "
+                + "FROM OrderItems oi "
+                + "JOIN Orders o ON oi.OrderId = o.Id "
+                + "WHERE o.[Status] IN (" + REPORT_ORDER_STATUSES + ")";
+
+        try (Connection conn = getConnection()) {
+            try (PreparedStatement ps = conn.prepareStatement(revenueSql);
+                    ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    summary.put("totalRevenue", rs.getBigDecimal("TotalRevenue"));
+                    summary.put("totalOrders", rs.getInt("TotalOrders"));
+                    summary.put("averageOrderValue", rs.getBigDecimal("AverageOrderValue"));
+                }
+            }
+
+            try (PreparedStatement ps = conn.prepareStatement(soldQuantitySql);
+                    ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    summary.put("totalSoldQuantity", rs.getInt("TotalSoldQuantity"));
+                }
+            }
+        } catch (ClassNotFoundException e) {
+            throw new SQLException("Database driver missing", e);
+        }
+
+        return summary;
+    }
+
+    /**
+     * Retrieves best-selling product statistics for a selected day, month, or
      * quarter.
      * Joins Orders, OrderItems, and Products to aggregate total sales volume.
      *
-     * @param type the aggregation period ("DAY", "MONTH", "QUARTER")
+     * @param type   the aggregation period ("DAY", "MONTH", "QUARTER")
+     * @param period the selected period label from getRevenueReport()
      * @return List of Maps containing product SKU, title, and total quantity sold
      * @throws SQLException if a database access error occurs
      */
-    public List<Map<String, Object>> getBestSellingReport(String type) throws SQLException {
+    public List<Map<String, Object>> getBestSellingReport(String type, String period) throws SQLException {
         List<Map<String, Object>> list = new ArrayList<>();
-        String dateFilter = buildBestSellerDateFilter(type, "o.CreatedAt");
+        if (period == null || period.trim().isEmpty()) {
+            return list;
+        }
+
+        String periodFilter = buildBestSellerPeriodFilter(type, "o.CreatedAt");
 
         String sql = "SELECT TOP 10 p.SKU AS sku, p.Title AS title, SUM(oi.Quantity) AS salesQuantity "
                 + "FROM OrderItems oi "
                 + "JOIN Orders o ON oi.OrderId = o.Id "
                 + "JOIN Products p ON oi.ProductId = p.Id "
-                + "WHERE o.[Status] IN ('CONFIRMED','SHIPPED','DELIVERED','COMPLETED') "
-                + "AND " + dateFilter + " "
+                + "WHERE o.[Status] IN (" + REPORT_ORDER_STATUSES + ") "
+                + "AND " + periodFilter + " "
                 + "GROUP BY p.SKU, p.Title "
                 + "ORDER BY salesQuantity DESC";
 
         try (Connection conn = getConnection();
-                PreparedStatement ps = conn.prepareStatement(sql);
-                ResultSet rs = ps.executeQuery()) {
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, period.trim());
 
-            while (rs.next()) {
-                Map<String, Object> item = new HashMap<>();
-                item.put("sku", rs.getString("sku"));
-                item.put("title", rs.getString("title"));
-                item.put("salesQuantity", rs.getInt("salesQuantity"));
-                list.add(item);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> item = new HashMap<>();
+                    item.put("sku", rs.getString("sku"));
+                    item.put("title", rs.getString("title"));
+                    item.put("salesQuantity", rs.getInt("salesQuantity"));
+                    list.add(item);
+                }
             }
         } catch (ClassNotFoundException e) {
             throw new SQLException("Database driver missing", e);
         }
         return list;
+    }
+
+    public List<Map<String, Object>> getBestSellingReport(String type) throws SQLException {
+        return getBestSellingReport(type, null);
     }
 }
