@@ -15,8 +15,15 @@
             </div>
 
             <div class="d-flex gap-2">
-                <button type="button" class="btn btn-outline-danger w-50" onclick="addToCart(false)">Thêm vào giỏ hàng</button>
-                <button type="button" class="btn btn-danger w-50" onclick="addToCart(true)">Mua ngay</button>
+                <c:choose>
+                    <c:when test="${sessionScope.user.roleName eq 'ADMIN' or sessionScope.user.roleName eq 'EMPLOYEE'}">
+                        <button type="button" class="btn btn-secondary w-100" disabled><i class="bi bi-info-circle me-1"></i>Tài khoản Quản trị không được mua hàng</button>
+                    </c:when>
+                    <c:otherwise>
+                        <button type="button" class="btn btn-outline-danger w-50" onclick="addToCart(false)">Thêm vào giỏ hàng</button>
+                        <button type="button" class="btn btn-danger w-50" onclick="addToCart(true)">Mua ngay</button>
+                    </c:otherwise>
+                </c:choose>
             </div>
         </div>
 

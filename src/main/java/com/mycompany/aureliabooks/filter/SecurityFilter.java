@@ -44,7 +44,15 @@ public class SecurityFilter implements Filter {
         // 2. Lấy thông tin User
         User loggedInUser = (session != null) ? (User) session.getAttribute("user") : null;
 
-        // 3. Phân quyền Admin & Employee (Nhân viên)
+        // 3. Chặn Admin/Employee thực hiện mua hàng (giỏ hàng, thanh toán, xem đơn hàng cá nhân)
+        if (requestURI.contains("/cart") || requestURI.contains("/checkout") || requestURI.equals(httpRequest.getContextPath() + "/orders")) {
+            if (loggedInUser != null && ("ADMIN".equals(loggedInUser.getRoleName()) || "EMPLOYEE".equals(loggedInUser.getRoleName()))) {
+                httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN, "Access Denied - Admin/Staff cannot place orders.");
+                return;
+            }
+        }
+
+        // 4. Phân quyền Admin & Employee (Nhân viên)
         if (requestURI.contains("/admin/")) {
             if (loggedInUser == null) {
                 httpResponse.sendRedirect(httpRequest.getContextPath() + "/auth?action=login");
