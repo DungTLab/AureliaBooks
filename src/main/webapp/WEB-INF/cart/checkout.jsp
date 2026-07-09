@@ -96,8 +96,8 @@
                     <h5 class="card-title mb-0">Mã giảm giá</h5>
                 </div>
                 <div class="card-body">
-                    <c:if test="${not empty sessionScope.voucherError}">
-                        <div class="alert alert-danger p-2 mb-3"><small>${sessionScope.voucherError}</small></div>
+                    <c:if test="${not empty voucherError}">
+                        <div class="alert alert-danger p-2 mb-3"><small>${voucherError}</small></div>
                         <c:remove var="voucherError" scope="session" />
                     </c:if>
                     

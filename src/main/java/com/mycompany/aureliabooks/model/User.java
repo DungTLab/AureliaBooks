@@ -22,6 +22,10 @@ public class User implements Serializable {
     private String authProvider;
     private Timestamp createdAt;
     private boolean isActive;
+    
+    // Helper attributes for admin user management
+    private String fullName;
+    private String phone;
 
     public User() {
     }
@@ -96,5 +100,21 @@ public class User implements Serializable {
 
     public void setIsActive(boolean isActive) {
         this.isActive = isActive;
+    }
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
     }
 }

@@ -14,6 +14,9 @@ import java.sql.Statement;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.mindrot.jbcrypt.BCrypt;
+import java.util.List;
+import java.util.ArrayList;
+import com.mycompany.aureliabooks.model.Role;
 
 /**
  * User DAO class. Created like NetBeans Maven template.
@@ -33,7 +36,7 @@ public class UserDAO extends BaseDAO {
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     String storedHash = rs.getString("PasswordHash");
-                    // Xác thực mật khẩu thông qua BCrypt
+                    // Verify password via BCrypt
                     if (BCrypt.checkpw(password, storedHash)) {
                         User user = new User();
                         user.setId(rs.getInt("Id"));
@@ -63,10 +66,10 @@ public class UserDAO extends BaseDAO {
 
         try {
             conn = getConnection();
-            // Bắt đầu Transaction
+            // Start Transaction
             conn.setAutoCommit(false);
 
-            // 1. Chèn vào bảng Users
+            // 1. Insert into Users table
             psUser = conn.prepareStatement(insertUserSql, Statement.RETURN_GENERATED_KEYS);
             psUser.setInt(1, user.getRoleId());
             psUser.setString(2, user.getUsername());
@@ -80,7 +83,7 @@ public class UserDAO extends BaseDAO {
                 return false;
             }
 
-            // Lấy ID tự sinh của User mới chèn
+            // Get auto-generated ID of the newly inserted User
             rsKeys = psUser.getGeneratedKeys();
             int newUserId = 0;
             if (rsKeys.next()) {
@@ -90,7 +93,7 @@ public class UserDAO extends BaseDAO {
                 return false;
             }
 
-            // 2. Chèn vào bảng UserProfiles
+            // 2. Insert into UserProfiles table
             psProfile = conn.prepareStatement(insertProfileSql);
             psProfile.setInt(1, newUserId);
             psProfile.setString(2, profile.getFullName());
@@ -100,21 +103,21 @@ public class UserDAO extends BaseDAO {
 
             psProfile.executeUpdate();
 
-            // Commit Transaction nếu tất cả thành công
+            // Commit Transaction if all steps succeed
             conn.commit();
             return true;
         } catch (Exception e) {
             e.printStackTrace();
             if (conn != null) {
                 try {
-                    conn.rollback(); // Hoàn tác nếu xảy ra lỗi bất kỳ
+                    conn.rollback(); // Rollback if any error occurs
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }
             }
             return false;
         } finally {
-            // Đóng tất cả tài nguyên kết nối
+            // Close all connection resources
             try {
                 if (rsKeys != null) {
                     rsKeys.close();
@@ -135,7 +138,7 @@ public class UserDAO extends BaseDAO {
     }
 
     public UserProfile getUserProfile(int userId) {
-        String sql = "SELECT * FROM UserProfiles WHERE UserId = ?"; // Tìm theo UserId
+        String sql = "SELECT * FROM UserProfiles WHERE UserId = ?"; // Find by UserId
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, userId);
@@ -165,7 +168,7 @@ public class UserDAO extends BaseDAO {
             ps.setString(2, profile.getPhone());
             ps.setString(3, profile.getAddress());
             ps.setString(4, profile.getAvatarUrl());
-            ps.setInt(5, profile.getUserId()); // Định danh chỉ bằng UserId
+            ps.setInt(5, profile.getUserId()); // Identify only by UserId
 
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
@@ -175,14 +178,14 @@ public class UserDAO extends BaseDAO {
     }
 
     public boolean changePassword(int userId, String oldPassword, String newPassword) {
-        // Bước 1: Lấy mật khẩu đã băm cũ từ DB của user này ra
+        // Step 1: Retrieve old hashed password from DB for this user
         String selectSql = "SELECT PasswordHash FROM Users WHERE Id = ?";
         String updateSql = "UPDATE Users SET PasswordHash = ? WHERE Id = ?";
 
         try (Connection conn = getConnection()) {
             String storedHash = null;
 
-            // Truy vấn lấy hash cũ
+            // Query to get old hash
             try (PreparedStatement psSelect = conn.prepareStatement(selectSql)) {
                 psSelect.setInt(1, userId);
                 try (ResultSet rs = psSelect.executeQuery()) {
@@ -192,9 +195,9 @@ public class UserDAO extends BaseDAO {
                 }
             }
 
-            // Bước 2: So khớp mật khẩu cũ thô với hash trong DB
+            // Step 2: Match old plain password with hash in DB
             if (storedHash != null && BCrypt.checkpw(oldPassword, storedHash)) {
-                // Bước 3: Nếu khớp, băm mật khẩu mới và cập nhật vào DB
+                // Step 3: If match, hash new password and update in DB
                 String newHashedPassword = BCrypt.hashpw(newPassword, BCrypt.gensalt());
                 try (PreparedStatement psUpdate = conn.prepareStatement(updateSql)) {
                     psUpdate.setString(1, newHashedPassword);
@@ -205,7 +208,7 @@ public class UserDAO extends BaseDAO {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return false; // Trả về false nếu sai mật khẩu cũ hoặc lỗi kết nối
+        return false; // Return false if old password is incorrect or connection fails
     }
 
     public User getUserByEmail(String email) {
@@ -234,4 +237,180 @@ public class UserDAO extends BaseDAO {
         return null;
     }
 
+    public List<User> getAllUsersWithProfiles() {
+        List<User> list = new ArrayList<>();
+        String sql = "SELECT u.Id, u.RoleId, r.Name AS RoleName, u.Username, u.Email, u.IsActive, u.AuthProvider, u.CreatedAt, "
+                   + "       p.FullName, p.Phone "
+                   + "FROM Users u "
+                   + "JOIN Roles r ON u.RoleId = r.Id "
+                   + "LEFT JOIN UserProfiles p ON u.Id = p.UserId "
+                   + "ORDER BY u.CreatedAt DESC";
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                User user = new User();
+                user.setId(rs.getInt("Id"));
+                user.setRoleId(rs.getInt("RoleId"));
+                user.setRoleName(rs.getString("RoleName"));
+                user.setUsername(rs.getString("Username"));
+                user.setEmail(rs.getString("Email"));
+                user.setIsActive(rs.getBoolean("IsActive"));
+                user.setAuthProvider(rs.getString("AuthProvider"));
+                user.setCreatedAt(rs.getTimestamp("CreatedAt"));
+                user.setFullName(rs.getString("FullName"));
+                user.setPhone(rs.getString("Phone"));
+                list.add(user);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public int countUsers(String search, int roleId) {
+        int count = 0;
+        StringBuilder sql = new StringBuilder(
+            "SELECT COUNT(*) FROM Users u " +
+            "JOIN Roles r ON u.RoleId = r.Id " +
+            "LEFT JOIN UserProfiles p ON u.Id = p.UserId WHERE 1=1"
+        );
+        
+        if (search != null && !search.trim().isEmpty()) {
+            sql.append(" AND (u.Username LIKE ? OR u.Id = TRY_CAST(? AS INT))");
+        }
+        if (roleId > 0) {
+            sql.append(" AND u.RoleId = ?");
+        }
+
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            int paramIndex = 1;
+            if (search != null && !search.trim().isEmpty()) {
+                String searchLike = "%" + search.trim() + "%";
+                ps.setString(paramIndex++, searchLike);
+                ps.setString(paramIndex++, search.trim());
+            }
+            if (roleId > 0) {
+                ps.setInt(paramIndex++, roleId);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    count = rs.getInt(1);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return count;
+    }
+
+    public List<User> getUsersPaginated(String search, int roleId, int offset, int limit) {
+        List<User> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+            "SELECT u.Id, u.RoleId, r.Name AS RoleName, u.Username, u.Email, u.IsActive, u.AuthProvider, u.CreatedAt, " +
+            "       p.FullName, p.Phone " +
+            "FROM Users u " +
+            "JOIN Roles r ON u.RoleId = r.Id " +
+            "LEFT JOIN UserProfiles p ON u.Id = p.UserId " +
+            "WHERE 1=1"
+        );
+        
+        if (search != null && !search.trim().isEmpty()) {
+            sql.append(" AND (u.Username LIKE ? OR u.Id = TRY_CAST(? AS INT))");
+        }
+        if (roleId > 0) {
+            sql.append(" AND u.RoleId = ?");
+        }
+        
+        sql.append(" ORDER BY u.CreatedAt DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            int paramIndex = 1;
+            if (search != null && !search.trim().isEmpty()) {
+                String searchLike = "%" + search.trim() + "%";
+                ps.setString(paramIndex++, searchLike);
+                ps.setString(paramIndex++, search.trim());
+            }
+            if (roleId > 0) {
+                ps.setInt(paramIndex++, roleId);
+            }
+            ps.setInt(paramIndex++, Math.max(offset, 0));
+            ps.setInt(paramIndex++, limit);
+            
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    User user = new User();
+                    user.setId(rs.getInt("Id"));
+                    user.setRoleId(rs.getInt("RoleId"));
+                    user.setRoleName(rs.getString("RoleName"));
+                    user.setUsername(rs.getString("Username"));
+                    user.setEmail(rs.getString("Email"));
+                    user.setIsActive(rs.getBoolean("IsActive"));
+                    user.setAuthProvider(rs.getString("AuthProvider"));
+                    user.setCreatedAt(rs.getTimestamp("CreatedAt"));
+                    user.setFullName(rs.getString("FullName"));
+                    user.setPhone(rs.getString("Phone"));
+                    list.add(user);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+
+    public boolean updateUserRole(int userId, int roleId) {
+        String sql = "UPDATE Users SET RoleId = ? WHERE Id = ?";
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, roleId);
+            ps.setInt(2, userId);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean toggleUserStatus(int userId, boolean isActive) {
+        String sql = "UPDATE Users SET IsActive = ? WHERE Id = ?";
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setBoolean(1, isActive);
+            ps.setInt(2, userId);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public List<Role> getAllRoles() {
+        List<Role> list = new ArrayList<>();
+        String sql = "SELECT * FROM Roles ORDER BY Id";
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                Role role = new Role();
+                role.setId(rs.getInt("Id"));
+                role.setName(rs.getString("Name"));
+                role.setDescription(rs.getString("Description"));
+                list.add(role);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public boolean isAdmin(int userId) {
+        String sql = "SELECT RoleId FROM Users WHERE Id = ?";
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("RoleId") == 1; // Role ID 1 is ADMIN
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
 }

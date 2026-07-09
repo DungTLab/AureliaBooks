@@ -151,6 +151,23 @@ public class CartDAO extends BaseDAO {
             e.printStackTrace();
         }
     }
-
-
+    public String getUserInfo(int userId) {
+        String sql = "SELECT Phone, Address FROM UserProfiles WHERE UserId = ?";
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    String phone = rs.getString("Phone");
+                    String address = rs.getString("Address");
+                    // Tránh trường hợp null
+                    phone = (phone != null) ? phone : "";
+                    address = (address != null) ? address : "";
+                    return phone + "/" + address;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "/";
+    }
 }
