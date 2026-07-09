@@ -5,7 +5,7 @@
 <div class="container my-5">
     <h2>Cập Nhật Sách (Admin)</h2>
     <!-- Form cập nhật sách (Skeleton để Dev 3 triển khai theo luồng TPT Transaction) -->
-    <form action="${pageContext.request.contextPath}/product?view=update" method="POST" enctype="multipart/form-data">
+    <form action="${pageContext.request.contextPath}/admin/products?view=update" method="POST" enctype="multipart/form-data">
         <input type="hidden" name="productId" value="${book.id}">
         <div class="row">
             <div class="col-md-6">
@@ -74,7 +74,7 @@
             </div>
         </div>
         <button type="submit" class="btn btn-primary mt-4">Cập nhật</button>
-        <a href="${pageContext.request.contextPath}/product?view=list" class="btn btn-secondary mt-4">Quay lại</a>
+        <a href="${pageContext.request.contextPath}/admin/products?view=list" class="btn btn-secondary mt-4">Quay lại</a>
     </form>
 </div>
 

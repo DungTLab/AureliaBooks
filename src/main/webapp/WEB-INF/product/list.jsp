@@ -5,8 +5,22 @@
 <div class="container my-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Quản Lý Kho Sách (Admin - TPT)</h2>
-        <a href="${pageContext.request.contextPath}/product?view=create" class="btn btn-success">Thêm Sách Mới</a>
+        <a href="${pageContext.request.contextPath}/admin/products?view=create" class="btn btn-success">Thêm Sách Mới</a>
     </div>
+
+    <!-- Thông báo kết quả -->
+    <c:if test="${not empty successMessage}">
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>${successMessage}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    </c:if>
+    <c:if test="${not empty errorMessage}">
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>${errorMessage}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    </c:if>
 
     <!-- Bảng danh sách sách phía Admin (Skeleton để Dev 3 liên kết CSDL) -->
     <table class="table table-bordered table-striped align-middle">
@@ -27,7 +41,9 @@
                 <tr>
                     <td>${book.id}</td>
                     <td>
-                        <img src="${pageContext.request.contextPath}/assets/images/book-image/${book.imageUrl}" class="img-thumbnail" style="width: 50px;" alt="...">
+                        <img src="${pageContext.request.contextPath}/uploads/${book.imageUrl}"
+                             onerror="this.onerror=null; this.src='${pageContext.request.contextPath}/assets/images/book-image/${book.imageUrl}'"
+                             class="img-thumbnail" style="width: 50px;" alt="...">
                     </td>
                     <td>
                         <strong>${book.title}</strong> <br>
@@ -45,8 +61,8 @@
                         </span>
                     </td>
                     <td>
-                        <a href="${pageContext.request.contextPath}/product?view=update&productId=${book.id}" class="btn btn-sm btn-primary">Sửa</a>
-                        <a href="${pageContext.request.contextPath}/product?view=delete&productId=${book.id}" class="btn btn-sm btn-danger ms-1">Xóa</a>
+                        <a href="${pageContext.request.contextPath}/admin/products?view=update&productId=${book.id}" class="btn btn-sm btn-primary">Sửa</a>
+                        <a href="${pageContext.request.contextPath}/admin/products?view=delete&productId=${book.id}" class="btn btn-sm btn-danger ms-1">Xóa</a>
                     </td>
                 </tr>
             </c:forEach>

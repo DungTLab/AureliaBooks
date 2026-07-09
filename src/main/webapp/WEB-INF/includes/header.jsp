@@ -103,6 +103,11 @@
                                                 </a>
                                             </li>
                                             <li>
+                                                <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/products">
+                                                    <i class="bi bi-book me-2"></i>Quản lý Sách
+                                                </a>
+                                            </li>
+                                            <li>
                                                 <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/discounts">
                                                     <i class="bi bi-ticket-perforated me-2"></i>Quản lý Voucher
                                                 </a>
@@ -174,6 +179,11 @@
                                             <li>
                                                 <a class="dropdown-item py-2" href="${pageContext.request.contextPath}/admin/categories">
                                                     <i class="bi bi-list-ul me-2 text-secondary"></i>Quản lý Danh mục
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item py-2" href="${pageContext.request.contextPath}/admin/products">
+                                                    <i class="bi bi-book me-2 text-secondary"></i>Quản lý Sách
                                                 </a>
                                             </li>
                                             <li>

@@ -834,6 +834,89 @@ public class ProductDAO extends BaseDAO {
             return false;
         }
     }
+
+    /**
+     * Returns all products (active + inactive) joined with Inventory for admin
+     * list management. Sets quantityInStock on each returned Product.
+     */
+    public List<Product> getAdminProductList(int offset, int limit) {
+        List<Product> products = new ArrayList<>();
+        if (limit <= 0) return products;
+
+        String sql = "SELECT p.[Id], p.[CategoryId], p.[SupplierId], p.[Title], p.[Description], "
+                + "p.[Price], p.[Sku], p.[Image_URL], p.[IsActive], p.[CreatedAt], "
+                + "b.[ProductId] AS [BookProductId], b.[PublisherId], b.[Translator], "
+                + "b.[PublicationYear], b.[NumberOfPages], b.[CoverType], b.[Language], "
+                + "b.[Weight] AS [BookWeight], b.[Dimensions] AS [BookDimensions], "
+                + "s.[ProductId] AS [StationeryProductId], s.[BrandId], s.[Origin], "
+                + "s.[Material], s.[Color], s.[Weight] AS [StationeryWeight], "
+                + "s.[Dimensions] AS [StationeryDimensions], s.[Specifications], s.[Warning], "
+                + "ISNULL(inv.[QuantityInStock], 0) AS [QuantityInStock] "
+                + "FROM [dbo].[Products] p "
+                + "LEFT JOIN [dbo].[Books] b ON p.[Id] = b.[ProductId] "
+                + "LEFT JOIN [dbo].[Stationeries] s ON p.[Id] = s.[ProductId] "
+                + "LEFT JOIN [dbo].[Inventory] inv ON p.[Id] = inv.[ProductId] "
+                + "ORDER BY p.[CreatedAt] DESC, p.[Id] DESC "
+                + "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+
+        try (Connection conn = this.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, Math.max(offset, 0));
+            stmt.setInt(2, limit);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    Product p = mapPagedProduct(rs);
+                    p.setQuantityInStock(rs.getInt("QuantityInStock"));
+                    products.add(p);
+                }
+            }
+        } catch (SQLException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return products;
+    }
+
+    /**
+     * Counts total products (active + inactive) for admin pagination.
+     */
+    public int countAdminProducts() {
+        int count = 0;
+        String sql = "SELECT COUNT(*) FROM [dbo].[Products]";
+        try (Connection conn = this.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            if (rs.next()) {
+                count = rs.getInt(1);
+            }
+        } catch (SQLException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return count;
+    }
+
+    /**
+     * Returns all publishers for dropdown in create/update forms.
+     */
+    public List<com.mycompany.aureliabooks.model.Publisher> getAllPublishers() {
+        List<com.mycompany.aureliabooks.model.Publisher> publishers = new ArrayList<>();
+        String sql = "SELECT [Id], [Name], [Address] FROM [dbo].[Publishers] ORDER BY [Name]";
+        try (Connection conn = this.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                com.mycompany.aureliabooks.model.Publisher pub = new com.mycompany.aureliabooks.model.Publisher();
+                pub.setId(rs.getInt("Id"));
+                pub.setName(rs.getString("Name"));
+                pub.setAddress(rs.getString("Address"));
+                publishers.add(pub);
+            }
+        } catch (SQLException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return publishers;
+    }
+
+
     
     public List<HashMap<String, Object>> getTopSellingBooks(int categoryId, int offset, int limit) {
     List<HashMap<String, Object>> list = new ArrayList<>();

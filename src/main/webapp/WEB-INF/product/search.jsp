@@ -35,7 +35,7 @@
                         <div class="col">
                             <a href="${pageContext.request.contextPath}/products?action=detail&id=${product.id}" class="card h-100 text-decoration-none text-dark border-0 shadow-sm">
                                 <div class="ratio ratio-1x1">
-                                    <img src="${pageContext.request.contextPath}/assets/images/book-image/${product.imageUrl}" class="card-img-top img-fluid object-fit-contain p-3" alt="${product.title}">
+                                    <img src="${pageContext.request.contextPath}/uploads/${product.imageUrl}" class="card-img-top img-fluid object-fit-contain p-3" alt="${product.title}">
                                 </div>
                                 <div class="card-body">
                                     <h5 class="card-title fs-6 fw-normal mb-2">${product.title}</h5>

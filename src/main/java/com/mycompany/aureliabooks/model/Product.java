@@ -107,4 +107,17 @@ public class Product implements Serializable {
     public void setCreatedAt(Timestamp createdAt) {
         this.createdAt = createdAt;
     }
+
+    // -------------------------------------------------------------------------
+    // Helper field (transient) - populated by admin queries joining Inventory
+    // -------------------------------------------------------------------------
+    private Integer quantityInStock;
+
+    public Integer getQuantityInStock() {
+        return quantityInStock;
+    }
+
+    public void setQuantityInStock(Integer quantityInStock) {
+        this.quantityInStock = quantityInStock;
+    }
 }
