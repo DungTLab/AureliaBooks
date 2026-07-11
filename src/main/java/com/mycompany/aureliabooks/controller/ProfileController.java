@@ -93,9 +93,13 @@ public class ProfileController extends HttpServlet {
         }
 
         try {
-            String fullName = request.getParameter("fullName").trim();
-            String phone = request.getParameter("phone").trim();
-            String address = request.getParameter("address").trim();
+            String rawFullName = request.getParameter("fullName");
+            String rawPhone = request.getParameter("phone");
+            String rawAddress = request.getParameter("address");
+
+            String fullName = (rawFullName != null) ? rawFullName.trim() : "";
+            String phone = (rawPhone != null) ? rawPhone.trim() : "";
+            String address = (rawAddress != null) ? rawAddress.trim() : "";
 
             if (fullName.isEmpty()) {
                 session.setAttribute("profileError", "Họ và tên không được để trống!");
@@ -140,8 +144,11 @@ public class ProfileController extends HttpServlet {
         }
 
         try {
-            String oldPassword = request.getParameter("oldPassword");
-            String newPassword = request.getParameter("newPassword");
+            String rawOldPassword = request.getParameter("oldPassword");
+            String rawNewPassword = request.getParameter("newPassword");
+
+            String oldPassword = (rawOldPassword != null) ? rawOldPassword : "";
+            String newPassword = (rawNewPassword != null) ? rawNewPassword : "";
 
             if (oldPassword.isEmpty() || newPassword.isEmpty()) {
                 session.setAttribute("passwordError", "Vui lòng nhập đầy đủ mật khẩu cũ và mới!");

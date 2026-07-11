@@ -108,16 +108,14 @@
                                     <strong>${appliedDiscount.code}</strong><br>
                                     <small>Đã giảm: -${discountAmount} VNĐ</small>
                                 </div>
-                                <form action="${pageContext.request.contextPath}/checkout?action=removeVoucher" method="POST">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">Hủy</button>
-                                </form>
+                                <button type="submit" form="checkoutForm" formaction="${pageContext.request.contextPath}/checkout?action=removeVoucher" formnovalidate class="btn btn-sm btn-outline-danger">Hủy</button>
                             </div>
                         </c:when>
                         <c:otherwise>
-                            <form action="${pageContext.request.contextPath}/checkout?action=applyVoucher" method="POST" class="d-flex">
-                                <input type="text" class="form-control me-2" name="voucherCode" placeholder="Nhập mã voucher" required>
-                                <button type="submit" class="btn btn-outline-primary">Áp dụng</button>
-                            </form>
+                            <div class="d-flex">
+                                <input type="text" class="form-control me-2" id="voucherCode" name="voucherCode" form="checkoutForm" placeholder="Nhập mã voucher" required>
+                                <button type="submit" form="checkoutForm" formaction="${pageContext.request.contextPath}/checkout?action=applyVoucher" formnovalidate class="btn btn-outline-primary">Áp dụng</button>
+                            </div>
                         </c:otherwise>
                     </c:choose>
                 </div>
@@ -167,5 +165,4 @@
         </div>
     </div>
 </div>
-
 <jsp:include page="/WEB-INF/includes/footer.jsp" />

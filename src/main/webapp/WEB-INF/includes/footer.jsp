@@ -75,5 +75,48 @@
     </div>
 </footer>
 <script src="${pageContext.request.contextPath}/assets/js/bootstrap.bundle.js"></script>
+
+<!-- Global Toast Notification Container -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1100;">
+    <div id="cartToast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="3000">
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="bi bi-check-circle-fill me-2"></i> Đã thêm sản phẩm vào giỏ hàng thành công!
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function addToCartGlobal(productId, quantity, redirect) {
+        var contextPath = "${pageContext.request.contextPath}";
+        var url = "";
+        if (redirect) {
+            url = contextPath + "/checkout?action=buyNow&productId=" + productId + "&quantity=" + quantity;
+        } else {
+            url = contextPath + "/cart?action=add&productId=" + productId + "&quantity=" + quantity;
+        }
+        
+        fetch(url, {
+            method: 'POST'
+        }).then(response => {
+            if (response.redirected && response.url.includes("login")) {
+                window.location.href = response.url;
+            } else {
+                if (redirect) {
+                    window.location.href = contextPath + "/checkout";
+                } else {
+                    var toastEl = document.getElementById('cartToast');
+                    var toast = new bootstrap.Toast(toastEl);
+                    toast.show();
+                }
+            }
+        }).catch(error => {
+            console.error('Error:', error);
+            alert("Có lỗi xảy ra khi thêm vào giỏ hàng!");
+        });
+    }
+</script>
 </body>
 </html>

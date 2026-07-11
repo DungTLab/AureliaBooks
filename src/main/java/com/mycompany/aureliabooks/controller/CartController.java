@@ -133,8 +133,17 @@ public class CartController extends HttpServlet {
                         cartDAO.addItem(cartId, productId, quantity);
                     }
 
-                    // Redirect back to the cart view to reflect the changes
-                    response.sendRedirect(request.getContextPath() + "/cart");
+                    // Redirect back to the referring page if available, else redirect to cart page
+                    String referer = request.getHeader("Referer");
+                    if (referer != null && !referer.trim().isEmpty()) {
+                        // Only set session message if NOT coming from the detail page (which uses AJAX and shows a Toast)
+                        if (!referer.contains("action=detail")) {
+                            session.setAttribute("cartSuccessMessage", "Đã thêm sản phẩm vào giỏ hàng thành công!");
+                        }
+                        response.sendRedirect(referer);
+                    } else {
+                        response.sendRedirect(request.getContextPath() + "/cart");
+                    }
 
                 } else if ("update".equals(action)) {
                     // Handle updating the quantity of a specific cart item
@@ -161,14 +170,14 @@ public class CartController extends HttpServlet {
                         }
                     }
 
-                    cartDAO.updateQuantity(itemId, quantity);
+                    cartDAO.updateQuantity(itemId, quantity, loggedUser.getId());
 
                     // Redirect back to the cart view to refresh the data
                     response.sendRedirect(request.getContextPath() + "/cart");
                 } else if ("delete".equals(action)) {
                     // Handle removing an item entirely from the cart
                     int itemId = Integer.parseInt(request.getParameter("itemId"));
-                    cartDAO.deleteItem(itemId);
+                    cartDAO.deleteItem(itemId, loggedUser.getId());
 
                     // Redirect back to the cart view to refresh the data
                     response.sendRedirect(request.getContextPath() + "/cart");
