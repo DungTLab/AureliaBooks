@@ -4,6 +4,19 @@
 
 <div class="container my-5">
     <h2>Cập Nhật Sách (Admin)</h2>
+
+    <c:if test="${not empty errorMessage}">
+        <div class="alert alert-danger" role="alert">
+            ${errorMessage}
+        </div>
+    </c:if>
+
+    <c:if test="${not empty successMessage}">
+        <div class="alert alert-success" role="alert">
+            ${successMessage}
+        </div>
+    </c:if>
+
     <!-- Form cập nhật sách (Skeleton để Dev 3 triển khai theo luồng TPT Transaction) -->
     <form action="${pageContext.request.contextPath}/admin/products?view=update" method="POST" enctype="multipart/form-data">
         <input type="hidden" name="productId" value="${book.id}">

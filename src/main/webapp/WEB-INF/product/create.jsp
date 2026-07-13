@@ -4,6 +4,19 @@
 
 <div class="container my-5">
     <h2>Thêm Sách Mới (Admin)</h2>
+
+    <c:if test="${not empty errorMessage}">
+        <div class="alert alert-danger" role="alert">
+            ${errorMessage}
+        </div>
+    </c:if>
+
+    <c:if test="${not empty successMessage}">
+        <div class="alert alert-success" role="alert">
+            ${successMessage}
+        </div>
+    </c:if>
+
     <!-- Form thêm mới sách (Skeleton để Dev 3 triển khai theo luồng TPT Transaction) -->
     <form action="${pageContext.request.contextPath}/admin/products?view=create" method="POST" enctype="multipart/form-data">
         <div class="row">

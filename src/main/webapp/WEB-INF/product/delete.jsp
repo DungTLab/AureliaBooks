@@ -4,6 +4,19 @@
 
 <div class="container my-5">
     <h2>Xác Nhận Xóa Sách</h2>
+
+    <c:if test="${not empty errorMessage}">
+        <div class="alert alert-danger" role="alert">
+            ${errorMessage}
+        </div>
+    </c:if>
+
+    <c:if test="${not empty successMessage}">
+        <div class="alert alert-success" role="alert">
+            ${successMessage}
+        </div>
+    </c:if>
+
     <div class="card border-danger mb-3" style="max-width: 30rem;">
         <div class="card-header bg-danger text-white">Cảnh báo xóa dữ liệu</div>
         <div class="card-body">
