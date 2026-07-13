@@ -66,11 +66,12 @@ public class CartDAO extends BaseDAO {
         return list;
     }
 
-    public void updateQuantity(int itemId, int quantity) {
-        String sql = "UPDATE CartItems SET Quantity = ? WHERE Id = ?";
+    public void updateQuantity(int itemId, int quantity, int userId) {
+        String sql = "UPDATE CartItems SET Quantity = ? WHERE Id = ? AND CartId = (SELECT Id FROM Carts WHERE UserId = ?)";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, quantity);
             ps.setInt(2, itemId);
+            ps.setInt(3, userId);
             ps.executeUpdate();
         } catch (Exception e) {
             e.printStackTrace();
@@ -126,7 +127,13 @@ public class CartDAO extends BaseDAO {
                 if (rs.next()) {
                     int existingId = rs.getInt("Id");
                     int newQuantity = rs.getInt("Quantity") + quantity;
-                    updateQuantity(existingId, newQuantity);
+                    // Note: internal addition from addItem can use a simplified internal update
+                    String sqlUpdate = "UPDATE CartItems SET Quantity = ? WHERE Id = ?";
+                    try (PreparedStatement psUp = conn.prepareStatement(sqlUpdate)) {
+                        psUp.setInt(1, newQuantity);
+                        psUp.setInt(2, existingId);
+                        psUp.executeUpdate();
+                    }
                 } else {
                     String insertSql = "INSERT INTO CartItems (CartId, ProductId, Quantity) VALUES (?, ?, ?)";
                     try (PreparedStatement psInsert = conn.prepareStatement(insertSql)) {
@@ -142,10 +149,11 @@ public class CartDAO extends BaseDAO {
         }
     }
 
-    public void deleteItem(int itemId) {
-        String sql = "DELETE FROM CartItems WHERE Id = ?";
+    public void deleteItem(int itemId, int userId) {
+        String sql = "DELETE FROM CartItems WHERE Id = ? AND CartId = (SELECT Id FROM Carts WHERE UserId = ?)";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, itemId);
+            ps.setInt(2, userId);
             ps.executeUpdate();
         } catch (Exception e) {
             e.printStackTrace();

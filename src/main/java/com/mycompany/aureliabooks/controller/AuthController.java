@@ -62,8 +62,12 @@ public class AuthController extends HttpServlet {
     private void handlelogin(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         try {
-            String username = request.getParameter("username").trim();
-            String password = request.getParameter("password");
+            String rawUsername = request.getParameter("username");
+            String rawPassword = request.getParameter("password");
+            
+            String username = (rawUsername != null) ? rawUsername.trim() : "";
+            String password = (rawPassword != null) ? rawPassword : "";
+            
             if (username.isEmpty() || password.isEmpty()) {
                 request.setAttribute("error", "Tài khoản và mật khẩu không được để trống!");
                 request.getRequestDispatcher("/WEB-INF/auth/login.jsp").forward(request, response);
@@ -91,10 +95,15 @@ public class AuthController extends HttpServlet {
     private void handleRegister(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         try {
-            String username = request.getParameter("username").trim();
-            String email = request.getParameter("email").trim();
-            String fullName = request.getParameter("fullName").trim();
-            String password = request.getParameter("password").trim();
+            String rawUsername = request.getParameter("username");
+            String rawEmail = request.getParameter("email");
+            String rawFullName = request.getParameter("fullName");
+            String rawPassword = request.getParameter("password");
+
+            String username = (rawUsername != null) ? rawUsername.trim() : "";
+            String email = (rawEmail != null) ? rawEmail.trim() : "";
+            String fullName = (rawFullName != null) ? rawFullName.trim() : "";
+            String password = (rawPassword != null) ? rawPassword.trim() : "";
 
             if (username.isEmpty() || email.isEmpty() || fullName.isEmpty() || password.isEmpty()) {
                 request.setAttribute("error", "Vui lòng nhập đầy đủ các trường thông tin");
