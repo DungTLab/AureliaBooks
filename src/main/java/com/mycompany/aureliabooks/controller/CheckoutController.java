@@ -100,6 +100,20 @@ public class CheckoutController extends HttpServlet {
 
         UserDAO userDAO = new UserDAO();
         UserProfile profile = userDAO.getUserProfile(loggedUser.getId());
+        if (profile == null) {
+            profile = new UserProfile();
+            profile.setUserId(loggedUser.getId());
+        }
+
+        // Restore temporarily saved inputs from session if present
+        String tempAddress = (String) session.getAttribute("tempAddress");
+        String tempPhone = (String) session.getAttribute("tempPhone");
+        if (tempAddress != null) {
+            profile.setAddress(tempAddress);
+        }
+        if (tempPhone != null) {
+            profile.setPhone(tempPhone);
+        }
 
         // Read and clear voucher error from session (Flash Attribute)
         String sessionVoucherError = (String) session.getAttribute("voucherError");
@@ -151,6 +165,11 @@ public class CheckoutController extends HttpServlet {
                 handleApplyVoucher(request, response, session);
                 return;
             } else if ("removeVoucher".equals(action)) {
+                String shippingAddress = request.getParameter("shippingAddress");
+                String contactPhone = request.getParameter("contactPhone");
+                session.setAttribute("tempAddress", shippingAddress);
+                session.setAttribute("tempPhone", contactPhone);
+
                 session.removeAttribute("appliedDiscount");
                 response.sendRedirect(request.getContextPath() + "/checkout");
                 return;
@@ -224,7 +243,9 @@ public class CheckoutController extends HttpServlet {
                 if (success) {
                     session.removeAttribute("checkoutItems");
                     session.removeAttribute("appliedDiscount");
-                    response.sendRedirect(request.getContextPath() + "/orders?action=view");
+                    session.removeAttribute("tempAddress");
+                    session.removeAttribute("tempPhone");
+                    response.sendRedirect(request.getContextPath() + "/orders");
                     return;
                 }
             }
@@ -240,6 +261,11 @@ public class CheckoutController extends HttpServlet {
     }
 
     private void handleApplyVoucher(HttpServletRequest request, HttpServletResponse response, HttpSession session) throws IOException {
+        String shippingAddress = request.getParameter("shippingAddress");
+        String contactPhone = request.getParameter("contactPhone");
+        session.setAttribute("tempAddress", shippingAddress);
+        session.setAttribute("tempPhone", contactPhone);
+
         String voucherCode = request.getParameter("voucherCode");
         
         List<CartItem> checkoutItems = (List<CartItem>) session.getAttribute("checkoutItems");
@@ -278,6 +304,13 @@ public class CheckoutController extends HttpServlet {
         Product product = productDAO.getProductById(productId);
 
         if (product != null) {
+            int stock = productDAO.getProductStock(productId);
+            if (quantity > stock) {
+                session.setAttribute("voucherError", "Không thể mua ngay. Số lượng đặt mua (" + quantity + ") vượt quá tồn kho hiện có (" + stock + ").");
+                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Out of stock");
+                return;
+            }
+
             CartItem newItem = new CartItem();
             newItem.setId(0); // 0 means it's not in the DB CartItems table yet
             newItem.setProductId(productId);

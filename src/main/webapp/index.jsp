@@ -14,6 +14,7 @@
     <%-- View all product --%>
     <div class="container mt-3">
 
+
         <div class=" container d-flex rounded-3 justify-content-between align-items-center pt-3 pb-3 bg-light">
             <label class="h2 mb-0"><i class="bi bi-graph-up-arrow btn btn-danger disabled"></i> Xu Hướng Mua Sắm</label>
             <a href="${pageContext.request.contextPath}/products" class="btn btn-danger fw-bold shadow-sm"><i class="bi bi-collection-fill me-1"></i> Xem tất cả sản phẩm</a>
@@ -42,7 +43,7 @@
                                                     <span class="badge bg-secondary py-2 px-3"><i class="bi bi-info-circle me-1"></i>Tài khoản Quản trị</span>
                                                 </c:when>
                                                 <c:otherwise>
-                                                    <a href="${pageContext.request.contextPath}/cart?action=add&productId=${product.id}" class="btn btn-primary px-4"> <i class="bi bi-cart"></i> Add to cart</a>
+                                                    <button type="button" onclick="addToCartGlobal(${product.id}, 1, false)" class="btn btn-primary px-4"> <i class="bi bi-cart"></i> Add to cart</button>
                                                 </c:otherwise>
                                             </c:choose>
                                         </div>

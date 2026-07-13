@@ -16,9 +16,11 @@
             <div>
                 <a href="${pageContext.request.contextPath}/admin/orders?status=ALL&search=${safeSearch}" class="btn btn-sm ${selectedStatus == 'ALL' ? 'btn-dark' : 'btn-secondary'}">Tất cả</a>
             <a href="${pageContext.request.contextPath}/admin/orders?status=PENDING&search=${safeSearch}" class="btn btn-sm ${selectedStatus == 'PENDING' ? 'btn-info text-white' : 'btn-outline-info'}">Chờ xác nhận</a>
+            <a href="${pageContext.request.contextPath}/admin/orders?status=CONFIRMED&search=${safeSearch}" class="btn btn-sm ${selectedStatus == 'CONFIRMED' ? 'btn-secondary text-white' : 'btn-outline-secondary'}">Đã xác nhận</a>
             <a href="${pageContext.request.contextPath}/admin/orders?status=SHIPPING&search=${safeSearch}" class="btn btn-sm ${selectedStatus == 'SHIPPING' ? 'btn-primary' : 'btn-outline-primary'}">Đang giao</a>
             <a href="${pageContext.request.contextPath}/admin/orders?status=COMPLETED&search=${safeSearch}" class="btn btn-sm ${selectedStatus == 'COMPLETED' ? 'btn-success' : 'btn-outline-success'}">Hoàn thành</a>
             <a href="${pageContext.request.contextPath}/admin/orders?status=CANCELLED&search=${safeSearch}" class="btn btn-sm ${selectedStatus == 'CANCELLED' ? 'btn-danger' : 'btn-outline-danger'}">Đã Hủy</a>
+            <a href="${pageContext.request.contextPath}/admin/orders?status=RETURNED&search=${safeSearch}" class="btn btn-sm ${selectedStatus == 'RETURNED' ? 'btn-warning text-dark' : 'btn-outline-warning'}">Đã Trả Hàng</a>
         </div>
 
         <form action="${pageContext.request.contextPath}/admin/orders" method="GET" class="d-flex">
@@ -62,6 +64,12 @@
                             <span class="badge ${order.status == 'COMPLETED' ? 'bg-success' : (order.status == 'CANCELLED' ? 'bg-danger' : (order.status == 'RETURNED' ? 'bg-warning text-dark' : 'bg-info text-dark'))}">
                                 <c:out value="${order.status}" />
                             </span>
+                            <%-- Show return reason inline for returned orders --%>
+                            <c:if test="${order.status == 'RETURNED' and not empty order.returnReason}">
+                                <div class="text-muted small mt-1" style="max-width:180px; white-space:normal;">
+                                    <i class="bi bi-chat-left-text me-1"></i><c:out value="${order.returnReason}"/>
+                                </div>
+                            </c:if>
                         </td>
 
                         <td>
@@ -79,6 +87,25 @@
                             <a href="${pageContext.request.contextPath}/admin/orders?action=detail&orderId=${order.id}" class="btn btn-sm btn-outline-secondary">Chi tiết</a>
 
                             <c:if test="${order.status == 'PENDING'}">
+                                <form action="${pageContext.request.contextPath}/admin/orders?action=updateStatus" method="POST" style="display:inline-block;">
+                                    <input type="hidden" name="orderId" value="${order.id}">
+                                    <input type="hidden" name="newStatus" value="CONFIRMED">
+                                    <input type="hidden" name="filterStatus" value="${safeStatus}">
+                                    <input type="hidden" name="search" value="${safeSearch}">
+                                    <input type="hidden" name="page" value="${currentPage}">
+                                    <button type="submit" class="btn btn-sm btn-secondary text-white ms-1">Xác nhận</button>
+                                </form>
+                                <form action="${pageContext.request.contextPath}/admin/orders?action=updateStatus" method="POST" style="display:inline-block;">
+                                    <input type="hidden" name="orderId" value="${order.id}">
+                                    <input type="hidden" name="newStatus" value="CANCELLED">
+                                    <input type="hidden" name="filterStatus" value="${safeStatus}">
+                                    <input type="hidden" name="search" value="${safeSearch}">
+                                    <input type="hidden" name="page" value="${currentPage}">
+                                    <button type="submit" class="btn btn-sm btn-danger ms-1" onclick="return confirm('Bạn chắc chắn muốn HỦY đơn hàng #${order.id} này?')">Hủy</button>
+                                </form>
+                            </c:if>
+
+                            <c:if test="${order.status == 'CONFIRMED'}">
                                 <form action="${pageContext.request.contextPath}/admin/orders?action=updateStatus" method="POST" style="display:inline-block;">
                                     <input type="hidden" name="orderId" value="${order.id}">
                                     <input type="hidden" name="newStatus" value="SHIPPING">
