@@ -19,7 +19,6 @@ import jakarta.servlet.http.Part;
 
 /**
  * Admin Product CRUD Controller.
-
  *
  * URL pattern: /admin/products?view={list|create|update|delete}
  *
