@@ -22,11 +22,11 @@
                     <form action="${pageContext.request.contextPath}/auth?action=login" method="POST">
                         <div class="mb-3">
                             <label for="username" class="form-label">Tài khoản</label>
-                            <input type="text" class="form-control" id="username" name="username" required>
+                            <input type="text" class="form-control" id="username" name="username" minlength="4" maxlength="30" autocomplete="username" spellcheck="false" required>
                         </div>
                         <div class="mb-3">
                             <label for="password" class="form-label">Mật khẩu</label>
-                            <input type="password" class="form-control" id="password" name="password" required>
+                            <input type="password" class="form-control" id="password" name="password" minlength="8" maxlength="50" autocomplete="current-password" required>
                         </div>
                         <button type="submit" class="btn btn-primary w-100">Đăng Nhập</button>
                     </form>

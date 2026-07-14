@@ -91,69 +91,77 @@
                                         <span class="small d-none d-xl-inline">${sessionScope.user.username}</span>
                                     </a>
                                     <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                        <%-- NHÓM 1: Tài khoản cá nhân (tất cả role) --%>
                                         <li><a class="dropdown-item" href="${pageContext.request.contextPath}/profile"><i class="bi bi-person me-2"></i>Hồ sơ cá nhân</a></li>
-                                            <c:if test="${sessionScope.user.roleName eq 'CUSTOMER'}">
+                                        <c:if test="${sessionScope.user.roleName eq 'CUSTOMER'}">
                                             <li><a class="dropdown-item" href="${pageContext.request.contextPath}/orders"><i class="bi bi-receipt me-2"></i>Đơn hàng của tôi</a></li>
-                                            </c:if>
+                                            <li><a class="dropdown-item" href="${pageContext.request.contextPath}/support?action=create"><i class="bi bi-headset me-2"></i>Gửi Yêu cầu hỗ trợ</a></li>
+                                        </c:if>
+                                        <c:if test="${sessionScope.user.roleName eq 'ADMIN' or sessionScope.user.roleName eq 'EMPLOYEE'}">
+                                            <li><a class="dropdown-item" href="${pageContext.request.contextPath}/admin/support"><i class="bi bi-tools me-2"></i>Xử lý yêu cầu hỗ trợ</a></li>
+                                        </c:if>
 
                                         <c:if test="${sessionScope.user.roleName eq 'ADMIN' or sessionScope.user.roleName eq 'EMPLOYEE'}">
+                                            <li><hr class="dropdown-divider"></li>
+
+                                            <%-- NHÓM 2: Quản lý nghiệp vụ (EMPLOYEE + ADMIN) --%>
+                                            <li>
+                                                <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/orders">
+                                                    <i class="bi bi-bag-check me-2"></i>Quản lý Đơn Hàng
+                                                </a>
+                                            </li>
                                             <li>
                                                 <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/categories">
-                                                    <i class="bi bi-list-ul me-2"></i>Quản lý Danh mục
+                                                    <i class="bi bi-bookmarks me-2"></i>Quản lý Danh mục
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/authors">
+                                                    <i class="bi bi-pen me-2 text-secondary"></i>Quản lý Tác giả
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/publishers">
+                                                    <i class="bi bi-building-fill me-2 text-secondary"></i>Quản lý NXB
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/brands">
+                                                    <i class="bi bi-tags me-2 text-secondary"></i>Quản lý Thương hiệu
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/suppliers">
+                                                    <i class="bi bi-truck me-2 text-secondary"></i>Quản lý Nhà cung cấp
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/inventory">
+                                                    <i class="bi bi-archive me-2 text-secondary"></i>Quản lý Kho hàng
                                                 </a>
                                             </li>
                                             <li>
                                                 <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/discounts">
-                                                    <i class="bi bi-ticket-perforated me-2"></i>Quản lý Voucher
+                                                    <i class="bi bi-ticket-perforated me-2 text-secondary"></i>Quản lý Voucher
                                                 </a>
                                             </li>
-                                            <li>
-                                                <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/orders">
-                                                    <i class="bi bi-speedometer2 me-2"></i>Quản lý Đơn Hàng
-                                                </a>
-                                            </li>
+
                                             <c:if test="${sessionScope.user.roleName eq 'ADMIN'}">
                                                 <li><hr class="dropdown-divider"></li>
-                                                <li>
-                                                    <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/authors">
-                                                        <i class="bi bi-person-lines-fill me-2 text-secondary"></i>Quản lý Tác giả
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/publishers">
-                                                        <i class="bi bi-building me-2 text-secondary"></i>Quản lý NXB
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/brands">
-                                                        <i class="bi bi-tags me-2 text-secondary"></i>Quản lý Thương hiệu
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/suppliers">
-                                                        <i class="bi bi-truck me-2 text-secondary"></i>Quản lý Nhà cung cấp
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/inventory">
-                                                        <i class="bi bi-box-seam me-2 text-secondary"></i>Quản lý Kho hàng
-                                                    </a>
-                                                </li>
-                                                <li><hr class="dropdown-divider"></li>
+
+                                                <%-- NHÓM 3: Quản trị hệ thống (ADMIN only) --%>
                                                 <li>
                                                     <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/reports">
                                                         <i class="bi bi-bar-chart-line me-2"></i>Báo cáo thống kê
                                                     </a>
                                                 </li>
                                                 <li>
-                                                    <a class="dropdown-item  text-danger fw-bold" href="${pageContext.request.contextPath}/admin/users">
+                                                    <a class="dropdown-item text-danger fw-bold" href="${pageContext.request.contextPath}/admin/users">
                                                         <i class="bi bi-people me-2"></i>Quản lý tài khoản
                                                     </a>
                                                 </li>
                                             </c:if>
-
                                         </c:if>
-
                                         <li><hr class="dropdown-divider"></li>
                                         <li><a class="dropdown-item" href="${pageContext.request.contextPath}/auth?action=logout"><i class="bi bi-box-arrow-right me-2"></i>Đăng xuất</a></li>
                                     </ul>
@@ -166,8 +174,6 @@
                                 </a>
                             </c:otherwise>
                         </c:choose>
-
-
                     </div>
 
                     <!-- Mobile Right-side Menu (Visible only below lg, styled like Fahasa with Cart and Profile Dropdown) -->
@@ -184,56 +190,47 @@
                             <a class="nav-link text-dark p-2 dropdown-toggle-split" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="Menu">
                                 <i class="bi bi-person fs-4"></i>
                             </a>
-                            <ul class="dropdown-menu dropdown-menu-end shadow-sm py-2" style="min-width: 200px;">
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm py-2" style="min-width: 210px;">
                                 <c:choose>
                                     <c:when test="${not empty sessionScope.user}">
                                         <li class="dropdown-header border-bottom pb-2 mb-1">Tài khoản: ${sessionScope.user.username}</li>
+                                        <%-- NHÓM 1: Tài khoản cá nhân --%>
                                         <li><a class="dropdown-item py-2" href="${pageContext.request.contextPath}/profile"><i class="bi bi-person me-2 text-secondary"></i>Hồ sơ cá nhân</a></li>
-                                            <c:if test="${sessionScope.user.roleName eq 'CUSTOMER'}">
+                                        <c:if test="${sessionScope.user.roleName eq 'CUSTOMER'}">
                                             <li><a class="dropdown-item py-2" href="${pageContext.request.contextPath}/orders"><i class="bi bi-receipt me-2 text-secondary"></i>Đơn hàng của tôi</a></li>
-                                            </c:if>
+                                            <li><a class="dropdown-item py-2" href="${pageContext.request.contextPath}/support?action=create"><i class="bi bi-headset me-2 text-secondary"></i>Gửi Yêu cầu hỗ trợ</a></li>
+                                        </c:if>
+                                        <c:if test="${sessionScope.user.roleName eq 'ADMIN' or sessionScope.user.roleName eq 'EMPLOYEE'}">
+                                            <li><a class="dropdown-item py-2" href="${pageContext.request.contextPath}/admin/support"><i class="bi bi-tools me-2 text-secondary"></i>Xử lý yêu cầu hỗ trợ</a></li>
+                                        </c:if>
 
                                         <c:if test="${sessionScope.user.roleName eq 'ADMIN' or sessionScope.user.roleName eq 'EMPLOYEE'}">
-                                            <li>
-                                                <a class="dropdown-item py-2" href="${pageContext.request.contextPath}/admin/categories">
-                                                    <i class="bi bi-list-ul me-2 text-secondary"></i>Quản lý Danh mục
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a class="dropdown-item py-2" href="${pageContext.request.contextPath}/admin/discounts">
-                                                    <i class="bi bi-ticket-perforated me-2 text-secondary"></i>Quản lý Voucher
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a class="dropdown-item py-2" href="${pageContext.request.contextPath}/admin/orders">
-                                                    <i class="bi bi-speedometer2 me-2"></i>
-                                                    <c:choose>
-                                                        <c:when test="${sessionScope.user.roleName eq 'ADMIN'}">Quản trị hệ thống</c:when>
-                                                        <c:otherwise>Trang Nhân viên</c:otherwise>
-                                                    </c:choose>
-                                                </a>
-                                            </li>
-                                            <c:if test="${sessionScope.user.roleName eq 'ADMIN'}">
-                                                <li>
-                                                    <a class="dropdown-item py-2" href="${pageContext.request.contextPath}/admin/reports">
-                                                        <i class="bi bi-bar-chart-line me-2 text-secondary"></i>Báo cáo thống kê
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <a class="dropdown-item py-2 text-danger fw-bold" href="${pageContext.request.contextPath}/admin/users">
-                                                        <i class="bi bi-people me-2 text-secondary"></i>Quản lý tài khoản
-                                                    </a>
-                                                </li>
-                                            </c:if>
+                                            <li><hr class="dropdown-divider my-1"></li>
+                                            <%-- NHÓM 2: Quản lý nghiệp vụ (EMPLOYEE + ADMIN) --%>
+                                            <li><a class="dropdown-item py-2" href="${pageContext.request.contextPath}/admin/orders"><i class="bi bi-bag-check me-2 text-secondary"></i>Quản lý Đơn Hàng</a></li>
+                                            <li><a class="dropdown-item py-2" href="${pageContext.request.contextPath}/admin/categories"><i class="bi bi-bookmarks me-2 text-secondary"></i>Quản lý Danh mục</a></li>
+                                            <li><a class="dropdown-item py-2" href="${pageContext.request.contextPath}/admin/authors"><i class="bi bi-pen me-2 text-secondary"></i>Quản lý Tác giả</a></li>
+                                            <li><a class="dropdown-item py-2" href="${pageContext.request.contextPath}/admin/publishers"><i class="bi bi-building-fill me-2 text-secondary"></i>Quản lý NXB</a></li>
+                                            <li><a class="dropdown-item py-2" href="${pageContext.request.contextPath}/admin/brands"><i class="bi bi-tags me-2 text-secondary"></i>Quản lý Thương hiệu</a></li>
+                                            <li><a class="dropdown-item py-2" href="${pageContext.request.contextPath}/admin/suppliers"><i class="bi bi-truck me-2 text-secondary"></i>Quản lý Nhà cung cấp</a></li>
+                                            <li><a class="dropdown-item py-2" href="${pageContext.request.contextPath}/admin/inventory"><i class="bi bi-archive me-2 text-secondary"></i>Quản lý Kho hàng</a></li>
+                                            <li><a class="dropdown-item py-2" href="${pageContext.request.contextPath}/admin/discounts"><i class="bi bi-ticket-perforated me-2 text-secondary"></i>Quản lý Voucher</a></li>
 
+                                            <c:if test="${sessionScope.user.roleName eq 'ADMIN'}">
+                                                <li><hr class="dropdown-divider my-1"></li>
+                                                <%-- NHÓM 3: Quản trị hệ thống (ADMIN only) --%>
+                                                <li><a class="dropdown-item py-2" href="${pageContext.request.contextPath}/admin/reports"><i class="bi bi-bar-chart-line me-2 text-secondary"></i>Báo cáo thống kê</a></li>
+                                                <li><a class="dropdown-item py-2 text-danger fw-bold" href="${pageContext.request.contextPath}/admin/users"><i class="bi bi-people me-2 text-secondary"></i>Quản lý tài khoản</a></li>
+                                            </c:if>
                                         </c:if>
+
                                         <li><hr class="dropdown-divider my-1"></li>
                                         <li><a class="dropdown-item py-2" href="${pageContext.request.contextPath}/auth?action=logout"><i class="bi bi-box-arrow-right me-2 text-secondary"></i>Đăng xuất</a></li>
-                                        </c:when>
-                                        <c:otherwise>
+                                    </c:when>
+                                    <c:otherwise>
                                         <li><a class="dropdown-item py-2 fw-bold" href="${pageContext.request.contextPath}/auth?action=login"><i class="bi bi-box-arrow-in-right me-2 text-secondary"></i>Đăng nhập</a></li>
-                                        </c:otherwise>
-                                    </c:choose>
+                                    </c:otherwise>
+                                </c:choose>
                             </ul>
                         </div>
                     </div>

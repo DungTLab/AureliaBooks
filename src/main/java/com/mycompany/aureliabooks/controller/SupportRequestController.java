@@ -29,6 +29,8 @@ public class SupportRequestController extends HttpServlet {
     // Enterprise Standard: Use standard Logger instead of System.out or e.printStackTrace()
     private static final Logger LOGGER = Logger.getLogger(SupportRequestController.class.getName());
 
+    private static final String SUBJECT_REGEX = "^[\\p{L}\\p{N}\\s\\p{P}]{5,150}$";
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -80,12 +82,8 @@ public class SupportRequestController extends HttpServlet {
                 request.setAttribute("supportRequests", supportRequests);
                 
                 // 3. Render view based on action
-                String action = request.getParameter("action");
-                if ("create".equals(action)) {
-                    request.getRequestDispatcher("/WEB-INF/support/create.jsp").forward(request, response);
-                } else {
-                    request.getRequestDispatcher("/WEB-INF/support/create.jsp").forward(request, response); // fallback
-                }
+                // create.jsp contains both the submit form and ticket history
+                request.getRequestDispatcher("/WEB-INF/support/create.jsp").forward(request, response);
                 
             } catch (Exception e) {
                 LOGGER.log(Level.SEVERE, "Unexpected critical error in SupportRequestController (GET)", e);
@@ -115,6 +113,18 @@ public class SupportRequestController extends HttpServlet {
                 if (idParam == null || idParam.trim().isEmpty() || replyMessage == null || replyMessage.trim().isEmpty()) {
                     session.setAttribute("errorMsg", "Vui lòng nhập đầy đủ nội dung phản hồi.");
                     response.sendRedirect(request.getContextPath() + "/admin/support?action=reply&id=" + (idParam != null ? idParam : ""));
+                    return;
+                }
+                
+                if (replyMessage.trim().length() < 10) {
+                    session.setAttribute("errorMsg", "Nội dung phản hồi phải có ít nhất 10 ký tự.");
+                    response.sendRedirect(request.getContextPath() + "/admin/support?action=reply&id=" + idParam);
+                    return;
+                }
+                
+                if (replyMessage.trim().length() > 2000) {
+                    session.setAttribute("errorMsg", "Nội dung phản hồi không được vượt quá 2000 ký tự.");
+                    response.sendRedirect(request.getContextPath() + "/admin/support?action=reply&id=" + idParam);
                     return;
                 }
                 
@@ -158,8 +168,29 @@ public class SupportRequestController extends HttpServlet {
                 String message = request.getParameter("message");
 
                 // 3. Validate Business Logic
-                if (subject == null || subject.trim().isEmpty() || message == null || message.trim().isEmpty()) {
+                String trimmedSubject = subject != null ? subject.trim() : "";
+                String trimmedMessage = message != null ? message.trim() : "";
+
+                if (trimmedSubject.isEmpty() || trimmedMessage.isEmpty()) {
                     session.setAttribute("errorMsg", "Vui lòng nhập đầy đủ Tiêu đề và Nội dung.");
+                    response.sendRedirect(request.getContextPath() + "/support?action=create");
+                    return;
+                }
+
+                if (trimmedSubject.length() < 5 || trimmedSubject.length() > 150) {
+                    session.setAttribute("errorMsg", "Tiêu đề phải từ 5 đến 150 ký tự.");
+                    response.sendRedirect(request.getContextPath() + "/support?action=create");
+                    return;
+                }
+
+                if (!trimmedSubject.matches(SUBJECT_REGEX)) {
+                    session.setAttribute("errorMsg", "Tiêu đề chứa ký tự không hợp lệ.");
+                    response.sendRedirect(request.getContextPath() + "/support?action=create");
+                    return;
+                }
+
+                if (trimmedMessage.length() < 10 || trimmedMessage.length() > 2000) {
+                    session.setAttribute("errorMsg", "Nội dung phải từ 10 đến 2000 ký tự.");
                     response.sendRedirect(request.getContextPath() + "/support?action=create");
                     return;
                 }

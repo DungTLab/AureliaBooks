@@ -70,7 +70,7 @@
                                                     <div class="modal-body">
                                                         <div class="mb-3">
                                                             <label for="returnReason" class="form-label">Lý do trả hàng</label>
-                                                            <textarea class="form-control" name="returnReason" rows="3" required placeholder="Vui lòng nêu rõ lý do trả hàng để chúng tôi duyệt..."></textarea>
+                                                            <textarea class="form-control" name="returnReason" rows="3" minlength="10" maxlength="500" title="Lý do trả hàng từ 10 đến 500 ký tự" required placeholder="Vui lòng nêu rõ lý do trả hàng để chúng tôi duyệt..."></textarea>
                                                         </div>
                                                     </div>
                                                     <div class="modal-footer">
