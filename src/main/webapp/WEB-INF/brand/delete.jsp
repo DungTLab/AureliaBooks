@@ -22,7 +22,7 @@
 
             <p class="text-muted small">Hành động này không thể hoàn tác nếu được thực hiện.</p>
 
-            <form action="${pageContext.request.contextPath}/admin/brands?view=delete" method="POST" class="mt-4">
+            <form action="${pageContext.request.contextPath}/admin/brands?action=delete" method="POST" class="mt-4">
                 <input type="hidden" name="id" value="${brand.id}">
                 
                 <div class="d-flex justify-content-center gap-3">

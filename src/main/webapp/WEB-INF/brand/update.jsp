@@ -20,17 +20,17 @@
                 </div>
             </c:if>
 
-            <form action="${pageContext.request.contextPath}/admin/brands?view=update" method="POST">
+            <form action="${pageContext.request.contextPath}/admin/brands?action=update" method="POST">
                 <input type="hidden" name="id" value="${brand.id}">
 
                 <div class="mb-3">
                     <label for="name" class="form-label fw-bold">Tên thương hiệu <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" id="name" name="name" value="${brand.name}" required>
+                    <input type="text" class="form-control" id="name" name="name" value="${brand.name}" maxlength="255" pattern="^[A-Za-z0-9À-ỹ\s\-&()]{2,255}$" title="Tên thương hiệu chỉ được chứa chữ cái, số, khoảng trắng và các ký tự - & ( ) từ 2 đến 255 ký tự" required>
                 </div>
                 
                 <div class="mb-3">
                     <label for="originCountry" class="form-label fw-bold">Quốc gia xuất xứ</label>
-                    <input type="text" class="form-control" id="originCountry" name="originCountry" value="${brand.originCountry}">
+                    <input type="text" class="form-control" id="originCountry" name="originCountry" value="${brand.originCountry}" maxlength="100" pattern="^[A-Za-z0-9À-ỹ\s\-&()]{2,100}$" title="Quốc gia xuất xứ chỉ được chứa chữ cái, số, khoảng trắng và các ký tự - & ( ) từ 2 đến 100 ký tự">
                 </div>
 
                 <div class="d-grid mt-4">
