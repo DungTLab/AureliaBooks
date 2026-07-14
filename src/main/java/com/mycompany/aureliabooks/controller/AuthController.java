@@ -27,6 +27,11 @@ public class AuthController extends HttpServlet {
 
     private final UserDAO userDAO = new UserDAO();
 
+    private static final String USERNAME_REGEX = "^[a-zA-Z0-9_]{4,30}$";
+    private static final String EMAIL_REGEX = "^[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$";
+    private static final String FULL_NAME_REGEX = "^[\\p{L} ]{2,100}$";
+    private static final String PASSWORD_REGEX = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,50}$";
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -65,11 +70,17 @@ public class AuthController extends HttpServlet {
             String rawUsername = request.getParameter("username");
             String rawPassword = request.getParameter("password");
             
-            String username = (rawUsername != null) ? rawUsername.trim() : "";
+            String username = (rawUsername != null) ? rawUsername.trim().toLowerCase() : "";
             String password = (rawPassword != null) ? rawPassword : "";
             
             if (username.isEmpty() || password.isEmpty()) {
                 request.setAttribute("error", "Tài khoản và mật khẩu không được để trống!");
+                request.getRequestDispatcher("/WEB-INF/auth/login.jsp").forward(request, response);
+                return;
+            }
+            
+            if (username.length() < 4 || username.length() > 30) {
+                request.setAttribute("error", "Tài khoản không hợp lệ!");
                 request.getRequestDispatcher("/WEB-INF/auth/login.jsp").forward(request, response);
                 return;
             }
@@ -111,8 +122,26 @@ public class AuthController extends HttpServlet {
                 return;
             }
 
-            if (password.length() < 6) {
-                request.setAttribute("error", "Mật khẩu phải có độ dài từ 6 ký tự trở lên!");
+            if (!username.matches(USERNAME_REGEX)) {
+                request.setAttribute("error", "Tài khoản chỉ gồm chữ cái, số, dấu gạch dưới và từ 4-30 ký tự!");
+                request.getRequestDispatcher("/WEB-INF/auth/register.jsp").forward(request, response);
+                return;
+            }
+
+            if (!email.matches(EMAIL_REGEX)) {
+                request.setAttribute("error", "Email không hợp lệ!");
+                request.getRequestDispatcher("/WEB-INF/auth/register.jsp").forward(request, response);
+                return;
+            }
+
+            if (!fullName.matches(FULL_NAME_REGEX)) {
+                request.setAttribute("error", "Họ và tên chỉ được chứa chữ cái và khoảng trắng (từ 2 đến 100 ký tự)!");
+                request.getRequestDispatcher("/WEB-INF/auth/register.jsp").forward(request, response);
+                return;
+            }
+
+            if (!password.matches(PASSWORD_REGEX)) {
+                request.setAttribute("error", "Mật khẩu phải từ 8 đến 50 ký tự, bao gồm ít nhất 1 chữ hoa, 1 chữ thường và 1 chữ số!");
                 request.getRequestDispatcher("/WEB-INF/auth/register.jsp").forward(request, response);
                 return;
             }

@@ -76,6 +76,12 @@ public class OrderController extends HttpServlet {
                 int orderId = Integer.parseInt(request.getParameter("orderId"));
                 String returnReason = request.getParameter("returnReason");
                 
+                if (returnReason == null || returnReason.trim().length() < 10 || returnReason.trim().length() > 500) {
+                    request.getSession().setAttribute("errorMessage", "Lý do trả hàng phải từ 10 đến 500 ký tự.");
+                    response.sendRedirect(request.getContextPath() + "/orders");
+                    return;
+                }
+                
                 OrderDAO orderDAO = new OrderDAO();
                 Order order = orderDAO.getOrderById(orderId);
                 
