@@ -121,8 +121,19 @@ public class AdminProductController extends HttpServlet {
             // CREATE: hiển thị form thêm sách mới
             // ------------------------------------------------------------------
             case "create": {
+                String type = request.getParameter("type");
+                if (type == null || type.trim().isEmpty()) {
+                    type = "book";
+                }
+                request.setAttribute("productType", type);
+                
                 request.setAttribute("categories", categoryDAO.getAllCategories());
-                request.setAttribute("publishers", productDAO.getAllPublishers());
+                if ("book".equals(type)) {
+                    request.setAttribute("publishers", productDAO.getAllPublishers());
+                } else if ("stationery".equals(type)) {
+                    request.setAttribute("brands", productDAO.getAllBrands());
+                    request.setAttribute("suppliers", productDAO.getAllSuppliers());
+                }
                 request.getRequestDispatcher("/WEB-INF/product/create.jsp").forward(request, response);
                 break;
             }
@@ -139,15 +150,26 @@ public class AdminProductController extends HttpServlet {
                 }
                 try {
                     int productId = Integer.parseInt(productIdParam);
-                    Product book = productDAO.getProductById(productId);
-                    if (book == null) {
+                    Product product = productDAO.getProductById(productId);
+                    if (product == null) {
                         request.setAttribute("errorMessage", "Không tìm thấy sản phẩm có ID = " + productId + ".");
                         showList(request, response);
                         return;
                     }
-                    request.setAttribute("book", book);
+                    
+                    String productType = "book";
+                    if (product instanceof Book) {
+                        productType = "book";
+                        request.setAttribute("publishers", productDAO.getAllPublishers());
+                    } else if (product instanceof Stationery) {
+                        productType = "stationery";
+                        request.setAttribute("brands", productDAO.getAllBrands());
+                        request.setAttribute("suppliers", productDAO.getAllSuppliers());
+                    }
+                    
+                    request.setAttribute("productType", productType);
+                    request.setAttribute("product", product);
                     request.setAttribute("categories", categoryDAO.getAllCategories());
-                    request.setAttribute("publishers", productDAO.getAllPublishers());
                     request.getRequestDispatcher("/WEB-INF/product/update.jsp").forward(request, response);
                 } catch (NumberFormatException e) {
                     request.setAttribute("errorMessage", "ID sản phẩm không hợp lệ.");
@@ -224,123 +246,105 @@ public class AdminProductController extends HttpServlet {
             throws ServletException, IOException {
 
         try {
-            // Bước 1: Đọc các trường từ form
+            String productType = request.getParameter("productType");
+            if (productType == null) productType = "book";
+
             String title       = request.getParameter("title");
             String categoryStr = request.getParameter("categoryId");
             String priceStr    = request.getParameter("price");
             String sku         = request.getParameter("sku");
             String description = request.getParameter("description");
 
-            // Các trường riêng của sách
-            String publisherStr    = request.getParameter("publisherId");
-            String translator      = request.getParameter("translator");
-            String yearStr         = request.getParameter("publicationYear");
-            String pagesStr        = request.getParameter("numberOfPages");
-            String coverType       = request.getParameter("coverType");
-            String language        = request.getParameter("language");
-
-            // Bước 2: Kiểm tra dữ liệu cơ bản (validate đơn giản)
             if (title == null || title.trim().isEmpty()) {
-                request.setAttribute("errorMessage", "Tiêu đề sách không được để trống!");
+                request.setAttribute("errorMessage", "Tiêu đề không được để trống!");
+                request.setAttribute("productType", productType);
                 request.setAttribute("categories", categoryDAO.getAllCategories());
-                request.setAttribute("publishers", productDAO.getAllPublishers());
+                if ("book".equals(productType)) request.setAttribute("publishers", productDAO.getAllPublishers());
+                else {
+                    request.setAttribute("brands", productDAO.getAllBrands());
+                    request.setAttribute("suppliers", productDAO.getAllSuppliers());
+                }
                 request.getRequestDispatcher("/WEB-INF/product/create.jsp").forward(request, response);
                 return;
             }
 
-            // Bước 3: Xử lý upload ảnh
             Part imagePart = request.getPart("image");
             String imageUrl = UploadUtils.saveUploadedFile(imagePart, getServletContext(), "book-image");
             if (imageUrl == null) {
-                imageUrl = "default-book.jpg";
+                imageUrl = "default.jpg";
             }
-
-            // Bước 4: Tạo object Book và set các giá trị
-            Book newBook = new Book();
-            newBook.setTitle(title.trim());
-            newBook.setDescription(description);
-            newBook.setSku(sku);
-            newBook.setImageUrl(imageUrl);
-            newBook.setIsActive(true);
 
             Integer categoryId = parseIntegerValue(categoryStr);
-            if (categoryId == null) {
-                request.setAttribute("errorMessage", "Danh mục không hợp lệ.");
-                request.setAttribute("categories", categoryDAO.getAllCategories());
-                request.setAttribute("publishers", productDAO.getAllPublishers());
-                request.getRequestDispatcher("/WEB-INF/product/create.jsp").forward(request, response);
-                return;
-            }
-
             BigDecimal price = parseBigDecimalValue(priceStr);
-            if (!isValidPrice(price)) {
-                request.setAttribute("errorMessage", "Giá tiền không hợp lệ.");
+
+            if (categoryId == null || !isValidPrice(price)) {
+                request.setAttribute("errorMessage", "Danh mục hoặc giá tiền không hợp lệ.");
+                request.setAttribute("productType", productType);
                 request.setAttribute("categories", categoryDAO.getAllCategories());
-                request.setAttribute("publishers", productDAO.getAllPublishers());
+                if ("book".equals(productType)) request.setAttribute("publishers", productDAO.getAllPublishers());
+                else {
+                    request.setAttribute("brands", productDAO.getAllBrands());
+                    request.setAttribute("suppliers", productDAO.getAllSuppliers());
+                }
                 request.getRequestDispatcher("/WEB-INF/product/create.jsp").forward(request, response);
                 return;
             }
 
-            Integer publisherId = null;
-            if (publisherStr != null && !publisherStr.trim().isEmpty()) {
-                publisherId = parseIntegerValue(publisherStr);
-                if (publisherId == null) {
-                    request.setAttribute("errorMessage", "Nhà xuất bản không hợp lệ.");
-                    request.setAttribute("categories", categoryDAO.getAllCategories());
-                    request.setAttribute("publishers", productDAO.getAllPublishers());
-                    request.getRequestDispatcher("/WEB-INF/product/create.jsp").forward(request, response);
-                    return;
-                }
-            }
+            boolean ok = false;
 
-            Integer publicationYear = null;
-            if (yearStr != null && !yearStr.trim().isEmpty()) {
-                publicationYear = parseIntegerValue(yearStr);
-                if (!isValidPublicationYear(publicationYear)) {
-                    request.setAttribute("errorMessage", "Năm xuất bản không hợp lệ. Vui lòng nhập từ năm 1900 đến năm hiện tại.");
-                    request.setAttribute("categories", categoryDAO.getAllCategories());
-                    request.setAttribute("publishers", productDAO.getAllPublishers());
-                    request.getRequestDispatcher("/WEB-INF/product/create.jsp").forward(request, response);
-                    return;
-                }
-                newBook.setPublicationYear(publicationYear);
-            }
+            if ("book".equals(productType)) {
+                Book newBook = new Book();
+                newBook.setTitle(title.trim());
+                newBook.setDescription(description);
+                newBook.setSku(sku);
+                newBook.setImageUrl(imageUrl);
+                newBook.setIsActive(true);
+                newBook.setCategoryId(categoryId);
+                newBook.setPrice(price);
 
-            Integer numberOfPages = null;
-            if (pagesStr != null && !pagesStr.trim().isEmpty()) {
-                numberOfPages = parseIntegerValue(pagesStr);
-                if (!isValidPositiveInteger(numberOfPages)) {
-                    request.setAttribute("errorMessage", "Số trang không hợp lệ.");
-                    request.setAttribute("categories", categoryDAO.getAllCategories());
-                    request.setAttribute("publishers", productDAO.getAllPublishers());
-                    request.getRequestDispatcher("/WEB-INF/product/create.jsp").forward(request, response);
-                    return;
-                }
-                newBook.setNumberOfPages(numberOfPages);
-            }
+                Integer publisherId = parseIntegerValue(request.getParameter("publisherId"));
+                newBook.setPublisherId(publisherId);
+                newBook.setTranslator(request.getParameter("translator"));
+                newBook.setPublicationYear(parseIntegerValue(request.getParameter("publicationYear")));
+                newBook.setNumberOfPages(parseIntegerValue(request.getParameter("numberOfPages")));
+                newBook.setCoverType(request.getParameter("coverType"));
+                newBook.setLanguage(request.getParameter("language"));
 
-            // Bước 5: Gọi DAO để lưu vào database
-            boolean ok = productDAO.insertBook(newBook);
-
-            // Bước 6: Đặt thông báo kết quả và hiển thị danh sách sách mới
-            if (ok) {
-                request.setAttribute("successMessage", "Thêm sách \"" + title.trim() + "\" thành công!");
+                ok = productDAO.insertBook(newBook);
             } else {
-                request.setAttribute("errorMessage", "Thêm sách thất bại, vui lòng thử lại.");
+                Stationery stat = new Stationery();
+                stat.setTitle(title.trim());
+                stat.setDescription(description);
+                stat.setSku(sku);
+                stat.setImageUrl(imageUrl);
+                stat.setIsActive(true);
+                stat.setCategoryId(categoryId);
+                stat.setPrice(price);
+
+                stat.setBrandId(parseIntegerValue(request.getParameter("brandId")));
+                stat.setSupplierId(parseIntegerValue(request.getParameter("supplierId")));
+                stat.setOrigin(request.getParameter("origin"));
+                stat.setMaterial(request.getParameter("material"));
+                stat.setColor(request.getParameter("color"));
+                stat.setWeight(parseBigDecimalValue(request.getParameter("weight")));
+                stat.setDimensions(request.getParameter("dimensions"));
+                stat.setSpecifications(request.getParameter("specifications"));
+                stat.setWarning(request.getParameter("warning"));
+
+                ok = productDAO.insertStationery(stat);
+            }
+
+            if (ok) {
+                request.setAttribute("successMessage", "Thêm sản phẩm \"" + title.trim() + "\" thành công!");
+            } else {
+                request.setAttribute("errorMessage", "Thêm sản phẩm thất bại, vui lòng thử lại.");
             }
             showList(request, response);
 
-        } catch (NumberFormatException e) {
-            request.setAttribute("errorMessage", "Dữ liệu số không hợp lệ, vui lòng kiểm tra lại.");
-            request.setAttribute("categories", categoryDAO.getAllCategories());
-            request.setAttribute("publishers", productDAO.getAllPublishers());
-            request.getRequestDispatcher("/WEB-INF/product/create.jsp").forward(request, response);
         } catch (Exception e) {
             e.printStackTrace();
             request.setAttribute("errorMessage", "Lỗi hệ thống: " + e.getMessage());
-            request.setAttribute("categories", categoryDAO.getAllCategories());
-            request.setAttribute("publishers", productDAO.getAllPublishers());
-            request.getRequestDispatcher("/WEB-INF/product/create.jsp").forward(request, response);
+            showList(request, response);
         }
     }
 
@@ -351,7 +355,6 @@ public class AdminProductController extends HttpServlet {
             throws ServletException, IOException {
 
         try {
-            // Bước 1: Đọc productId từ hidden input
             String productIdParam = request.getParameter("productId");
             if (productIdParam == null || productIdParam.trim().isEmpty()) {
                 request.setAttribute("errorMessage", "Thiếu ID sản phẩm khi cập nhật.");
@@ -360,7 +363,6 @@ public class AdminProductController extends HttpServlet {
             }
             int productId = Integer.parseInt(productIdParam);
 
-            // Bước 2: Lấy sách cũ từ DB để kiểm tra còn tồn tại không
             Product existing = productDAO.getProductById(productId);
             if (existing == null) {
                 request.setAttribute("errorMessage", "Không tìm thấy sản phẩm để cập nhật.");
@@ -368,125 +370,104 @@ public class AdminProductController extends HttpServlet {
                 return;
             }
 
-            // Bước 3: Đọc các trường mới từ form
+            String productType = request.getParameter("productType");
+            if (productType == null) productType = (existing instanceof Book) ? "book" : "stationery";
+
             String title       = request.getParameter("title");
             String categoryStr = request.getParameter("categoryId");
             String priceStr    = request.getParameter("price");
             String sku         = request.getParameter("sku");
             String description = request.getParameter("description");
 
-            String publisherStr    = request.getParameter("publisherId");
-            String translator      = request.getParameter("translator");
-            String yearStr         = request.getParameter("publicationYear");
-            String pagesStr        = request.getParameter("numberOfPages");
-            String coverType       = request.getParameter("coverType");
-            String language        = request.getParameter("language");
-
-            // Bước 4: Validate cơ bản
             if (title == null || title.trim().isEmpty()) {
-                request.setAttribute("errorMessage", "Tiêu đề sách không được để trống!");
-                request.setAttribute("book", existing);
+                request.setAttribute("errorMessage", "Tiêu đề không được để trống!");
+                request.setAttribute("productType", productType);
+                request.setAttribute("product", existing);
                 request.setAttribute("categories", categoryDAO.getAllCategories());
-                request.setAttribute("publishers", productDAO.getAllPublishers());
+                if ("book".equals(productType)) request.setAttribute("publishers", productDAO.getAllPublishers());
+                else {
+                    request.setAttribute("brands", productDAO.getAllBrands());
+                    request.setAttribute("suppliers", productDAO.getAllSuppliers());
+                }
                 request.getRequestDispatcher("/WEB-INF/product/update.jsp").forward(request, response);
                 return;
             }
 
-            // Bước 5: Xử lý ảnh
             Part imagePart = request.getPart("image");
             String imageUrl = UploadUtils.saveUploadedFile(imagePart, getServletContext(), "book-image");
             if (imageUrl == null) {
-                imageUrl = existing.getImageUrl(); // Giữ ảnh cũ
+                imageUrl = existing.getImageUrl();
             }
-
-            // Bước 6: Gán dữ liệu mới vào Book object
-            Book updatedBook = new Book();
-            updatedBook.setId(productId);
-            updatedBook.setTitle(title.trim());
-            updatedBook.setDescription(description);
-            updatedBook.setSku(sku);
-            updatedBook.setImageUrl(imageUrl);
-            updatedBook.setIsActive(existing.isIsActive());
 
             Integer categoryId = parseIntegerValue(categoryStr);
-            if (categoryId == null) {
-                request.setAttribute("errorMessage", "Danh mục không hợp lệ.");
-                request.setAttribute("book", existing);
-                request.setAttribute("categories", categoryDAO.getAllCategories());
-                request.setAttribute("publishers", productDAO.getAllPublishers());
-                request.getRequestDispatcher("/WEB-INF/product/update.jsp").forward(request, response);
-                return;
-            }
-
             BigDecimal price = parseBigDecimalValue(priceStr);
-            if (!isValidPrice(price)) {
-                request.setAttribute("errorMessage", "Giá tiền không hợp lệ.");
-                request.setAttribute("book", existing);
+
+            if (categoryId == null || !isValidPrice(price)) {
+                request.setAttribute("errorMessage", "Danh mục hoặc giá tiền không hợp lệ.");
+                request.setAttribute("productType", productType);
+                request.setAttribute("product", existing);
                 request.setAttribute("categories", categoryDAO.getAllCategories());
-                request.setAttribute("publishers", productDAO.getAllPublishers());
+                if ("book".equals(productType)) request.setAttribute("publishers", productDAO.getAllPublishers());
+                else {
+                    request.setAttribute("brands", productDAO.getAllBrands());
+                    request.setAttribute("suppliers", productDAO.getAllSuppliers());
+                }
                 request.getRequestDispatcher("/WEB-INF/product/update.jsp").forward(request, response);
                 return;
             }
 
-            updatedBook.setCategoryId(categoryId);
-            updatedBook.setPrice(price);
+            boolean ok = false;
 
-            Integer publisherId = null;
-            if (publisherStr != null && !publisherStr.trim().isEmpty()) {
-                publisherId = parseIntegerValue(publisherStr);
-                if (publisherId == null) {
-                    request.setAttribute("errorMessage", "Nhà xuất bản không hợp lệ.");
-                    request.setAttribute("book", existing);
-                    request.setAttribute("categories", categoryDAO.getAllCategories());
-                    request.setAttribute("publishers", productDAO.getAllPublishers());
-                    request.getRequestDispatcher("/WEB-INF/product/update.jsp").forward(request, response);
-                    return;
-                }
-                updatedBook.setPublisherId(publisherId);
+            if ("book".equals(productType)) {
+                Book updatedBook = new Book();
+                updatedBook.setId(productId);
+                updatedBook.setTitle(title.trim());
+                updatedBook.setDescription(description);
+                updatedBook.setSku(sku);
+                updatedBook.setImageUrl(imageUrl);
+                updatedBook.setIsActive(existing.isIsActive());
+                updatedBook.setCategoryId(categoryId);
+                updatedBook.setPrice(price);
+
+                updatedBook.setPublisherId(parseIntegerValue(request.getParameter("publisherId")));
+                updatedBook.setTranslator(request.getParameter("translator"));
+                updatedBook.setPublicationYear(parseIntegerValue(request.getParameter("publicationYear")));
+                updatedBook.setNumberOfPages(parseIntegerValue(request.getParameter("numberOfPages")));
+                updatedBook.setCoverType(request.getParameter("coverType"));
+                updatedBook.setLanguage(request.getParameter("language"));
+
+                ok = productDAO.updateBook(updatedBook);
+            } else {
+                Stationery stat = new Stationery();
+                stat.setId(productId);
+                stat.setTitle(title.trim());
+                stat.setDescription(description);
+                stat.setSku(sku);
+                stat.setImageUrl(imageUrl);
+                stat.setIsActive(existing.isIsActive());
+                stat.setCategoryId(categoryId);
+                stat.setPrice(price);
+
+                stat.setBrandId(parseIntegerValue(request.getParameter("brandId")));
+                stat.setSupplierId(parseIntegerValue(request.getParameter("supplierId")));
+                stat.setOrigin(request.getParameter("origin"));
+                stat.setMaterial(request.getParameter("material"));
+                stat.setColor(request.getParameter("color"));
+                stat.setWeight(parseBigDecimalValue(request.getParameter("weight")));
+                stat.setDimensions(request.getParameter("dimensions"));
+                stat.setSpecifications(request.getParameter("specifications"));
+                stat.setWarning(request.getParameter("warning"));
+
+                ok = productDAO.updateStationery(stat);
             }
 
-            Integer publicationYear = null;
-            if (yearStr != null && !yearStr.trim().isEmpty()) {
-                publicationYear = parseIntegerValue(yearStr);
-                if (!isValidPublicationYear(publicationYear)) {
-                    request.setAttribute("errorMessage", "Năm xuất bản không hợp lệ. Vui lòng nhập từ năm 1900 đến năm hiện tại.");
-                    request.setAttribute("book", existing);
-                    request.setAttribute("categories", categoryDAO.getAllCategories());
-                    request.setAttribute("publishers", productDAO.getAllPublishers());
-                    request.getRequestDispatcher("/WEB-INF/product/update.jsp").forward(request, response);
-                    return;
-                }
-                updatedBook.setPublicationYear(publicationYear);
-            }
-
-            Integer numberOfPages = null;
-            if (pagesStr != null && !pagesStr.trim().isEmpty()) {
-                numberOfPages = parseIntegerValue(pagesStr);
-                if (!isValidPositiveInteger(numberOfPages)) {
-                    request.setAttribute("errorMessage", "Số trang không hợp lệ.");
-                    request.setAttribute("book", existing);
-                    request.setAttribute("categories", categoryDAO.getAllCategories());
-                    request.setAttribute("publishers", productDAO.getAllPublishers());
-                    request.getRequestDispatcher("/WEB-INF/product/update.jsp").forward(request, response);
-                    return;
-                }
-                updatedBook.setNumberOfPages(numberOfPages);
-            }
-
-            // Bước 7: Lưu xuống database
-            boolean ok = productDAO.updateBook(updatedBook);
-
-            // Bước 8: Đặt thông báo kết quả và hiển thị danh sách sách mới
             if (ok) {
-                request.setAttribute("successMessage", "Cập nhật sách \"" + title.trim() + "\" thành công!");
+                request.setAttribute("successMessage", "Cập nhật sản phẩm \"" + title.trim() + "\" thành công!");
             } else {
                 request.setAttribute("errorMessage", "Cập nhật thất bại, vui lòng thử lại.");
             }
             showList(request, response);
 
-        } catch (NumberFormatException e) {
-            request.setAttribute("errorMessage", "Dữ liệu số không hợp lệ khi cập nhật.");
-            showList(request, response);
         } catch (Exception e) {
             e.printStackTrace();
             request.setAttribute("errorMessage", "Lỗi hệ thống: " + e.getMessage());

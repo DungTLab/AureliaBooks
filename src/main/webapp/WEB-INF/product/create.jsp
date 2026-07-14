@@ -3,7 +3,7 @@
 <jsp:include page="/WEB-INF/includes/header.jsp" />
 
 <div class="container my-5">
-    <h2>Thêm Sách Mới (Admin)</h2>
+    <h2>Thêm Mới ${productType == 'stationery' ? 'Văn Phòng Phẩm' : 'Sách'} (Admin)</h2>
 
     <c:if test="${not empty errorMessage}">
         <div class="alert alert-danger" role="alert">
@@ -19,6 +19,7 @@
 
     <!-- Form thêm mới sách (Skeleton để Dev 3 triển khai theo luồng TPT Transaction) -->
     <form action="${pageContext.request.contextPath}/admin/products?view=create" method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="productType" value="${productType}">
         <div class="row">
             <div class="col-md-6">
                 <h4 class="mb-3">Thông tin sản phẩm chung</h4>
@@ -53,35 +54,88 @@
             </div>
             
             <div class="col-md-6">
-                <h4 class="mb-3">Thông số chi tiết Sách</h4>
-                <div class="mb-3">
-                    <label for="publisherId" class="form-label">Nhà xuất bản</label>
-                    <select class="form-select" id="publisherId" name="publisherId">
-                        <c:forEach var="pub" items="${publishers}">
-                            <option value="${pub.id}">${pub.name}</option>
-                        </c:forEach>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label for="translator" class="form-label">Dịch giả</label>
-                    <input type="text" class="form-control" id="translator" name="translator">
-                </div>
-                <div class="mb-3">
-                    <label for="publicationYear" class="form-label">Năm xuất bản</label>
-                    <input type="number" class="form-control" id="publicationYear" name="publicationYear">
-                </div>
-                <div class="mb-3">
-                    <label for="numberOfPages" class="form-label">Số trang</label>
-                    <input type="number" class="form-control" id="numberOfPages" name="numberOfPages">
-                </div>
-                <div class="mb-3">
-                    <label for="coverType" class="form-label">Loại bìa</label>
-                    <input type="text" class="form-control" id="coverType" name="coverType">
-                </div>
-                <div class="mb-3">
-                    <label for="language" class="form-label">Ngôn ngữ</label>
-                    <input type="text" class="form-control" id="language" name="language" value="Tiếng Việt">
-                </div>
+                <c:choose>
+                    <c:when test="${productType == 'book'}">
+                        <h4 class="mb-3">Thông số chi tiết Sách</h4>
+                        <div class="mb-3">
+                            <label for="publisherId" class="form-label">Nhà xuất bản</label>
+                            <select class="form-select" id="publisherId" name="publisherId">
+                                <c:forEach var="pub" items="${publishers}">
+                                    <option value="${pub.id}">${pub.name}</option>
+                                </c:forEach>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="translator" class="form-label">Dịch giả</label>
+                            <input type="text" class="form-control" id="translator" name="translator">
+                        </div>
+                        <div class="mb-3">
+                            <label for="publicationYear" class="form-label">Năm xuất bản</label>
+                            <input type="number" class="form-control" id="publicationYear" name="publicationYear">
+                        </div>
+                        <div class="mb-3">
+                            <label for="numberOfPages" class="form-label">Số trang</label>
+                            <input type="number" class="form-control" id="numberOfPages" name="numberOfPages">
+                        </div>
+                        <div class="mb-3">
+                            <label for="coverType" class="form-label">Loại bìa</label>
+                            <input type="text" class="form-control" id="coverType" name="coverType">
+                        </div>
+                        <div class="mb-3">
+                            <label for="language" class="form-label">Ngôn ngữ</label>
+                            <input type="text" class="form-control" id="language" name="language" value="Tiếng Việt">
+                        </div>
+                    </c:when>
+                    <c:when test="${productType == 'stationery'}">
+                        <h4 class="mb-3">Thông số chi tiết Văn phòng phẩm</h4>
+                        <div class="mb-3">
+                            <label for="brandId" class="form-label">Thương hiệu</label>
+                            <select class="form-select" id="brandId" name="brandId">
+                                <option value="">-- Chọn Thương hiệu --</option>
+                                <c:forEach var="brand" items="${brands}">
+                                    <option value="${brand.id}">${brand.name}</option>
+                                </c:forEach>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="supplierId" class="form-label">Nhà cung cấp</label>
+                            <select class="form-select" id="supplierId" name="supplierId">
+                                <option value="">-- Chọn Nhà cung cấp --</option>
+                                <c:forEach var="supplier" items="${suppliers}">
+                                    <option value="${supplier.id}">${supplier.name}</option>
+                                </c:forEach>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="origin" class="form-label">Xuất xứ</label>
+                            <input type="text" class="form-control" id="origin" name="origin">
+                        </div>
+                        <div class="mb-3">
+                            <label for="material" class="form-label">Chất liệu</label>
+                            <input type="text" class="form-control" id="material" name="material">
+                        </div>
+                        <div class="mb-3">
+                            <label for="color" class="form-label">Màu sắc</label>
+                            <input type="text" class="form-control" id="color" name="color">
+                        </div>
+                        <div class="mb-3">
+                            <label for="weight" class="form-label">Trọng lượng (g)</label>
+                            <input type="number" step="0.01" class="form-control" id="weight" name="weight">
+                        </div>
+                        <div class="mb-3">
+                            <label for="dimensions" class="form-label">Kích thước</label>
+                            <input type="text" class="form-control" id="dimensions" name="dimensions">
+                        </div>
+                        <div class="mb-3">
+                            <label for="specifications" class="form-label">Thông số kỹ thuật</label>
+                            <textarea class="form-control" id="specifications" name="specifications" rows="2"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="warning" class="form-label">Cảnh báo (nếu có)</label>
+                            <input type="text" class="form-control" id="warning" name="warning">
+                        </div>
+                    </c:when>
+                </c:choose>
             </div>
         </div>
         <button type="submit" class="btn btn-success mt-4">Thêm mới</button>

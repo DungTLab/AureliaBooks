@@ -916,6 +916,48 @@ public class ProductDAO extends BaseDAO {
         return publishers;
     }
 
+    /**
+     * Returns all brands for dropdown in create/update forms.
+     */
+    public List<com.mycompany.aureliabooks.model.Brand> getAllBrands() {
+        List<com.mycompany.aureliabooks.model.Brand> brands = new ArrayList<>();
+        String sql = "SELECT [Id], [Name] FROM [dbo].[Brands] ORDER BY [Name]";
+        try (Connection conn = this.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                com.mycompany.aureliabooks.model.Brand brand = new com.mycompany.aureliabooks.model.Brand();
+                brand.setId(rs.getInt("Id"));
+                brand.setName(rs.getString("Name"));
+                brands.add(brand);
+            }
+        } catch (SQLException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return brands;
+    }
+
+    /**
+     * Returns all suppliers for dropdown in create/update forms.
+     */
+    public List<com.mycompany.aureliabooks.model.Supplier> getAllSuppliers() {
+        List<com.mycompany.aureliabooks.model.Supplier> suppliers = new ArrayList<>();
+        String sql = "SELECT [Id], [Name] FROM [dbo].[Suppliers] ORDER BY [Name]";
+        try (Connection conn = this.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                com.mycompany.aureliabooks.model.Supplier sup = new com.mycompany.aureliabooks.model.Supplier();
+                sup.setId(rs.getInt("Id"));
+                sup.setName(rs.getString("Name"));
+                suppliers.add(sup);
+            }
+        } catch (SQLException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return suppliers;
+    }
+
 
     
     public List<HashMap<String, Object>> getTopSellingBooks(int categoryId, int offset, int limit) {
