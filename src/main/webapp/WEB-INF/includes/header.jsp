@@ -115,6 +115,32 @@
                                             <c:if test="${sessionScope.user.roleName eq 'ADMIN'}">
                                                 <li><hr class="dropdown-divider"></li>
                                                 <li>
+                                                    <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/authors">
+                                                        <i class="bi bi-person-lines-fill me-2 text-secondary"></i>Quản lý Tác giả
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/publishers">
+                                                        <i class="bi bi-building me-2 text-secondary"></i>Quản lý NXB
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/brands">
+                                                        <i class="bi bi-tags me-2 text-secondary"></i>Quản lý Thương hiệu
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/suppliers">
+                                                        <i class="bi bi-truck me-2 text-secondary"></i>Quản lý Nhà cung cấp
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/inventory">
+                                                        <i class="bi bi-box-seam me-2 text-secondary"></i>Quản lý Kho hàng
+                                                    </a>
+                                                </li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
                                                     <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/reports">
                                                         <i class="bi bi-bar-chart-line me-2"></i>Báo cáo thống kê
                                                     </a>
