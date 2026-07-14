@@ -107,28 +107,25 @@
                                                     <i class="bi bi-ticket-perforated me-2"></i>Quản lý Voucher
                                                 </a>
                                             </li>
+                                            <li>
+                                                <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/orders">
+                                                    <i class="bi bi-speedometer2 me-2"></i>Quản lý Đơn Hàng
+                                                </a>
+                                            </li>
                                             <c:if test="${sessionScope.user.roleName eq 'ADMIN'}">
+                                                <li><hr class="dropdown-divider"></li>
                                                 <li>
                                                     <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/reports">
                                                         <i class="bi bi-bar-chart-line me-2"></i>Báo cáo thống kê
                                                     </a>
                                                 </li>
                                                 <li>
-                                                    <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/users">
+                                                    <a class="dropdown-item  text-danger fw-bold" href="${pageContext.request.contextPath}/admin/users">
                                                         <i class="bi bi-people me-2"></i>Quản lý tài khoản
                                                     </a>
                                                 </li>
                                             </c:if>
-                                            <li><hr class="dropdown-divider"></li>
-                                            <li>
-                                                <a class="dropdown-item text-danger fw-bold" href="${pageContext.request.contextPath}/admin/orders">
-                                                    <i class="bi bi-speedometer2 me-2"></i>
-                                                    <c:choose>
-                                                        <c:when test="${sessionScope.user.roleName eq 'ADMIN'}">Quản trị hệ thống</c:when>
-                                                        <c:otherwise>Trang Nhân viên</c:otherwise>
-                                                    </c:choose>
-                                                </a>
-                                            </li>
+
                                         </c:if>
 
                                         <li><hr class="dropdown-divider"></li>
@@ -181,20 +178,8 @@
                                                     <i class="bi bi-ticket-perforated me-2 text-secondary"></i>Quản lý Voucher
                                                 </a>
                                             </li>
-                                            <c:if test="${sessionScope.user.roleName eq 'ADMIN'}">
-                                                <li>
-                                                    <a class="dropdown-item py-2" href="${pageContext.request.contextPath}/admin/reports">
-                                                        <i class="bi bi-bar-chart-line me-2 text-secondary"></i>Báo cáo thống kê
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <a class="dropdown-item py-2" href="${pageContext.request.contextPath}/admin/users">
-                                                        <i class="bi bi-people me-2 text-secondary"></i>Quản lý tài khoản
-                                                    </a>
-                                                </li>
-                                            </c:if>
                                             <li>
-                                                <a class="dropdown-item text-danger fw-bold py-2" href="${pageContext.request.contextPath}/admin/orders">
+                                                <a class="dropdown-item py-2" href="${pageContext.request.contextPath}/admin/orders">
                                                     <i class="bi bi-speedometer2 me-2"></i>
                                                     <c:choose>
                                                         <c:when test="${sessionScope.user.roleName eq 'ADMIN'}">Quản trị hệ thống</c:when>
@@ -202,6 +187,19 @@
                                                     </c:choose>
                                                 </a>
                                             </li>
+                                            <c:if test="${sessionScope.user.roleName eq 'ADMIN'}">
+                                                <li>
+                                                    <a class="dropdown-item py-2" href="${pageContext.request.contextPath}/admin/reports">
+                                                        <i class="bi bi-bar-chart-line me-2 text-secondary"></i>Báo cáo thống kê
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item py-2 text-danger fw-bold" href="${pageContext.request.contextPath}/admin/users">
+                                                        <i class="bi bi-people me-2 text-secondary"></i>Quản lý tài khoản
+                                                    </a>
+                                                </li>
+                                            </c:if>
+
                                         </c:if>
                                         <li><hr class="dropdown-divider my-1"></li>
                                         <li><a class="dropdown-item py-2" href="${pageContext.request.contextPath}/auth?action=logout"><i class="bi bi-box-arrow-right me-2 text-secondary"></i>Đăng xuất</a></li>
