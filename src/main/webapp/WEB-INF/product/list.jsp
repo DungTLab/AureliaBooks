@@ -5,7 +5,10 @@
 <div class="container my-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Quản Lý Kho Sách (Admin - TPT)</h2>
-        <a href="${pageContext.request.contextPath}/admin/products?view=create" class="btn btn-success">Thêm Sách Mới</a>
+        <div>
+            <a href="${pageContext.request.contextPath}/admin/products?view=create&type=book" class="btn btn-success me-2">Thêm Sách</a>
+            <a href="${pageContext.request.contextPath}/admin/products?view=create&type=stationery" class="btn btn-success">Thêm VPP</a>
+        </div>
     </div>
 
     <!-- Thông báo kết quả -->
@@ -42,7 +45,7 @@
                     <td>${book.id}</td>
                     <td>
                         <img src="${pageContext.request.contextPath}/uploads/${book.imageUrl}"
-                             onerror="this.onerror=null; this.src='${pageContext.request.contextPath}/assets/images/book-image/${book.imageUrl}'"
+                             onerror="this.onerror=null; this.src='${pageContext.request.contextPath}/assets/images/${book.imageUrl}'"
                              class="img-thumbnail" style="width: 50px;" alt="...">
                     </td>
                     <td>
