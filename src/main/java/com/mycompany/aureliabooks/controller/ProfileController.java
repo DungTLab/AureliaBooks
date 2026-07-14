@@ -25,6 +25,11 @@ public class ProfileController extends HttpServlet {
 
     private final UserDAO userDAO = new UserDAO();
 
+    private static final String FULL_NAME_REGEX = "^[\\p{L} ]{2,100}$";
+    private static final String PHONE_REGEX = "^0[0-9]{9}$";
+    private static final String ADDRESS_REGEX = "^[\\p{L}\\p{N}\\s,\\.\\-/]{5,255}$";
+    private static final String PASSWORD_REGEX = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,50}$";
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -107,6 +112,24 @@ public class ProfileController extends HttpServlet {
                 return;
             }
 
+            if (!fullName.matches(FULL_NAME_REGEX)) {
+                session.setAttribute("profileError", "Họ và tên chỉ được chứa chữ cái và khoảng trắng (từ 2 đến 100 ký tự)!");
+                response.sendRedirect(request.getContextPath() + "/profile");
+                return;
+            }
+
+            if (!phone.isEmpty() && !phone.matches(PHONE_REGEX)) {
+                session.setAttribute("profileError", "Số điện thoại không hợp lệ! Vui lòng nhập đúng 10 chữ số bắt đầu bằng số 0.");
+                response.sendRedirect(request.getContextPath() + "/profile");
+                return;
+            }
+
+            if (!address.isEmpty() && !address.matches(ADDRESS_REGEX)) {
+                session.setAttribute("profileError", "Địa chỉ không hợp lệ! Chỉ cho phép chữ, số, khoảng trắng và các ký tự , . - / (từ 5 đến 255 ký tự).");
+                response.sendRedirect(request.getContextPath() + "/profile");
+                return;
+            }
+
             UserProfile newProfile = userDAO.getUserProfile(loggedInUser.getId());
             if (newProfile == null) {
                 newProfile = new UserProfile();
@@ -156,8 +179,8 @@ public class ProfileController extends HttpServlet {
                 return;
             }
 
-            if (newPassword.length() < 6) {
-                session.setAttribute("passwordError", "Mật khẩu mới phải từ 6 ký tự trở lên!");
+            if (!newPassword.matches(PASSWORD_REGEX)) {
+                session.setAttribute("passwordError", "Mật khẩu mới phải từ 8 đến 50 ký tự, bao gồm ít nhất 1 chữ hoa, 1 chữ thường và 1 chữ số!");
                 response.sendRedirect(request.getContextPath() + "/profile");
                 return;
             }
