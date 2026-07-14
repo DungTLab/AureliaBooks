@@ -33,11 +33,11 @@
                     <form action="${pageContext.request.contextPath}/profile?action=updateInfo" method="POST">
                         <div class="mb-3">
                             <label for="fullName" class="form-label">Họ và Tên</label>
-                            <input type="text" class="form-control" id="fullName" name="fullName" value="${sessionScope.userProfile.fullName}">
+                            <input type="text" class="form-control" id="fullName" name="fullName" value="${sessionScope.userProfile.fullName}" required pattern="^[A-Za-zÀ-ỹ\s]{2,100}$" title="Họ và tên chỉ được chứa chữ cái và khoảng trắng, độ dài từ 2 đến 100 ký tự">
                         </div>
                         <div class="mb-3">
                             <label for="phone" class="form-label">Số điện thoại</label>
-                            <input type="text" class="form-control" id="phone" name="phone" value="${sessionScope.userProfile.phone}">
+                            <input type="text" class="form-control" id="phone" name="phone" value="${sessionScope.userProfile.phone}" pattern="^0[0-9]{9}$" title="Số điện thoại phải bắt đầu bằng số 0 và bao gồm đúng 10 chữ số">
                         </div>
                         <div class="mb-3">
                             <label for="address" class="form-label">Địa chỉ</label>
@@ -68,7 +68,7 @@
                         </div>
                         <div class="mb-3">
                             <label for="newPassword" class="form-label">Mật khẩu mới</label>
-                            <input type="password" class="form-control" id="newPassword" name="newPassword" required>
+                            <input type="password" class="form-control" id="newPassword" name="newPassword" required pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,50}$" title="Mật khẩu phải từ 8 đến 50 ký tự, bao gồm ít nhất 1 chữ hoa, 1 chữ thường và 1 chữ số">
                         </div>
                         <button type="submit" class="btn btn-warning">Đổi mật khẩu</button>
                     </form>
