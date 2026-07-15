@@ -24,7 +24,7 @@
 
             <form action="${pageContext.request.contextPath}/admin/publishers?view=delete" method="POST" class="mt-4">
                 <input type="hidden" name="id" value="${publisher.id}">
-                
+                <input type ="hidden" name ="action" value="delete">
                 <div class="d-flex justify-content-center gap-3">
                     <a href="${pageContext.request.contextPath}/admin/publishers" class="btn btn-secondary px-4 py-2">Hủy Bỏ</a>
                     <button type="submit" class="btn btn-danger px-4 py-2" ${isReferenced ? 'disabled' : ''}>

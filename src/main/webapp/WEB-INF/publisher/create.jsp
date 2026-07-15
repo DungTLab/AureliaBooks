@@ -21,6 +21,7 @@
             </c:if>
 
             <form action="${pageContext.request.contextPath}/admin/publishers?view=create" method="POST">
+                <input  type ="hidden" name="action" value="create">
                 <div class="mb-3">
                     <label for="name" class="form-label fw-bold">Tên nhà xuất bản <span class="text-danger">*</span></label>
                     <input type="text" class="form-control" id="name" name="name" value="${publisher.name}" required>
