@@ -5,7 +5,7 @@
 <div class="container my-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Quản Lý Nhà Xuất Bản (Admin)</h2>
-        <a href="${pageContext.request.contextPath}/admin/publishers?view=create" class="btn btn-success">
+        <a href="${pageContext.request.contextPath}/admin/publishers?action=create" class="btn btn-success">
             <i class="bi bi-plus-lg me-1"></i>Thêm Nhà Xuất Bản Mới
         </a>
     </div>
@@ -41,10 +41,10 @@
                             <td><strong>${pub.name}</strong></td>
                             <td>${pub.address}</td>
                             <td class="text-end">
-                                <a href="${pageContext.request.contextPath}/admin/publishers?view=update&id=${pub.id}" class="btn btn-sm btn-outline-primary">
+                                <a href="${pageContext.request.contextPath}/admin/publishers?action=update&id=${pub.id}" class="btn btn-sm btn-outline-primary">
                                     <i class="bi bi-pencil me-1"></i>Sửa
                                 </a>
-                                <a href="${pageContext.request.contextPath}/admin/publishers?view=delete&id=${pub.id}" class="btn btn-sm btn-outline-danger ms-1">
+                                <a href="${pageContext.request.contextPath}/admin/publishers?action=delete&id=${pub.id}" class="btn btn-sm btn-outline-danger ms-1">
                                     <i class="bi bi-trash me-1"></i>Xóa
                                 </a>
                             </td>
