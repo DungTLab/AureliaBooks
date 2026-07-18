@@ -113,7 +113,7 @@
                         </c:when>
                         <c:otherwise>
                             <div class="d-flex">
-                                <input type="text" class="form-control me-2" id="voucherCode" name="voucherCode" form="checkoutForm" placeholder="Nhập mã voucher" required>
+                                <input type="text" class="form-control me-2" id="voucherCode" name="voucherCode" form="checkoutForm" placeholder="Nhập mã voucher">
                                 <button type="submit" form="checkoutForm" formaction="${pageContext.request.contextPath}/checkout?action=applyVoucher" formnovalidate class="btn btn-outline-primary">Áp dụng</button>
                             </div>
                         </c:otherwise>
