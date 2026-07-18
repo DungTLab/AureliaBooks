@@ -9,14 +9,16 @@ import com.mycompany.aureliabooks.dao.ProductDAO;
 import com.mycompany.aureliabooks.model.CartItem;
 import com.mycompany.aureliabooks.model.User;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-import java.math.BigDecimal;
 
 /**
  * Controller responsible for handling shopping cart operations.
@@ -28,6 +30,10 @@ import java.math.BigDecimal;
 @WebServlet(name = "CartController", urlPatterns = {"/cart"})
 public class CartController extends HttpServlet {
 
+    /**
+     * Handles GET requests. Primarily used for displaying the cart contents.
+     * Maps to the /cart URL.
+     */
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -36,8 +42,8 @@ public class CartController extends HttpServlet {
         HttpSession session = request.getSession();
         User loggedUser = (User) session.getAttribute("user");
 
+        // Protect access: Redirect unauthenticated users to the login page
         if (loggedUser == null) {
-            // Redirect unauthenticated users to the login page
             response.sendRedirect(request.getContextPath() + "/auth?action=login");
         } else {
             // Default to 'view' action if no specific action parameter is provided
@@ -48,16 +54,19 @@ public class CartController extends HttpServlet {
                     
                     // Fetch the user's cart items from the database
                     List<CartItem> cartItems = cartDAO.findAll(loggedUser.getId());
+                    
                     // Calculate the total price of all items in the cart
                     BigDecimal cartTotal = BigDecimal.ZERO;
-                    java.util.Map<Integer, Integer> stockMap = new java.util.HashMap<>();
+                    // Track stock limits for each product in the cart
+                    Map<Integer, Integer> stockMap = new HashMap<>();
+                    
                     for (CartItem item : cartItems) {
                         BigDecimal itemTotal = item.getProduct().getPrice().multiply(new BigDecimal(item.getQuantity()));
                         cartTotal = cartTotal.add(itemTotal);
                         stockMap.put(item.getProductId(), productDAO.getProductStock(item.getProductId()));
                     }
 
-                    // Retrieve the user's phone number and address to pre-fill the checkout form
+                    // Retrieve the user's phone number and address to pre-fill the checkout form if needed
                     String userInfoStr = cartDAO.getUserInfo(loggedUser.getId());
                     String defaultPhone = "";
                     String defaultAddress = "";
@@ -67,6 +76,7 @@ public class CartController extends HttpServlet {
                         defaultAddress = parts.length > 1 ? parts[1] : "";
                     }
 
+                    // Set attributes for the JSP view
                     request.setAttribute("cartItems", cartItems);
                     request.setAttribute("cartTotal", cartTotal);
                     request.setAttribute("stockMap", stockMap);
@@ -77,7 +87,7 @@ public class CartController extends HttpServlet {
                     request.getRequestDispatcher("/WEB-INF/cart/cart.jsp").forward(request, response);
                 } catch (Exception e) {
                     e.printStackTrace();
-                    request.setAttribute("errorMessage", "Đã xảy ra lỗi khi tải giỏ hàng: " + e.getMessage());
+                    request.setAttribute("errorMessage", "An error occurred while loading the cart: " + e.getMessage());
                     request.getRequestDispatcher("/WEB-INF/error/500.jsp").forward(request, response);
                 }
             } else {
@@ -87,6 +97,9 @@ public class CartController extends HttpServlet {
         }
     }
 
+    /**
+     * Handles POST requests. Used for modifications such as adding, updating, or deleting items.
+     */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -97,13 +110,13 @@ public class CartController extends HttpServlet {
 
         User loggedUser = (User) session.getAttribute("user");
 
+        // Protect POST actions from unauthenticated access
         if (loggedUser == null) {
-            // Protect POST actions from unauthenticated access
             response.sendRedirect(request.getContextPath() + "/auth?action=login");
         } else {
             try {
                 if ("add".equals(action)) {
-                    // Handle adding a new product to the cart
+                    // Action: Add a new product to the cart
                     int productId = Integer.parseInt(request.getParameter("productId"));
 
                     // Handle quantity parameter, defaulting to 1 if it's missing (e.g., when called from an <a> tag)
@@ -120,14 +133,15 @@ public class CartController extends HttpServlet {
                         }
                     }
 
-                    // Validate stock availability
+                    // Validate stock availability before adding to cart
                     int stock = productDAO.getProductStock(productId);
                     if (existingQuantity + quantity > stock) {
-                        request.setAttribute("errorMessage", "Không thể thêm sản phẩm. Tổng số lượng trong giỏ hàng (" + (existingQuantity + quantity) + ") vượt quá tồn kho hiện có (" + stock + ")");
+                        request.setAttribute("errorMessage", "Cannot add product. Total quantity in cart (" + (existingQuantity + quantity) + ") exceeds available stock (" + stock + ")");
                         request.getRequestDispatcher("/WEB-INF/error/400.jsp").forward(request, response);
                         return;
                     }
 
+                    // Retrieve Cart ID and add item
                     int cartId = cartDAO.getCartIdByUserId(loggedUser.getId());
                     if (cartId != -1) {
                         cartDAO.addItem(cartId, productId, quantity);
@@ -138,7 +152,7 @@ public class CartController extends HttpServlet {
                     if (referer != null && !referer.trim().isEmpty()) {
                         // Only set session message if NOT coming from the detail page (which uses AJAX and shows a Toast)
                         if (!referer.contains("action=detail")) {
-                            session.setAttribute("cartSuccessMessage", "Đã thêm sản phẩm vào giỏ hàng thành công!");
+                            session.setAttribute("cartSuccessMessage", "Product added to cart successfully!");
                         }
                         response.sendRedirect(referer);
                     } else {
@@ -146,7 +160,7 @@ public class CartController extends HttpServlet {
                     }
 
                 } else if ("update".equals(action)) {
-                    // Handle updating the quantity of a specific cart item
+                    // Action: Update the quantity of a specific cart item
                     int itemId = Integer.parseInt(request.getParameter("itemId"));
                     int quantity = Integer.parseInt(request.getParameter("quantity"));
 
@@ -160,11 +174,11 @@ public class CartController extends HttpServlet {
                         }
                     }
 
-                    // Validate stock availability
+                    // Validate stock availability before updating quantity
                     if (productId != -1) {
                         int stock = productDAO.getProductStock(productId);
                         if (quantity > stock) {
-                            request.setAttribute("errorMessage", "Không thể cập nhật số lượng. Số lượng cập nhật (" + quantity + ") vượt quá tồn kho hiện có (" + stock + ")");
+                            request.setAttribute("errorMessage", "Cannot update quantity. Requested quantity (" + quantity + ") exceeds available stock (" + stock + ")");
                             request.getRequestDispatcher("/WEB-INF/error/400.jsp").forward(request, response);
                             return;
                         }
@@ -174,8 +188,9 @@ public class CartController extends HttpServlet {
 
                     // Redirect back to the cart view to refresh the data
                     response.sendRedirect(request.getContextPath() + "/cart");
+
                 } else if ("delete".equals(action)) {
-                    // Handle removing an item entirely from the cart
+                    // Action: Remove an item entirely from the cart
                     int itemId = Integer.parseInt(request.getParameter("itemId"));
                     cartDAO.deleteItem(itemId, loggedUser.getId());
 
@@ -183,11 +198,13 @@ public class CartController extends HttpServlet {
                     response.sendRedirect(request.getContextPath() + "/cart");
                 }
             } catch (NumberFormatException e) {
-                request.setAttribute("errorMessage", "Định dạng ID hoặc số lượng không hợp lệ.");
+                // Catch invalid number formats for IDs or quantities
+                request.setAttribute("errorMessage", "Invalid ID or quantity format.");
                 request.getRequestDispatcher("/WEB-INF/error/400.jsp").forward(request, response);
             } catch (Exception e) {
+                // General exception handler for unforeseen errors
                 e.printStackTrace();
-                request.setAttribute("errorMessage", "Đã xảy ra lỗi trong quá trình xử lý giỏ hàng: " + e.getMessage());
+                request.setAttribute("errorMessage", "An error occurred while processing the cart: " + e.getMessage());
                 request.getRequestDispatcher("/WEB-INF/error/500.jsp").forward(request, response);
             }
         }

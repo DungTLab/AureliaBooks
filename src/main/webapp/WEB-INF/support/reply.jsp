@@ -51,7 +51,7 @@
                         
                         <div class="mb-3">
                             <label for="replyMessage" class="form-label fw-bold">Nội dung phản hồi <span class="text-danger">*</span></label>
-                            <textarea class="form-control" id="replyMessage" name="replyMessage" rows="6" placeholder="Nhập câu trả lời hoặc hướng dẫn giải quyết..." required><c:out value="${supportRequest.replyMessage}" /></textarea>
+                            <textarea class="form-control" id="replyMessage" name="replyMessage" rows="6" placeholder="Nhập câu trả lời hoặc hướng dẫn giải quyết..." minlength="10" maxlength="2000" title="Nội dung phản hồi từ 10 đến 2000 ký tự" required><c:out value="${supportRequest.replyMessage}" /></textarea>
                         </div>
                         
                         <div class="mb-4">

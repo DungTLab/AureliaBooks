@@ -61,10 +61,9 @@ public class SecurityFilter implements Filter {
             
             String role = loggedInUser.getRoleName();
             
-            // Admin-only sections: reports, user management, discounts
+            // Admin-only sections: reports, user management
             if (requestURI.contains("/admin/reports") 
-                || requestURI.contains("/admin/users") 
-                || requestURI.contains("/admin/discounts")) {
+                || requestURI.contains("/admin/users")) {
                 if (!"ADMIN".equals(role)) {
                     httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN, "Access Denied - Admin Only");
                     return;

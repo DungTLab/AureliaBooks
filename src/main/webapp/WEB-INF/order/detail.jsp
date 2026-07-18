@@ -26,6 +26,15 @@
                     <c:if test="${order.status == 'RETURNED'}">
                         <p class="text-danger"><strong>Lý do trả hàng:</strong> ${order.returnReason}</p>
                     </c:if>
+                    
+                    <c:if test="${order.status == 'PENDING' || order.status == 'SHIPPING'}">
+                        <div class="mt-3">
+                            <form action="${pageContext.request.contextPath}/orders?action=cancel" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn hủy đơn hàng này không?');">
+                                <input type="hidden" name="orderId" value="${order.id}">
+                                <button type="submit" class="btn btn-outline-danger w-100">Hủy đơn hàng này</button>
+                            </form>
+                        </div>
+                    </c:if>
                 </div>
             </div>
         </div>

@@ -4,10 +4,13 @@ import com.mycompany.aureliabooks.model.CartItem;
 import com.mycompany.aureliabooks.model.Order;
 import com.mycompany.aureliabooks.model.OrderItem;
 import com.mycompany.aureliabooks.model.Product;
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -415,12 +418,12 @@ public class OrderDAO extends BaseDAO {
             conn.setAutoCommit(false);
 
             int orderId = -1;
-            try (PreparedStatement psOrder = conn.prepareStatement(insertOrderSql, java.sql.Statement.RETURN_GENERATED_KEYS)) {
+            try (PreparedStatement psOrder = conn.prepareStatement(insertOrderSql, Statement.RETURN_GENERATED_KEYS)) {
                 psOrder.setInt(1, order.getUserId());
                 if (order.getDiscountId() != null) {
                     psOrder.setInt(2, order.getDiscountId());
                 } else {
-                    psOrder.setNull(2, java.sql.Types.INTEGER);
+                    psOrder.setNull(2, Types.INTEGER);
                 }
                 psOrder.setBigDecimal(3, order.getTotalAmount());
                 psOrder.setString(4, order.getShippingAddress());
@@ -450,7 +453,7 @@ public class OrderDAO extends BaseDAO {
                     psItems.setInt(2, item.getProductId());
                     psItems.setInt(3, item.getQuantity());
                     psItems.setBigDecimal(4, item.getProduct().getPrice());
-                    psItems.setBigDecimal(5, item.getProduct().getPrice().multiply(new java.math.BigDecimal(item.getQuantity())));
+                    psItems.setBigDecimal(5, item.getProduct().getPrice().multiply(new BigDecimal(item.getQuantity())));
                     psItems.addBatch();
 
                     // Queue delete from DB Cart if applicable
@@ -669,9 +672,9 @@ public class OrderDAO extends BaseDAO {
      */
     public Map<String, Object> getRevenueSummary() throws SQLException {
         Map<String, Object> summary = new HashMap<>();
-        summary.put("totalRevenue", java.math.BigDecimal.ZERO);
+        summary.put("totalRevenue", BigDecimal.ZERO);
         summary.put("totalOrders", 0);
-        summary.put("averageOrderValue", java.math.BigDecimal.ZERO);
+        summary.put("averageOrderValue", BigDecimal.ZERO);
         summary.put("totalSoldQuantity", 0);
 
         String revenueSql = "SELECT "

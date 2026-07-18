@@ -11,18 +11,18 @@
             <i class="bi bi-exclamation-triangle-fill text-danger fs-1 mb-3"></i>
             
             <p class="fs-5">
-                Bạn có chắc chắn muốn xóa nhà cung cấp <strong class="text-danger">${supplier.name}</strong> khỏi hệ thống?
+                Bạn có chắc chắn muốn xóa nhà cung cấp <strong class="text-danger"><c:out value="${supplier.name}" /></strong> khỏi hệ thống?
             </p>
 
             <c:if test="${not empty usageWarning}">
                 <div class="alert alert-warning text-start" role="alert">
-                    <i class="bi bi-info-circle-fill me-2"></i>${usageWarning}
+                    <i class="bi bi-info-circle-fill me-2"></i><c:out value="${usageWarning}" />
                 </div>
             </c:if>
 
             <p class="text-muted small">Hành động này không thể hoàn tác nếu được thực hiện.</p>
 
-            <form action="${pageContext.request.contextPath}/admin/suppliers?view=delete" method="POST" class="mt-4">
+            <form action="${pageContext.request.contextPath}/admin/suppliers?action=delete" method="POST" class="mt-4">
                 <input type="hidden" name="id" value="${supplier.id}">
                 
                 <div class="d-flex justify-content-center gap-3">
