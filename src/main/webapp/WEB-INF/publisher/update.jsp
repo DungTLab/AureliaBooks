@@ -20,17 +20,17 @@
                 </div>
             </c:if>
 
-            <form action="${pageContext.request.contextPath}/admin/publishers?view=update" method="POST">
+            <form action="${pageContext.request.contextPath}/admin/publishers?action=update" method="POST">
                 <input type="hidden" name="id" value="${publisher.id}">
 
                 <div class="mb-3">
                     <label for="name" class="form-label fw-bold">Tên nhà xuất bản <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" id="name" name="name" value="${publisher.name}" required>
+                    <input type="text" class="form-control" id="name" name="name" value="${publisher.name}" maxlength="255" pattern="^[A-Za-z0-9À-ỹ\s\-&()]{2,255}$" title="Tên nhà xuất bản chỉ được chứa chữ cái, số, khoảng trắng và các ký tự - & ( ) từ 2 đến 255 ký tự" required>
                 </div>
                 
                 <div class="mb-3">
                     <label for="address" class="form-label fw-bold">Địa chỉ</label>
-                    <input type="text" class="form-control" id="address" name="address" value="${publisher.address}">
+                    <input type="text" class="form-control" id="address" name="address" value="${publisher.address}" maxlength="500">
                 </div>
 
                 <div class="d-grid mt-4">
