@@ -53,6 +53,14 @@
                             <td>
                                 <a href="${pageContext.request.contextPath}/orders?action=detail&id=${order.id}" class="btn btn-sm btn-outline-primary">Chi tiết</a>
                                 
+                                <!-- Hỗ trợ Hủy đơn (Chỉ hiện nút Hủy đơn khi trạng thái đơn là PENDING hoặc SHIPPING) -->
+                                <c:if test="${order.status == 'PENDING' || order.status == 'SHIPPING'}">
+                                    <form action="${pageContext.request.contextPath}/orders?action=cancel" method="POST" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn hủy đơn hàng này không?');" onclick="event.stopPropagation();">
+                                        <input type="hidden" name="orderId" value="${order.id}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger ms-2">Hủy đơn</button>
+                                    </form>
+                                </c:if>
+
                                 <!-- Hỗ trợ trả hàng (Chỉ hiện nút Trả hàng khi trạng thái đơn là COMPLETED) -->
                                 <c:if test="${order.status == 'COMPLETED'}">
                                     <button class="btn btn-sm btn-danger ms-2" data-bs-toggle="modal" data-bs-target="#returnModal${order.id}">Yêu cầu trả hàng</button>
