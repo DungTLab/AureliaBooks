@@ -1,5 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <jsp:include page="/WEB-INF/includes/header.jsp" />
 
 <div class="container my-5">
@@ -39,7 +40,14 @@
                                 <tr class="${item.quantity > stock ? 'table-danger' : ''}">
                                     <td>
                                         <div class="d-flex align-items-center">
-                                            <img src="${pageContext.request.contextPath}/assets/images/book-image/${item.product.imageUrl}" class="img-thumbnail me-3" style="width: 50px;" alt="${item.product.title}">
+                                            <c:choose>
+                                                <c:when test="${not empty item.product.imageUrl && item.product.imageUrl.contains('/')}">
+                                                    <img src="${pageContext.request.contextPath}/uploads/${item.product.imageUrl}" class="img-thumbnail me-3" style="width: 50px; height: 50px; object-fit: contain;" alt="${item.product.title}">
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <img src="${pageContext.request.contextPath}/assets/images/book-image/${item.product.imageUrl}" class="img-thumbnail me-3" style="width: 50px; height: 50px; object-fit: contain;" alt="${item.product.title}">
+                                                </c:otherwise>
+                                            </c:choose>
                                             <span>
                                                 ${item.product.title}
                                                 <c:if test="${item.quantity > stock}">
@@ -48,14 +56,14 @@
                                             </span>
                                         </div>
                                     </td>
-                                    <td>${item.product.price} VNĐ</td>
+                                    <td><fmt:formatNumber value="${item.product.price}" type="number" groupingUsed="true" maxFractionDigits="0"/> VNĐ</td>
                                     <td>
                                         <form action="${pageContext.request.contextPath}/cart?action=update" method="POST" style="width: 80px;">
                                             <input type="hidden" name="itemId" value="${item.id}">
                                             <input type="number" class="form-control ${item.quantity > stock ? 'is-invalid' : ''}" name="quantity" value="${item.quantity}" min="1" onchange="this.form.submit()">
                                         </form>
                                     </td>
-                                    <td>${item.product.price * item.quantity} VNĐ</td>
+                                    <td><fmt:formatNumber value="${item.product.price * item.quantity}" type="number" groupingUsed="true" maxFractionDigits="0"/> VNĐ</td>
                                     <td>
                                         <form action="${pageContext.request.contextPath}/cart?action=delete" method="POST">
                                             <input type="hidden" name="itemId" value="${item.id}">
@@ -78,7 +86,7 @@
                     <ul class="list-group list-group-flush mb-4">
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             Tổng tiền hàng:
-                            <strong>${requestScope.cartTotal != null ? requestScope.cartTotal : 0} VNĐ</strong>
+                            <strong><fmt:formatNumber value="${requestScope.cartTotal != null ? requestScope.cartTotal : 0}" type="number" groupingUsed="true" maxFractionDigits="0"/> VNĐ</strong>
                         </li>
                     </ul>
                     
