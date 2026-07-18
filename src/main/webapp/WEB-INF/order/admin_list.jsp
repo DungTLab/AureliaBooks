@@ -9,7 +9,7 @@
 
     <div class="container my-5">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2>Danh Sách Đơn Hàng (Admin)</h2>
+            <h2>Danh Sách Đơn Hàng</h2>
         </div>
 
         <div class="d-flex justify-content-between mb-3 flex-wrap gap-2">
