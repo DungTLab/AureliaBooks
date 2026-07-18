@@ -40,10 +40,9 @@ import jakarta.servlet.http.HttpSession;
 @WebServlet(name = "CheckoutController", urlPatterns = {"/checkout"})
 public class CheckoutController extends HttpServlet {
 
-    /**
-     * Handles GET requests. Used to display the checkout summary page, calculate totals,
-     * apply active vouchers, and resolve shipping addresses.
-     */
+    private static final String PHONE_REGEX = "^0[0-9]{9}$";
+    private static final String ADDRESS_REGEX = "^[\\p{L}\\p{N}\\s,\\.\\-/]{5,255}$";
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -150,7 +149,14 @@ public class CheckoutController extends HttpServlet {
             profile.setPhone(tempPhone);
         }
 
-        // Read and clear voucher error from session (Flash Attribute pattern)
+        // Read and clear checkout error from session (Flash Attribute)
+        String sessionCheckoutError = (String) session.getAttribute("checkoutError");
+        if (sessionCheckoutError != null) {
+            request.setAttribute("checkoutError", sessionCheckoutError);
+            session.removeAttribute("checkoutError");
+        }
+
+        // Read and clear voucher error from session (Flash Attribute)
         String sessionVoucherError = (String) session.getAttribute("voucherError");
         if (sessionVoucherError != null) {
             request.setAttribute("voucherError", sessionVoucherError);
@@ -216,9 +222,36 @@ public class CheckoutController extends HttpServlet {
                 return;
             }
 
-            // Default Action: Process Order Submission
-            String shippingAddress = request.getParameter("shippingAddress");
-            String contactPhone = request.getParameter("contactPhone");
+            // Process Submit Order
+            String shippingAddressRaw = request.getParameter("shippingAddress");
+            String contactPhoneRaw = request.getParameter("contactPhone");
+            
+            String shippingAddress = (shippingAddressRaw != null) ? shippingAddressRaw.trim() : "";
+            String contactPhone = (contactPhoneRaw != null) ? contactPhoneRaw.trim() : "";
+            
+            if (shippingAddress.isEmpty() || contactPhone.isEmpty()) {
+                session.setAttribute("checkoutError", "Vui lòng nhập đầy đủ địa chỉ giao hàng và số điện thoại liên hệ.");
+                session.setAttribute("tempAddress", shippingAddress);
+                session.setAttribute("tempPhone", contactPhone);
+                response.sendRedirect(request.getContextPath() + "/checkout");
+                return;
+            }
+            
+            if (!contactPhone.matches(PHONE_REGEX)) {
+                session.setAttribute("checkoutError", "Số điện thoại không hợp lệ! Vui lòng nhập đúng 10 chữ số bắt đầu bằng số 0.");
+                session.setAttribute("tempAddress", shippingAddress);
+                session.setAttribute("tempPhone", contactPhone);
+                response.sendRedirect(request.getContextPath() + "/checkout");
+                return;
+            }
+            
+            if (shippingAddress.length() < 5 || !shippingAddress.matches(ADDRESS_REGEX)) {
+                session.setAttribute("checkoutError", "Địa chỉ không hợp lệ! Chỉ cho phép chữ, số, khoảng trắng và các ký tự , . - / (từ 5 đến 255 ký tự).");
+                session.setAttribute("tempAddress", shippingAddress);
+                session.setAttribute("tempPhone", contactPhone);
+                response.sendRedirect(request.getContextPath() + "/checkout");
+                return;
+            }
 
             @SuppressWarnings("unchecked")
             List<CartItem> checkoutItems = (List<CartItem>) session.getAttribute("checkoutItems");
