@@ -82,7 +82,7 @@
                                     </td>
                                     <td><fmt:formatNumber value="${item.product.price}" type="number" groupingUsed="true" maxFractionDigits="0"/> VNĐ</td>
                                     <td>
-                                        <form action="${pageContext.request.contextPath}/checkout?action=update" method="POST" style="width: 80px;">
+                                        <form action="${pageContext.request.contextPath}/checkout?action=update" method="POST" style="width: 100px;">
                                             <input type="hidden" name="productId" value="${item.productId}">
                                             <input type="number" class="form-control ${item.quantity > stock ? 'is-invalid' : ''}" name="quantity" value="${item.quantity}" min="1" onchange="this.form.submit()">
                                         </form>

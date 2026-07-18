@@ -25,6 +25,7 @@ public class Order implements Serializable {
     private String contactPhone;
     private Integer processedByUserId;
     private String returnReason;
+    private String returnAdminNote;
     private Timestamp createdAt;
     private List<OrderItem> items = new ArrayList<>();
 
@@ -109,6 +110,14 @@ public class Order implements Serializable {
 
     public void setCreatedAt(Timestamp createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getReturnAdminNote() {
+        return returnAdminNote;
+    }
+
+    public void setReturnAdminNote(String returnAdminNote) {
+        this.returnAdminNote = returnAdminNote;
     }
 
     public List<OrderItem> getItems() {

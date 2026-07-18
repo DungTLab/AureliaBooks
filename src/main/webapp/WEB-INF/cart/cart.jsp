@@ -8,6 +8,28 @@
         <h2>Giỏ Hàng Của Bạn</h2>
     </div>
     
+    <c:if test="${not empty sessionScope.cartSuccessMessage}">
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i><c:out value="${sessionScope.cartSuccessMessage}" />
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <c:remove var="cartSuccessMessage" scope="session" />
+    </c:if>
+    <c:if test="${not empty sessionScope.cartWarningMessage}">
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i><c:out value="${sessionScope.cartWarningMessage}" />
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <c:remove var="cartWarningMessage" scope="session" />
+    </c:if>
+    <c:if test="${not empty sessionScope.cartErrorMessage}">
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-octagon-fill me-2"></i><c:out value="${sessionScope.cartErrorMessage}" />
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <c:remove var="cartErrorMessage" scope="session" />
+    </c:if>
+    
     <div class="justify-content-between  mb-4">
         <a class="btn btn-outline-danger" href="${pageContext.request.contextPath}/orders?action=view">Đơn hàng</a>
     </div>
@@ -58,7 +80,7 @@
                                     </td>
                                     <td><fmt:formatNumber value="${item.product.price}" type="number" groupingUsed="true" maxFractionDigits="0"/> VNĐ</td>
                                     <td>
-                                        <form action="${pageContext.request.contextPath}/cart?action=update" method="POST" style="width: 80px;">
+                                        <form action="${pageContext.request.contextPath}/cart?action=update" method="POST" style="width: 100px;">
                                             <input type="hidden" name="itemId" value="${item.id}">
                                             <input type="number" class="form-control ${item.quantity > stock ? 'is-invalid' : ''}" name="quantity" value="${item.quantity}" min="1" onchange="this.form.submit()">
                                         </form>

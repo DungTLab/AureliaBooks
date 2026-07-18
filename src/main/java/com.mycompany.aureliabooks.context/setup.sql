@@ -238,11 +238,12 @@ CREATE TABLE [dbo].[Orders] (
     [DiscountId] INT NULL FOREIGN KEY REFERENCES [dbo].[Discounts]([Id]),
     [TotalAmount] DECIMAL(18,2) NOT NULL CHECK ([TotalAmount] >= 0),
     [Status] NVARCHAR(50) NOT NULL DEFAULT 'PENDING' 
-        CHECK ([Status] IN ('PENDING', 'CONFIRMED', 'SHIPPING', 'COMPLETED', 'CANCELLED', 'RETURNED')),
+        CHECK ([Status] IN ('PENDING', 'CONFIRMED', 'SHIPPING', 'COMPLETED', 'CANCELLED', 'RETURNED', 'RETURN_REQUESTED', 'RETURN_REJECTED')),
     [ShippingAddress] NVARCHAR(MAX) NOT NULL,
     [ContactPhone] NVARCHAR(20) NOT NULL,
     [ProcessedByUserId] INT NULL FOREIGN KEY REFERENCES [dbo].[Users]([Id]),
     [ReturnReason] NVARCHAR(MAX) NULL,
+    [ReturnAdminNote] NVARCHAR(500) NULL,
     [CreatedAt] DATETIME DEFAULT GETDATE()
 );
 
