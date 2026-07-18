@@ -44,13 +44,13 @@
                         <ul class="dropdown-menu w-100 p-3 shadow-sm">
                             <li>
                                 <div class="row g-2 text-center">
-                                    <div class="col-4 col-lg-4 border-end-lg">
+                                    <div class="col-12 col-md-4 border-bottom border-md-bottom-0 border-md-end py-1 py-md-0">
                                         <a class="dropdown-item fw-bold text-dark rounded py-2" href="${pageContext.request.contextPath}/products?categoryId=1">Sách trong nước</a>
                                     </div>
-                                    <div class="col-4 col-lg-4 border-end-lg">
+                                    <div class="col-12 col-md-4 border-bottom border-md-bottom-0 border-md-end py-1 py-md-0">
                                         <a class="dropdown-item fw-bold text-dark rounded py-2" href="${pageContext.request.contextPath}/products?categoryId=2">Sách nước ngoài</a>
                                     </div>
-                                    <div class="col-4 col-lg-4">
+                                    <div class="col-12 col-md-4 py-1 py-md-0">
                                         <a class="dropdown-item fw-bold text-dark rounded py-2" href="${pageContext.request.contextPath}/products?categoryId=3">VPP - Dụng cụ học sinh</a>
                                     </div>
                                 </div>

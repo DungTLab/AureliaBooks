@@ -28,7 +28,14 @@
                         <div class="card border-2">
                             <div class="row g-0">
                                 <div class="col-md-3">
-                                    <img src="${pageContext.request.contextPath}/assets/images/book-image/${product.imageUrl}" class="img-fluid rounded-start object-fit-contain w-100" alt="${product.title}" style="height: 220px;">
+                                    <c:choose>
+                                        <c:when test="${not empty product.imageUrl && product.imageUrl.contains('/')}">
+                                            <img src="${pageContext.request.contextPath}/uploads/${product.imageUrl}" class="img-fluid rounded-start object-fit-contain w-100" alt="${product.title}" style="height: 220px;">
+                                        </c:when>
+                                        <c:otherwise>
+                                            <img src="${pageContext.request.contextPath}/assets/images/book-image/${product.imageUrl}" class="img-fluid rounded-start object-fit-contain w-100" alt="${product.title}" style="height: 220px;">
+                                        </c:otherwise>
+                                    </c:choose>
                                 </div>
                                 <div class="col-md-9">
                                     <div class="card-body d-flex flex-column h-100">

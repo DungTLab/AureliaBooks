@@ -7,8 +7,31 @@
         <div class="col-md-4">
             <div class="card shadow-sm mb-4">
                 <div class="card-body text-center">
-                    <img src="${sessionScope.userProfile.avatarUrl != null ? sessionScope.userProfile.avatarUrl : 'assets/images/default-avatar.png'}" class="rounded-circle img-fluid" style="width: 150px;" alt="Avatar">
-                    <h5 class="my-3">${sessionScope.userProfile.fullName}</h5>
+                    <c:choose>
+                        <c:when test="${not empty sessionScope.userProfile.avatarUrl}">
+                            <c:choose>
+                                <c:when test="${sessionScope.userProfile.avatarUrl.startsWith('http')}">
+                                    <c:set var="avatarSrc" value="${sessionScope.userProfile.avatarUrl}" />
+                                </c:when>
+                                <c:otherwise>
+                                    <c:set var="avatarSrc" value="${pageContext.request.contextPath}/uploads/${sessionScope.userProfile.avatarUrl}" />
+                                </c:otherwise>
+                            </c:choose>
+                        </c:when>
+                        <c:otherwise>
+                            <c:set var="avatarSrc" value="https://cdn-icons-png.flaticon.com/512/149/149071.png" />
+                        </c:otherwise>
+                    </c:choose>
+                    <img src="${avatarSrc}" class="rounded-circle img-fluid mb-3" style="width: 150px; height: 150px; object-fit: cover;" alt="Avatar">
+                    
+                    <form action="${pageContext.request.contextPath}/profile?action=updateAvatar" method="POST" enctype="multipart/form-data" class="mb-3">
+                        <div class="input-group input-group-sm mb-2">
+                            <input type="file" class="form-control" name="avatar" accept="image/*" required>
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-outline-primary w-100">Thay ảnh đại diện</button>
+                    </form>
+
+                    <h5 class="my-2">${sessionScope.userProfile.fullName}</h5>
                     <p class="text-muted mb-1">Vai trò: ${sessionScope.user.roleName}</p>
                 </div>
             </div>

@@ -10,8 +10,16 @@
         <div class="col-lg-5 ">
 
             <div class="mb-2">
-                <img class="img-fluid" src="${pageContext.request.contextPath}/assets/images/book-image/${product.imageUrl}" 
-                     alt="${product.title}" style="width: 100%; height: 400px; object-fit: contain;" />
+                <c:choose>
+                    <c:when test="${not empty product.imageUrl && product.imageUrl.contains('/')}">
+                        <img class="img-fluid" src="${pageContext.request.contextPath}/uploads/${product.imageUrl}" 
+                             alt="${product.title}" style="width: 100%; height: 400px; object-fit: contain;" />
+                    </c:when>
+                    <c:otherwise>
+                        <img class="img-fluid" src="${pageContext.request.contextPath}/assets/images/book-image/${product.imageUrl}" 
+                             alt="${product.title}" style="width: 100%; height: 400px; object-fit: contain;" />
+                    </c:otherwise>
+                </c:choose>
             </div>
 
             <div class="d-flex gap-2">
