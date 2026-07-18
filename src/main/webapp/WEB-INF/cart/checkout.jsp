@@ -1,5 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <jsp:include page="/WEB-INF/includes/header.jsp" />
 
 <div class="container my-5">
@@ -63,7 +64,14 @@
                                 <tr class="${item.quantity > stock ? 'table-danger' : ''}">
                                     <td>
                                         <div class="d-flex align-items-center">
-                                            <img src="${pageContext.request.contextPath}/assets/images/book-image/${item.product.imageUrl}" class="img-thumbnail me-3" style="width: 50px;" alt="${item.product.title}">
+                                            <c:choose>
+                                                <c:when test="${not empty item.product.imageUrl && item.product.imageUrl.contains('/')}">
+                                                    <img src="${pageContext.request.contextPath}/uploads/${item.product.imageUrl}" class="img-thumbnail me-3" style="width: 50px; height: 50px; object-fit: contain;" alt="${item.product.title}">
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <img src="${pageContext.request.contextPath}/assets/images/book-image/${item.product.imageUrl}" class="img-thumbnail me-3" style="width: 50px; height: 50px; object-fit: contain;" alt="${item.product.title}">
+                                                </c:otherwise>
+                                            </c:choose>
                                             <span>
                                                 ${item.product.title}
                                                 <c:if test="${item.quantity > stock}">
@@ -72,14 +80,14 @@
                                             </span>
                                         </div>
                                     </td>
-                                    <td>${item.product.price} VNĐ</td>
+                                    <td><fmt:formatNumber value="${item.product.price}" type="number" groupingUsed="true" maxFractionDigits="0"/> VNĐ</td>
                                     <td>
                                         <form action="${pageContext.request.contextPath}/checkout?action=update" method="POST" style="width: 80px;">
                                             <input type="hidden" name="productId" value="${item.productId}">
                                             <input type="number" class="form-control ${item.quantity > stock ? 'is-invalid' : ''}" name="quantity" value="${item.quantity}" min="1" onchange="this.form.submit()">
                                         </form>
                                     </td>
-                                    <td><strong>${item.product.price * item.quantity} VNĐ</strong></td>
+                                    <td><strong><fmt:formatNumber value="${item.product.price * item.quantity}" type="number" groupingUsed="true" maxFractionDigits="0"/> VNĐ</strong></td>
                                     <td>
                                         <form action="${pageContext.request.contextPath}/checkout?action=delete" method="POST">
                                             <input type="hidden" name="productId" value="${item.productId}">
@@ -112,7 +120,7 @@
                             <div class="alert alert-success d-flex justify-content-between align-items-center mb-0 p-2">
                                 <div>
                                     <strong>${appliedDiscount.code}</strong><br>
-                                    <small>Đã giảm: -${discountAmount} VNĐ</small>
+                                    <small>Đã giảm: -<fmt:formatNumber value="${discountAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/> VNĐ</small>
                                 </div>
                                 <button type="submit" form="checkoutForm" formaction="${pageContext.request.contextPath}/checkout?action=removeVoucher" formnovalidate class="btn btn-sm btn-outline-danger">Hủy</button>
                             </div>
@@ -135,25 +143,25 @@
                     <ul class="list-group list-group-flush mb-4">
                         <li class="list-group-item d-flex justify-content-between align-items-center px-0">
                             Tổng tiền hàng:
-                            <span>${requestScope.subTotal} VNĐ</span>
+                            <span><fmt:formatNumber value="${requestScope.subTotal}" type="number" groupingUsed="true" maxFractionDigits="0"/> VNĐ</span>
                         </li>
                         <c:if test="${not empty appliedDiscount}">
                         <li class="list-group-item d-flex justify-content-between align-items-center px-0 text-success">
                             Giảm giá (${appliedDiscount.code}):
-                            <span>-${requestScope.discountAmount} VNĐ</span>
+                            <span>-<fmt:formatNumber value="${requestScope.discountAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/> VNĐ</span>
                         </li>
                         </c:if>
                         <li class="list-group-item d-flex justify-content-between align-items-center px-0">
                             Phí giao hàng:
-                            <span>${requestScope.shippingCost} VNĐ</span>
+                            <span><fmt:formatNumber value="${requestScope.shippingCost}" type="number" groupingUsed="true" maxFractionDigits="0"/> VNĐ</span>
                         </li>
                         <li class="list-group-item d-flex justify-content-between align-items-center px-0">
                             Thuế VAT (8%):
-                            <span>${requestScope.tax} VNĐ</span>
+                            <span><fmt:formatNumber value="${requestScope.tax}" type="number" groupingUsed="true" maxFractionDigits="0"/> VNĐ</span>
                         </li>
                         <li class="list-group-item d-flex justify-content-between align-items-center px-0 fw-bold fs-5">
                             Tổng cộng:
-                            <span class="text-danger">${requestScope.totalAmount} VNĐ</span>
+                            <span class="text-danger"><fmt:formatNumber value="${requestScope.totalAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/> VNĐ</span>
                         </li>
                     </ul>
 

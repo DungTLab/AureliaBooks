@@ -10,10 +10,12 @@ import com.mycompany.aureliabooks.model.UserProfile;
 import java.io.IOException;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.Part;
 
 /**
  * User Profile & Password Controller. Created like NetBeans Maven template.
@@ -21,6 +23,11 @@ import jakarta.servlet.http.HttpSession;
  * @author DungLT
  */
 @WebServlet(name = "ProfileController", urlPatterns = {"/profile"})
+@MultipartConfig(
+    fileSizeThreshold = 1024 * 1024 * 1, // 1 MB
+    maxFileSize = 1024 * 1024 * 2,      // 2 MB
+    maxRequestSize = 1024 * 1024 * 10    // 10 MB
+)
 public class ProfileController extends HttpServlet {
 
     private final UserDAO userDAO = new UserDAO();
@@ -83,6 +90,8 @@ public class ProfileController extends HttpServlet {
             handleUpdateInfo(request, response);
         } else if ("changePassword".equals(action)) {
             handleChangePassword(request, response);
+        } else if ("updateAvatar".equals(action)) {
+            handleUpdateAvatar(request, response);
         }
     }
 
@@ -198,6 +207,66 @@ public class ProfileController extends HttpServlet {
             e.printStackTrace();
             request.setAttribute("errorMessage", "Lỗi khi đổi mật khẩu: " + e.getMessage());
             request.getRequestDispatcher("/WEB-INF/error/500.jsp").forward(request, response);
+        }
+    }
+
+    private void handleUpdateAvatar(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        HttpSession session = request.getSession(false);
+        User loggedInUser = (session != null) ? (User) session.getAttribute("user") : null;
+
+        if (loggedInUser == null) {
+            response.sendRedirect(request.getContextPath() + "/auth?action=login");
+            return;
+        }
+
+        try {
+            Part filePart = request.getPart("avatar");
+            if (filePart == null || filePart.getSize() == 0) {
+                session.setAttribute("profileError", "Vui lòng chọn một file ảnh để tải lên!");
+                response.sendRedirect(request.getContextPath() + "/profile");
+                return;
+            }
+
+            if (filePart.getSize() > 2 * 1024 * 1024) {
+                session.setAttribute("profileError", "Dung lượng ảnh đại diện không được vượt quá 2MB!");
+                response.sendRedirect(request.getContextPath() + "/profile");
+                return;
+            }
+
+            String contentType = filePart.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                session.setAttribute("profileError", "File được chọn không phải là ảnh hợp lệ!");
+                response.sendRedirect(request.getContextPath() + "/profile");
+                return;
+            }
+
+            String relativePath = com.mycompany.aureliabooks.util.UploadUtils.saveUploadedFile(filePart, getServletContext(), "avatars");
+            if (relativePath != null) {
+                UserProfile profile = userDAO.getUserProfile(loggedInUser.getId());
+                if (profile == null) {
+                    profile = new UserProfile();
+                    profile.setUserId(loggedInUser.getId());
+                }
+                profile.setAvatarUrl(relativePath);
+                
+                boolean isSuccess = userDAO.updateUserProfile(profile);
+                if (isSuccess) {
+                    session.setAttribute("userProfile", profile);
+                    session.setAttribute("profileSuccess", "Cập nhật ảnh đại diện thành công!");
+                } else {
+                    session.setAttribute("profileError", "Cập nhật ảnh đại diện thất bại. Vui lòng thử lại!");
+                }
+            } else {
+                session.setAttribute("profileError", "Không thể lưu file ảnh tải lên!");
+            }
+            
+            response.sendRedirect(request.getContextPath() + "/profile");
+        } catch (Exception e) {
+            e.printStackTrace();
+            session.setAttribute("profileError", "Lỗi xử lý tải lên ảnh: " + e.getMessage());
+            response.sendRedirect(request.getContextPath() + "/profile");
         }
     }
 }
