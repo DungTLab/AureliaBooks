@@ -5,8 +5,11 @@
 package com.mycompany.aureliabooks.dao;
 
 import com.mycompany.aureliabooks.model.Book;
+import com.mycompany.aureliabooks.model.Brand;
+import com.mycompany.aureliabooks.model.Inventory;
 import com.mycompany.aureliabooks.model.Product;
 import com.mycompany.aureliabooks.model.Stationery;
+import com.mycompany.aureliabooks.model.Supplier;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -834,6 +837,131 @@ public class ProductDAO extends BaseDAO {
             return false;
         }
     }
+
+    /**
+     * Returns all products (active + inactive) joined with Inventory for admin
+     * list management. Sets quantityInStock on each returned Product.
+     */
+    public List<Product> getAdminProductList(int offset, int limit) {
+        List<Product> products = new ArrayList<>();
+        if (limit <= 0) return products;
+
+        String sql = "SELECT p.[Id], p.[CategoryId], p.[SupplierId], p.[Title], p.[Description], "
+                + "p.[Price], p.[Sku], p.[Image_URL], p.[IsActive], p.[CreatedAt], "
+                + "b.[ProductId] AS [BookProductId], b.[PublisherId], b.[Translator], "
+                + "b.[PublicationYear], b.[NumberOfPages], b.[CoverType], b.[Language], "
+                + "b.[Weight] AS [BookWeight], b.[Dimensions] AS [BookDimensions], "
+                + "s.[ProductId] AS [StationeryProductId], s.[BrandId], s.[Origin], "
+                + "s.[Material], s.[Color], s.[Weight] AS [StationeryWeight], "
+                + "s.[Dimensions] AS [StationeryDimensions], s.[Specifications], s.[Warning], "
+                + "ISNULL(inv.[QuantityInStock], 0) AS [QuantityInStock] "
+                + "FROM [dbo].[Products] p "
+                + "LEFT JOIN [dbo].[Books] b ON p.[Id] = b.[ProductId] "
+                + "LEFT JOIN [dbo].[Stationeries] s ON p.[Id] = s.[ProductId] "
+                + "LEFT JOIN [dbo].[Inventory] inv ON p.[Id] = inv.[ProductId] "
+                + "ORDER BY p.[CreatedAt] DESC, p.[Id] DESC "
+                + "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+
+        try (Connection conn = this.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, Math.max(offset, 0));
+            stmt.setInt(2, limit);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    Product p = mapPagedProduct(rs);
+                    p.setQuantityInStock(rs.getInt("QuantityInStock"));
+                    products.add(p);
+                }
+            }
+        } catch (SQLException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return products;
+    }
+
+    /**
+     * Counts total products (active + inactive) for admin pagination.
+     */
+    public int countAdminProducts() {
+        int count = 0;
+        String sql = "SELECT COUNT(*) FROM [dbo].[Products]";
+        try (Connection conn = this.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            if (rs.next()) {
+                count = rs.getInt(1);
+            }
+        } catch (SQLException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return count;
+    }
+
+    /**
+     * Returns all publishers for dropdown in create/update forms.
+     */
+    public List<com.mycompany.aureliabooks.model.Publisher> getAllPublishers() {
+        List<com.mycompany.aureliabooks.model.Publisher> publishers = new ArrayList<>();
+        String sql = "SELECT [Id], [Name], [Address] FROM [dbo].[Publishers] ORDER BY [Name]";
+        try (Connection conn = this.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                com.mycompany.aureliabooks.model.Publisher pub = new com.mycompany.aureliabooks.model.Publisher();
+                pub.setId(rs.getInt("Id"));
+                pub.setName(rs.getString("Name"));
+                pub.setAddress(rs.getString("Address"));
+                publishers.add(pub);
+            }
+        } catch (SQLException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return publishers;
+    }
+
+    /**
+     * Returns all brands for dropdown in create/update forms.
+     */
+    public List<Brand> getAllBrands() {
+        List<Brand> brands = new ArrayList<>();
+        String sql = "SELECT [Id], [Name] FROM [dbo].[Brands] ORDER BY [Name]";
+        try (Connection conn = this.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                Brand brand = new Brand();
+                brand.setId(rs.getInt("Id"));
+                brand.setName(rs.getString("Name"));
+                brands.add(brand);
+            }
+        } catch (SQLException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return brands;
+    }
+
+    /**
+     * Returns all suppliers for dropdown in create/update forms.
+     */
+    public List<Supplier> getAllSuppliers() {
+        List<Supplier> suppliers = new ArrayList<>();
+        String sql = "SELECT [Id], [Name] FROM [dbo].[Suppliers] ORDER BY [Name]";
+        try (Connection conn = this.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                Supplier sup = new Supplier();
+                sup.setId(rs.getInt("Id"));
+                sup.setName(rs.getString("Name"));
+                suppliers.add(sup);
+            }
+        } catch (SQLException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return suppliers;
+    }
+
+
     
     public List<HashMap<String, Object>> getTopSellingBooks(int categoryId, int offset, int limit) {
     List<HashMap<String, Object>> list = new ArrayList<>();
@@ -963,5 +1091,74 @@ public class ProductDAO extends BaseDAO {
             e.printStackTrace();
         }
         return count;
+    }
+
+    public List<Inventory> getInventoryList() {
+        List<Inventory> list = new ArrayList<>();
+        String sql = "SELECT p.[Id], p.[Title], p.[Sku], "
+                + "ISNULL(inv.[QuantityInStock], 0) AS [QuantityInStock], "
+                + "inv.[WarehouseLocation] "
+                + "FROM [dbo].[Products] p "
+                + "LEFT JOIN [dbo].[Inventory] inv ON p.[Id] = inv.[ProductId] "
+                + "ORDER BY p.[Id]";
+        try (Connection conn = this.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                com.mycompany.aureliabooks.model.Inventory item = new com.mycompany.aureliabooks.model.Inventory();
+                item.setProductId(rs.getInt("Id"));
+                item.setProductTitle(rs.getString("Title"));
+                item.setSku(rs.getString("Sku"));
+                item.setQuantityInStock(rs.getInt("QuantityInStock"));
+                item.setWarehouseLocation(rs.getString("WarehouseLocation"));
+                list.add(item);
+            }
+        } catch (SQLException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public boolean adjustInventory(int productId, int quantityChange, String warehouseLocation) {
+        // Kiểm tra tồn kho hiện tại
+        String selectSql = "SELECT [QuantityInStock] FROM [dbo].[Inventory] WHERE [ProductId] = ?";
+        try (Connection conn = this.getConnection();
+             PreparedStatement selectStmt = conn.prepareStatement(selectSql)) {
+            selectStmt.setInt(1, productId);
+            try (ResultSet rs = selectStmt.executeQuery()) {
+                if (rs.next()) {
+                    // Đã có record -> UPDATE
+                    int currentStock = rs.getInt("QuantityInStock");
+                    int newStock = currentStock + quantityChange;
+                    if (newStock < 0) return false;
+
+                    String updateSql = "UPDATE [dbo].[Inventory] SET [QuantityInStock] = ?, "
+                            + "[WarehouseLocation] = ?, [LastUpdated] = GETDATE() "
+                            + "WHERE [ProductId] = ?";
+                    try (PreparedStatement updateStmt = conn.prepareStatement(updateSql)) {
+                        updateStmt.setInt(1, newStock);
+                        updateStmt.setString(2, warehouseLocation);
+                        updateStmt.setInt(3, productId);
+                        updateStmt.executeUpdate();
+                    }
+                } else {
+                    // Chưa có record -> INSERT
+                    if (quantityChange < 0) return false;
+
+                    String insertSql = "INSERT INTO [dbo].[Inventory] ([ProductId], [QuantityInStock], "
+                            + "[WarehouseLocation], [LastUpdated]) VALUES (?, ?, ?, GETDATE())";
+                    try (PreparedStatement insertStmt = conn.prepareStatement(insertSql)) {
+                        insertStmt.setInt(1, productId);
+                        insertStmt.setInt(2, quantityChange);
+                        insertStmt.setString(3, warehouseLocation);
+                        insertStmt.executeUpdate();
+                    }
+                }
+            }
+            return true;
+        } catch (SQLException | ClassNotFoundException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 }

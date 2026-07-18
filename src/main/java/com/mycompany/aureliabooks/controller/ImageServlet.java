@@ -44,8 +44,10 @@ public class ImageServlet extends HttpServlet {
             return;
         }
 
-        // 2. Trỏ tới file ảnh vật lý trên ổ đĩa
-        java.io.File file = new java.io.File(com.mycompany.aureliabooks.util.UploadUtils.UPLOAD_DIR + pathInfo);
+        // 2. Dựng đường dẫn vật lý động trỏ tới thư mục uploads ngoài gốc project
+        String baseUploadPath = com.mycompany.aureliabooks.util.UploadUtils.getUploadPath(getServletContext());
+        java.io.File file = new java.io.File(baseUploadPath + pathInfo);
+
 
         // 3. Kiểm tra file tồn tại
         if (!file.exists() || !file.isFile()) {

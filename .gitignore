@@ -25,3 +25,6 @@ Desktop.ini
 
 # Google OAuth credentials
 **/oauth.properties
+
+# Ignore uploaded images
+/uploads/

@@ -4,6 +4,19 @@
 
 <div class="container my-5">
     <h2>Xác Nhận Xóa Sách</h2>
+
+    <c:if test="${not empty errorMessage}">
+        <div class="alert alert-danger" role="alert">
+            ${errorMessage}
+        </div>
+    </c:if>
+
+    <c:if test="${not empty successMessage}">
+        <div class="alert alert-success" role="alert">
+            ${successMessage}
+        </div>
+    </c:if>
+
     <div class="card border-danger mb-3" style="max-width: 30rem;">
         <div class="card-header bg-danger text-white">Cảnh báo xóa dữ liệu</div>
         <div class="card-body">
@@ -13,10 +26,10 @@
                 <strong>Mã SKU:</strong> ${book.sku} <br>
                 <strong>Giá:</strong> ${book.price} VNĐ
             </p>
-            <form action="${pageContext.request.contextPath}/product?view=delete" method="POST">
+            <form action="${pageContext.request.contextPath}/admin/products?view=delete" method="POST">
                 <input type="hidden" name="productId" value="${book.id}">
                 <button type="submit" class="btn btn-danger">Xác nhận xóa vĩnh viễn</button>
-                <a href="${pageContext.request.contextPath}/product?view=list" class="btn btn-secondary">Hủy bỏ</a>
+                <a href="${pageContext.request.contextPath}/admin/products?view=list" class="btn btn-secondary">Hủy bỏ</a>
             </form>
         </div>
     </div>
