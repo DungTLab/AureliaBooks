@@ -45,14 +45,23 @@
                     <c:forEach var="book" items="${listBooks}">
                         <tr>
                             <td>${book.id}</td>
-
+                            <!-- <td>
+                        <img src="${pageContext.request.contextPath}/uploads/${book.imageUrl}"
+                             onerror="this.onerror=null; this.src='${pageContext.request.contextPath}/assets/images/${book.imageUrl}'"
+                             class="img-thumbnail" style="width: 50px;" alt="...">
+                    </td> -->
                             <td>
                                 <c:choose>
-                                    <c:when test="${not empty book.imageUrl && book.imageUrl.contains('/')}">
-                                        <img src="${pageContext.request.contextPath}/uploads/${book.imageUrl}" class="img-thumbnail" style="width: 50px; height: 50px; object-fit: contain;" alt="...">
+                                    <c:when
+                                        test="${not empty book.imageUrl && book.imageUrl.startsWith('book-image/')}">
+                                        <img src="${pageContext.request.contextPath}/uploads/${book.imageUrl}"
+                                            onerror="this.onerror=null; this.src='${pageContext.request.contextPath}/assets/images/${book.imageUrl}'"
+                                            class="img-thumbnail" style="width: 50px;" alt="...">
                                     </c:when>
                                     <c:otherwise>
-                                        <img src="${pageContext.request.contextPath}/assets/images/book-image/${book.imageUrl}" class="img-thumbnail" style="width: 50px; height: 50px; object-fit: contain;" alt="...">
+                                        <img src="${pageContext.request.contextPath}/assets/images/book-image/${book.imageUrl}"
+                                            onerror="this.onerror=null; this.src='${pageContext.request.contextPath}/uploads/${book.imageUrl}'"
+                                            class="img-thumbnail" style="width: 50px;" alt="...">
                                     </c:otherwise>
                                 </c:choose>
                             </td>
