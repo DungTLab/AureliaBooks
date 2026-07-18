@@ -31,11 +31,15 @@
                     <form action="${pageContext.request.contextPath}/support?action=create" method="POST">
                         <div class="mb-3">
                             <label for="subject" class="form-label fw-bold">Tiêu đề <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="subject" name="subject" placeholder="Nhập tóm tắt vấn đề..." required>
+                            <input type="text" class="form-control" id="subject" name="subject" placeholder="Nhập tóm tắt vấn đề..." minlength="5" maxlength="150" title="Tiêu đề từ 5 đến 150 ký tự" required>
                         </div>
                         <div class="mb-3">
                             <label for="message" class="form-label fw-bold">Nội dung chi tiết <span class="text-danger">*</span></label>
-                            <textarea class="form-control" id="message" name="message" rows="5" placeholder="Vui lòng mô tả chi tiết vấn đề bạn đang gặp phải..." required></textarea>
+                            <textarea class="form-control" id="message" name="message" rows="6" placeholder="Vui lòng mô tả chi tiết vấn đề bạn đang gặp phải..." minlength="10" maxlength="2000" required></textarea>
+                            <div class="form-text text-muted d-flex justify-content-between mt-1">
+                                <span><i class="bi bi-info-circle me-1"></i>Tối thiểu 10 ký tự</span>
+                                <span id="msgCount">Tối đa 2000 ký tự</span>
+                            </div>
                         </div>
                         <button type="submit" class="btn btn-primary w-100">Gửi Yêu Cầu</button>
                     </form>

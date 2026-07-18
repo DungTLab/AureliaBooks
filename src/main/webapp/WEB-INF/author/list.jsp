@@ -5,7 +5,7 @@
 <div class="container my-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Quản Lý Tác Giả (Admin)</h2>
-        <a href="${pageContext.request.contextPath}/admin/authors?view=create" class="btn btn-success">
+        <a href="${pageContext.request.contextPath}/admin/authors?action=create" class="btn btn-success">
             <i class="bi bi-plus-lg me-1"></i>Thêm Tác Giả Mới
         </a>
     </div>
@@ -45,10 +45,10 @@
                                 </span>
                             </td>
                             <td class="text-end">
-                                <a href="${pageContext.request.contextPath}/admin/authors?view=update&id=${author.authorId}" class="btn btn-sm btn-outline-primary">
+                                <a href="${pageContext.request.contextPath}/admin/authors?action=update&id=${author.authorId}" class="btn btn-sm btn-outline-primary">
                                     <i class="bi bi-pencil me-1"></i>Sửa
                                 </a>
-                                <a href="${pageContext.request.contextPath}/admin/authors?view=delete&id=${author.authorId}" class="btn btn-sm btn-outline-danger ms-1">
+                                <a href="${pageContext.request.contextPath}/admin/authors?action=delete&id=${author.authorId}" class="btn btn-sm btn-outline-danger ms-1">
                                     <i class="bi bi-trash me-1"></i>Xóa
                                 </a>
                             </td>

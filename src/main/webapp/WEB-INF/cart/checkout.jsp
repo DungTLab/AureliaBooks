@@ -7,6 +7,12 @@
         <h2>Thanh Toán Đơn Hàng</h2>
         <a href="${pageContext.request.contextPath}/cart" class="btn btn-secondary">Quay lại giỏ hàng</a>
     </div>
+    
+    <c:if test="${not empty requestScope.checkoutError}">
+        <div class="alert alert-danger py-2">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>${requestScope.checkoutError}
+        </div>
+    </c:if>
 
     <!-- Main Checkout Form (using HTML5 form attribute for inputs outside this tag) -->
     <form id="checkoutForm" action="${pageContext.request.contextPath}/checkout" method="POST"></form>
@@ -22,11 +28,11 @@
                 <div class="card-body">
                     <div class="mb-3">
                         <label for="shippingAddress" class="form-label">Địa chỉ giao hàng <span class="text-danger">*</span></label>
-                        <textarea class="form-control" id="shippingAddress" name="shippingAddress" form="checkoutForm" rows="3" required>${requestScope.profile.address}</textarea>
+                        <textarea class="form-control" id="shippingAddress" name="shippingAddress" form="checkoutForm" rows="3" minlength="5" maxlength="255" required>${requestScope.profile.address}</textarea>
                     </div>
                     <div class="mb-3">
                         <label for="contactPhone" class="form-label">Số điện thoại liên hệ <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="contactPhone" name="contactPhone" form="checkoutForm" value="${requestScope.profile.phone}" pattern="^0[0-9]{9}$" title="Vui lòng nhập số điện thoại gồm 10 chữ số và bắt đầu bằng số 0" required>
+                        <input type="text" class="form-control" id="contactPhone" name="contactPhone" form="checkoutForm" value="${requestScope.profile.phone}" pattern="^0[0-9]{9}$" minlength="10" maxlength="10" inputmode="numeric" title="Vui lòng nhập số điện thoại gồm 10 chữ số và bắt đầu bằng số 0" required>
                     </div>
                 </div>
             </div>
@@ -113,7 +119,7 @@
                         </c:when>
                         <c:otherwise>
                             <div class="d-flex">
-                                <input type="text" class="form-control me-2" id="voucherCode" name="voucherCode" form="checkoutForm" placeholder="Nhập mã voucher" required>
+                                <input type="text" class="form-control me-2" id="voucherCode" name="voucherCode" form="checkoutForm" placeholder="Nhập mã voucher">
                                 <button type="submit" form="checkoutForm" formaction="${pageContext.request.contextPath}/checkout?action=applyVoucher" formnovalidate class="btn btn-outline-primary">Áp dụng</button>
                             </div>
                         </c:otherwise>

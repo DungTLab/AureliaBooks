@@ -20,15 +20,15 @@
                 </div>
             </c:if>
 
-            <form action="${pageContext.request.contextPath}/admin/authors?view=create" method="POST">
+            <form action="${pageContext.request.contextPath}/admin/authors?action=create" method="POST">
                 <div class="mb-3">
                     <label for="fullName" class="form-label fw-bold">Họ tên <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" id="fullName" name="fullName" value="${author.fullName}" required>
+                    <input type="text" class="form-control" id="fullName" name="fullName" value="${author.fullName}" maxlength="255" pattern="^[A-Za-z0-9À-ỹ\s\-&()]{2,255}$" title="Họ tên chỉ được chứa chữ cái, số, khoảng trắng và các ký tự - & ( ) từ 2 đến 255 ký tự" required>
                 </div>
                 
                 <div class="mb-3">
                     <label for="biography" class="form-label fw-bold">Tiểu sử</label>
-                    <textarea class="form-control" id="biography" name="biography" rows="5">${author.biography}</textarea>
+                    <textarea class="form-control" id="biography" name="biography" rows="5" maxlength="2000">${author.biography}</textarea>
                 </div>
 
                 <div class="d-grid mt-4">

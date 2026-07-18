@@ -5,6 +5,7 @@
 package com.mycompany.aureliabooks.model;
 
 import java.io.Serializable;
+import java.sql.Timestamp;
 
 /**
  * Supplier Entity model.
@@ -17,6 +18,7 @@ public class Supplier implements Serializable {
     private String contactEmail;
     private String contactPhone;
     private String address;
+    private Timestamp createdAt;
 
     public Supplier() {
     }
@@ -59,5 +61,13 @@ public class Supplier implements Serializable {
 
     public void setAddress(String address) {
         this.address = address;
+    }
+
+    public Timestamp getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Timestamp createdAt) {
+        this.createdAt = createdAt;
     }
 }

@@ -9,13 +9,13 @@ import com.mycompany.aureliabooks.model.Product;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
-import java.math.BigDecimal;
 
 /**
  * Data Access Object (DAO) for managing shopping cart operations.
- * Handles database interactions related to Cart, CartItems, and creating Orders.
+ * Handles database interactions related to Cart, CartItems, and retrieving user info for checkout.
  * 
  * @author ADMIN
  */
@@ -66,6 +66,14 @@ public class CartDAO extends BaseDAO {
         return list;
     }
 
+    /**
+     * Updates the quantity of a specific item in the user's cart.
+     * Includes a subquery constraint to ensure the item belongs to the user.
+     *
+     * @param itemId   The unique ID of the CartItem record.
+     * @param quantity The new quantity to set.
+     * @param userId   The ID of the user requesting the update (security check).
+     */
     public void updateQuantity(int itemId, int quantity, int userId) {
         String sql = "UPDATE CartItems SET Quantity = ? WHERE Id = ? AND CartId = (SELECT Id FROM Carts WHERE UserId = ?)";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -78,12 +86,19 @@ public class CartDAO extends BaseDAO {
         }
     }
 
+    /**
+     * Retrieves the Cart ID associated with a user.
+     * If no cart exists for the user, a new one is created automatically.
+     *
+     * @param userId The ID of the user.
+     * @return The Cart ID, or -1 if an error occurred.
+     */
     public int getCartIdByUserId(int userId) {
         String sqlSelect = "SELECT Id FROM Carts WHERE UserId = ?";
         String sqlInsert = "INSERT INTO Carts (UserId, CreatedAt) VALUES (?, CURRENT_TIMESTAMP)";
         
         try (Connection conn = getConnection()) {
-            // Check if cart exists
+            // Step 1: Check if cart exists
             try (PreparedStatement psSelect = conn.prepareStatement(sqlSelect)) {
                 psSelect.setInt(1, userId);
                 try (ResultSet rs = psSelect.executeQuery()) {
@@ -93,8 +108,8 @@ public class CartDAO extends BaseDAO {
                 }
             }
             
-            // Cart does not exist, insert a new one dynamically
-            try (PreparedStatement psInsert = conn.prepareStatement(sqlInsert, java.sql.Statement.RETURN_GENERATED_KEYS)) {
+            // Step 2: Cart does not exist, insert a new one dynamically
+            try (PreparedStatement psInsert = conn.prepareStatement(sqlInsert, Statement.RETURN_GENERATED_KEYS)) {
                 psInsert.setInt(1, userId);
                 int affectedRows = psInsert.executeUpdate();
                 if (affectedRows > 0) {
@@ -112,7 +127,8 @@ public class CartDAO extends BaseDAO {
     }
 
     /**
-     * Adds a product to the user's cart or updates its quantity if it already exists.
+     * Adds a product to the user's cart. 
+     * If the product already exists in the cart, its quantity is incremented.
      * 
      * @param cartId    The ID of the cart to add the item to.
      * @param productId The ID of the product being added.
@@ -125,9 +141,9 @@ public class CartDAO extends BaseDAO {
             psCheck.setInt(2, productId);
             try (ResultSet rs = psCheck.executeQuery()) {
                 if (rs.next()) {
+                    // Item exists, update the quantity
                     int existingId = rs.getInt("Id");
                     int newQuantity = rs.getInt("Quantity") + quantity;
-                    // Note: internal addition from addItem can use a simplified internal update
                     String sqlUpdate = "UPDATE CartItems SET Quantity = ? WHERE Id = ?";
                     try (PreparedStatement psUp = conn.prepareStatement(sqlUpdate)) {
                         psUp.setInt(1, newQuantity);
@@ -135,6 +151,7 @@ public class CartDAO extends BaseDAO {
                         psUp.executeUpdate();
                     }
                 } else {
+                    // Item does not exist, insert a new record
                     String insertSql = "INSERT INTO CartItems (CartId, ProductId, Quantity) VALUES (?, ?, ?)";
                     try (PreparedStatement psInsert = conn.prepareStatement(insertSql)) {
                         psInsert.setInt(1, cartId);
@@ -149,6 +166,13 @@ public class CartDAO extends BaseDAO {
         }
     }
 
+    /**
+     * Removes an item entirely from the user's cart.
+     * Includes a subquery constraint to ensure the item belongs to the user.
+     *
+     * @param itemId The unique ID of the CartItem to remove.
+     * @param userId The ID of the user requesting the removal (security check).
+     */
     public void deleteItem(int itemId, int userId) {
         String sql = "DELETE FROM CartItems WHERE Id = ? AND CartId = (SELECT Id FROM Carts WHERE UserId = ?)";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -159,6 +183,14 @@ public class CartDAO extends BaseDAO {
             e.printStackTrace();
         }
     }
+
+    /**
+     * Retrieves the phone and address of a user from their profile.
+     * Used primarily to pre-fill the checkout form.
+     *
+     * @param userId The ID of the user.
+     * @return A formatted string "phone/address" to easily split in the controller.
+     */
     public String getUserInfo(int userId) {
         String sql = "SELECT Phone, Address FROM UserProfiles WHERE UserId = ?";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -167,7 +199,7 @@ public class CartDAO extends BaseDAO {
                 if (rs.next()) {
                     String phone = rs.getString("Phone");
                     String address = rs.getString("Address");
-                    // Tránh trường hợp null
+                    // Prevent returning 'null' string literals
                     phone = (phone != null) ? phone : "";
                     address = (address != null) ? address : "";
                     return phone + "/" + address;

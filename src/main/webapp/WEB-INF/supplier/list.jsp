@@ -5,20 +5,20 @@
 <div class="container my-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Quản Lý Nhà Cung Cấp (Admin)</h2>
-        <a href="${pageContext.request.contextPath}/admin/suppliers?view=create" class="btn btn-success">
+        <a href="${pageContext.request.contextPath}/admin/suppliers?action=create" class="btn btn-success">
             <i class="bi bi-plus-lg me-1"></i>Thêm Nhà Cung Cấp Mới
         </a>
     </div>
 
     <c:if test="${not empty successMessage}">
         <div class="alert alert-success alert-dismissible fade show" role="alert">
-            ${successMessage}
+            <c:out value="${successMessage}" />
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     </c:if>
     <c:if test="${not empty errorMessage}">
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            ${errorMessage}
+            <c:out value="${errorMessage}" />
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     </c:if>
@@ -39,16 +39,16 @@
                 <tbody>
                     <c:forEach var="sup" items="${suppliers}">
                         <tr>
-                            <td>${sup.id}</td>
-                            <td><strong>${sup.name}</strong></td>
-                            <td>${sup.contactEmail}</td>
-                            <td>${sup.contactPhone}</td>
-                            <td>${sup.address}</td>
+                            <td><c:out value="${sup.id}" /></td>
+                            <td><strong><c:out value="${sup.name}" /></strong></td>
+                            <td><c:out value="${sup.contactEmail}" default="-" /></td>
+                            <td><c:out value="${sup.contactPhone}" default="-" /></td>
+                            <td><c:out value="${sup.address}" default="-" /></td>
                             <td class="text-end">
-                                <a href="${pageContext.request.contextPath}/admin/suppliers?view=update&id=${sup.id}" class="btn btn-sm btn-outline-primary">
+                                <a href="${pageContext.request.contextPath}/admin/suppliers?action=update&amp;id=${sup.id}" class="btn btn-sm btn-outline-primary">
                                     <i class="bi bi-pencil me-1"></i>Sửa
                                 </a>
-                                <a href="${pageContext.request.contextPath}/admin/suppliers?view=delete&id=${sup.id}" class="btn btn-sm btn-outline-danger ms-1">
+                                <a href="${pageContext.request.contextPath}/admin/suppliers?action=delete&amp;id=${sup.id}" class="btn btn-sm btn-outline-danger ms-1">
                                     <i class="bi bi-trash me-1"></i>Xóa
                                 </a>
                             </td>
