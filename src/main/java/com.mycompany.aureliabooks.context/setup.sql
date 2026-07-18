@@ -410,13 +410,13 @@ GO
 
 -- 12. Insert Users data
 INSERT INTO [dbo].[Users] ([RoleId], [Username], [PasswordHash], [Email], [AuthProvider], [IsActive]) VALUES 
-(1, 'admin', '$2a$10$asF2urAUZb0VnxsyC6DHMOvCztuCiBs55CBVlLWrNFmGOVYIV58R6', 'admin@minifahasa.com', 'local', 1),
-(2, 'dunglt', '$2a$10$4cKNr/Wh2GRVb/c5CKZhC.wwexcJP0w6Xi4CdLE.ky7mgW6IMTn0.', 'emp1@minifahasa.com', 'local', 1),
-(2, 'giacth', '$2a$10$yo7zXNy/77M3vRXSudLD1.CSL4U8JEVIXLH4ccKnTjX5QlKHygscG', 'emp2@minifahasa.com', 'local', 1),
-(2, 'duyhn', '$2a$10$JO1dBx0rh8YDRr3MbDuSAO5j5D.iAEyupOlKY8sAWAilvmNoC40Qa', 'emp3@minifahasa.com', 'local', 1),
-(2, 'anhntd', '$2a$10$ibaL/gWTaAsrvmZDNKOFe.BzwxItTdVYp0VZhBSrv/6qR./JRTycS', 'emp4@minifahasa.com', 'local', 1),
-(2, 'trongnp', '$2a$10$Bw8wJmP2mAtjYYrEdfDYkuTNc4vkdZwb45KKCvfrUNOh9KWzWsCIi', 'emp5@minifahasa.com', 'local', 1),
-(3, 'democustomer', '$2a$10$4lu9H6z0Y4k3V1kQLsWwLuB6jUfgzqyv6TB5yVwhxK15bufb9N3l2', 'democustomer@minifahasa.com', 'local', 1);
+(1, 'admin', '$2a$10$CCi9FyOPB8MKf6vgzMkNq.Ph4/gXmu531pW8/sK.Kg/NvJmXw2PAG', 'admin@minifahasa.com', 'local', 1),
+(2, 'dunglt', '$2a$10$X0pNrX9AMFz6G9AQpjy7oumzJaogx/YFSbnPj5ZI4B8M8GlmA2o7G', 'emp1@minifahasa.com', 'local', 1),
+(2, 'giacth', '$2a$10$dJikt5K3zsc074.RgW1NFeusS8AJGpGer7KpjEsb9op1sk243r.Zq', 'emp2@minifahasa.com', 'local', 1),
+(2, 'duyhn', '$2a$10$kKN./JEuP6G.KqT8S1l.KefVFFw1C.SPQwI9k0I.1NDWxCwm7E8Ai', 'emp3@minifahasa.com', 'local', 1),
+(2, 'anhntd', '$2a$10$YhihfKxaNThT/LDEpg3oqOD4k.pRa5aC0Rp/vJ9zdH7sUBArXtMLu', 'emp4@minifahasa.com', 'local', 1),
+(2, 'trongnp', '$2a$10$JI741kzrYIoz6LF5A4JRG.H9b9h83kqPm51g8HmiLGcSNxdh3UEVS', 'emp5@minifahasa.com', 'local', 1),
+(3, 'democustomer', '$2a$10$VE0vXU8PuHFUdr/XyVTSLOpEB9p0JkJuBhOEkbK7Y0ShaRlx.fPIu', 'democustomer@minifahasa.com', 'local', 1);
 GO
 
 -- 13. Insert UserProfiles data
