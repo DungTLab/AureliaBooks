@@ -5,8 +5,11 @@
 package com.mycompany.aureliabooks.dao;
 
 import com.mycompany.aureliabooks.model.Book;
+import com.mycompany.aureliabooks.model.Brand;
+import com.mycompany.aureliabooks.model.Inventory;
 import com.mycompany.aureliabooks.model.Product;
 import com.mycompany.aureliabooks.model.Stationery;
+import com.mycompany.aureliabooks.model.Supplier;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -919,14 +922,14 @@ public class ProductDAO extends BaseDAO {
     /**
      * Returns all brands for dropdown in create/update forms.
      */
-    public List<com.mycompany.aureliabooks.model.Brand> getAllBrands() {
-        List<com.mycompany.aureliabooks.model.Brand> brands = new ArrayList<>();
+    public List<Brand> getAllBrands() {
+        List<Brand> brands = new ArrayList<>();
         String sql = "SELECT [Id], [Name] FROM [dbo].[Brands] ORDER BY [Name]";
         try (Connection conn = this.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) {
-                com.mycompany.aureliabooks.model.Brand brand = new com.mycompany.aureliabooks.model.Brand();
+                Brand brand = new Brand();
                 brand.setId(rs.getInt("Id"));
                 brand.setName(rs.getString("Name"));
                 brands.add(brand);
@@ -940,14 +943,14 @@ public class ProductDAO extends BaseDAO {
     /**
      * Returns all suppliers for dropdown in create/update forms.
      */
-    public List<com.mycompany.aureliabooks.model.Supplier> getAllSuppliers() {
-        List<com.mycompany.aureliabooks.model.Supplier> suppliers = new ArrayList<>();
+    public List<Supplier> getAllSuppliers() {
+        List<Supplier> suppliers = new ArrayList<>();
         String sql = "SELECT [Id], [Name] FROM [dbo].[Suppliers] ORDER BY [Name]";
         try (Connection conn = this.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) {
-                com.mycompany.aureliabooks.model.Supplier sup = new com.mycompany.aureliabooks.model.Supplier();
+                Supplier sup = new Supplier();
                 sup.setId(rs.getInt("Id"));
                 sup.setName(rs.getString("Name"));
                 suppliers.add(sup);
@@ -1088,5 +1091,74 @@ public class ProductDAO extends BaseDAO {
             e.printStackTrace();
         }
         return count;
+    }
+
+    public List<Inventory> getInventoryList() {
+        List<Inventory> list = new ArrayList<>();
+        String sql = "SELECT p.[Id], p.[Title], p.[Sku], "
+                + "ISNULL(inv.[QuantityInStock], 0) AS [QuantityInStock], "
+                + "inv.[WarehouseLocation] "
+                + "FROM [dbo].[Products] p "
+                + "LEFT JOIN [dbo].[Inventory] inv ON p.[Id] = inv.[ProductId] "
+                + "ORDER BY p.[Id]";
+        try (Connection conn = this.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                com.mycompany.aureliabooks.model.Inventory item = new com.mycompany.aureliabooks.model.Inventory();
+                item.setProductId(rs.getInt("Id"));
+                item.setProductTitle(rs.getString("Title"));
+                item.setSku(rs.getString("Sku"));
+                item.setQuantityInStock(rs.getInt("QuantityInStock"));
+                item.setWarehouseLocation(rs.getString("WarehouseLocation"));
+                list.add(item);
+            }
+        } catch (SQLException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public boolean adjustInventory(int productId, int quantityChange, String warehouseLocation) {
+        // Kiểm tra tồn kho hiện tại
+        String selectSql = "SELECT [QuantityInStock] FROM [dbo].[Inventory] WHERE [ProductId] = ?";
+        try (Connection conn = this.getConnection();
+             PreparedStatement selectStmt = conn.prepareStatement(selectSql)) {
+            selectStmt.setInt(1, productId);
+            try (ResultSet rs = selectStmt.executeQuery()) {
+                if (rs.next()) {
+                    // Đã có record -> UPDATE
+                    int currentStock = rs.getInt("QuantityInStock");
+                    int newStock = currentStock + quantityChange;
+                    if (newStock < 0) return false;
+
+                    String updateSql = "UPDATE [dbo].[Inventory] SET [QuantityInStock] = ?, "
+                            + "[WarehouseLocation] = ?, [LastUpdated] = GETDATE() "
+                            + "WHERE [ProductId] = ?";
+                    try (PreparedStatement updateStmt = conn.prepareStatement(updateSql)) {
+                        updateStmt.setInt(1, newStock);
+                        updateStmt.setString(2, warehouseLocation);
+                        updateStmt.setInt(3, productId);
+                        updateStmt.executeUpdate();
+                    }
+                } else {
+                    // Chưa có record -> INSERT
+                    if (quantityChange < 0) return false;
+
+                    String insertSql = "INSERT INTO [dbo].[Inventory] ([ProductId], [QuantityInStock], "
+                            + "[WarehouseLocation], [LastUpdated]) VALUES (?, ?, ?, GETDATE())";
+                    try (PreparedStatement insertStmt = conn.prepareStatement(insertSql)) {
+                        insertStmt.setInt(1, productId);
+                        insertStmt.setInt(2, quantityChange);
+                        insertStmt.setString(3, warehouseLocation);
+                        insertStmt.executeUpdate();
+                    }
+                }
+            }
+            return true;
+        } catch (SQLException | ClassNotFoundException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 }

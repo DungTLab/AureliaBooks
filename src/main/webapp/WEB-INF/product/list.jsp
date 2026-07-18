@@ -72,9 +72,18 @@
                             <td>${book.categoryId}</td>
                             <td>${book.price} VNĐ</td>
                             <td>
-                                <!-- Đọc tồn kho từ bảng Inventory tương ứng -->
-                                <span class="badge bg-secondary">${book.quantityInStock != null ? book.quantityInStock :
-                                    0}</span>
+                                <!-- Hiển thị tồn kho với màu sắc phù hợp -->
+                                <c:choose>
+                                    <c:when test="${book.quantityInStock > 10}">
+                                        <span class="badge bg-success">${book.quantityInStock}</span>
+                                    </c:when>
+                                    <c:when test="${book.quantityInStock > 0}">
+                                        <span class="badge bg-warning text-dark">${book.quantityInStock}</span>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <span class="badge bg-danger">0</span>
+                                    </c:otherwise>
+                                </c:choose>
                             </td>
                             <td>
                                 <span class="badge ${book.isActive ? 'bg-success' : 'bg-danger'}">
@@ -86,8 +95,13 @@
                                     class="btn btn-sm btn-primary">Sửa</a>
                                 <a href="${pageContext.request.contextPath}/admin/products?view=delete&productId=${book.id}"
                                     class="btn btn-sm btn-danger ms-1">Xóa</a>
+                                <a href="${pageContext.request.contextPath}/admin/inventory?view=adjust&productId=${book.id}"
+                                    class="btn btn-sm btn-outline-secondary ms-1" title="Điều chỉnh kho">
+                                    <i class="bi bi-boxes"></i> Kho
+                                </a>
                             </td>
                         </tr>
+
                     </c:forEach>
                 </tbody>
             </table>

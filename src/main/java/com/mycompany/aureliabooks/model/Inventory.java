@@ -52,4 +52,26 @@ public class Inventory implements Serializable {
     public void setLastUpdated(Timestamp lastUpdated) {
         this.lastUpdated = lastUpdated;
     }
+
+    // -------------------------------------------------------------------------
+    // Transient fields - populated by JOIN queries (không có cột trong DB)
+    // -------------------------------------------------------------------------
+    private String productTitle;
+    private String sku;
+
+    public String getProductTitle() {
+        return productTitle;
+    }
+
+    public void setProductTitle(String productTitle) {
+        this.productTitle = productTitle;
+    }
+
+    public String getSku() {
+        return sku;
+    }
+
+    public void setSku(String sku) {
+        this.sku = sku;
+    }
 }
