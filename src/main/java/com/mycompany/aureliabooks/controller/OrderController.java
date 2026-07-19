@@ -102,9 +102,9 @@ public class OrderController extends HttpServlet {
                 if (order != null && order.getUserId() == loggedUser.getId()) {
                     boolean success = orderDAO.requestOrderReturn(orderId, returnReason);
                     if (success) {
-                        request.getSession().setAttribute("successMessage", "Return request for Order #" + orderId + " has been recorded. We will process your refund soon.");
+                        request.getSession().setAttribute("successMessage", "Yêu cầu trả đơn hàng #" + orderId + " đã được gửi thành công và đang chờ quản trị viên phê duyệt.");
                     } else {
-                        request.getSession().setAttribute("errorMessage", "Unable to process the return request. The order might not be completed or has already been processed.");
+                        request.getSession().setAttribute("errorMessage", "Không thể gửi yêu cầu trả hàng. Đơn hàng phải ở trạng thái đã hoàn thành (COMPLETED) hoặc bị từ chối trả hàng trước đó.");
                     }
                 } else {
                     request.getSession().setAttribute("errorMessage", "You do not have permission to perform this action.");

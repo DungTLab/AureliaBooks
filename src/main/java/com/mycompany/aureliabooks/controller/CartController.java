@@ -136,24 +136,26 @@ public class CartController extends HttpServlet {
                     // Validate stock availability before adding to cart
                     int stock = productDAO.getProductStock(productId);
                     if (existingQuantity + quantity > stock) {
-                        request.setAttribute("errorMessage", "Cannot add product. Total quantity in cart (" + (existingQuantity + quantity) + ") exceeds available stock (" + stock + ")");
-                        request.getRequestDispatcher("/WEB-INF/error/400.jsp").forward(request, response);
-                        return;
+                        session.setAttribute("cartWarningMessage", "Số lượng sản phẩm trong giỏ hàng đã đạt giới hạn tồn kho (" + stock + ")!");
+                        quantity = stock - existingQuantity;
                     }
 
-                    // Retrieve Cart ID and add item
-                    int cartId = cartDAO.getCartIdByUserId(loggedUser.getId());
-                    if (cartId != -1) {
-                        cartDAO.addItem(cartId, productId, quantity);
+                    if (quantity > 0) {
+                        // Retrieve Cart ID and add item
+                        int cartId = cartDAO.getCartIdByUserId(loggedUser.getId());
+                        if (cartId != -1) {
+                            cartDAO.addItem(cartId, productId, quantity);
+                        }
+                        if (session.getAttribute("cartWarningMessage") == null) {
+                            session.setAttribute("cartSuccessMessage", "Sản phẩm đã được thêm vào giỏ hàng thành công!");
+                        }
+                    } else {
+                        session.setAttribute("cartErrorMessage", "Không thể thêm sản phẩm. Số lượng trong giỏ hàng của bạn đã bằng tồn kho hiện tại (" + stock + ").");
                     }
 
                     // Redirect back to the referring page if available, else redirect to cart page
                     String referer = request.getHeader("Referer");
                     if (referer != null && !referer.trim().isEmpty()) {
-                        // Only set session message if NOT coming from the detail page (which uses AJAX and shows a Toast)
-                        if (!referer.contains("action=detail")) {
-                            session.setAttribute("cartSuccessMessage", "Product added to cart successfully!");
-                        }
                         response.sendRedirect(referer);
                     } else {
                         response.sendRedirect(request.getContextPath() + "/cart");
@@ -164,27 +166,11 @@ public class CartController extends HttpServlet {
                     int itemId = Integer.parseInt(request.getParameter("itemId"));
                     int quantity = Integer.parseInt(request.getParameter("quantity"));
 
-                    // Find Product ID from item ID to validate stock
-                    int productId = -1;
-                    List<CartItem> cartItems = cartDAO.findAll(loggedUser.getId());
-                    for (CartItem item : cartItems) {
-                        if (item.getId() == itemId) {
-                            productId = item.getProductId();
-                            break;
-                        }
+                    if (quantity <= 0) {
+                        cartDAO.deleteItem(itemId, loggedUser.getId());
+                    } else {
+                        cartDAO.updateQuantity(itemId, quantity, loggedUser.getId());
                     }
-
-                    // Validate stock availability before updating quantity
-                    if (productId != -1) {
-                        int stock = productDAO.getProductStock(productId);
-                        if (quantity > stock) {
-                            request.setAttribute("errorMessage", "Cannot update quantity. Requested quantity (" + quantity + ") exceeds available stock (" + stock + ")");
-                            request.getRequestDispatcher("/WEB-INF/error/400.jsp").forward(request, response);
-                            return;
-                        }
-                    }
-
-                    cartDAO.updateQuantity(itemId, quantity, loggedUser.getId());
 
                     // Redirect back to the cart view to refresh the data
                     response.sendRedirect(request.getContextPath() + "/cart");

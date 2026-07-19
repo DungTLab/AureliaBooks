@@ -21,6 +21,8 @@
             <a href="${pageContext.request.contextPath}/admin/orders?status=COMPLETED&search=${safeSearch}" class="btn btn-sm ${selectedStatus == 'COMPLETED' ? 'btn-success' : 'btn-outline-success'}">Hoàn thành</a>
             <a href="${pageContext.request.contextPath}/admin/orders?status=CANCELLED&search=${safeSearch}" class="btn btn-sm ${selectedStatus == 'CANCELLED' ? 'btn-danger' : 'btn-outline-danger'}">Đã Hủy</a>
             <a href="${pageContext.request.contextPath}/admin/orders?status=RETURNED&search=${safeSearch}" class="btn btn-sm ${selectedStatus == 'RETURNED' ? 'btn-warning text-dark' : 'btn-outline-warning'}">Đã Trả Hàng</a>
+            <a href="${pageContext.request.contextPath}/admin/orders?status=RETURN_REQUESTED&search=${safeSearch}" class="btn btn-sm ${selectedStatus == 'RETURN_REQUESTED' ? 'btn-info text-dark' : 'btn-outline-info'}">Yêu cầu trả hàng</a>
+            <a href="${pageContext.request.contextPath}/admin/orders?status=RETURN_REJECTED&search=${safeSearch}" class="btn btn-sm ${selectedStatus == 'RETURN_REJECTED' ? 'btn-danger' : 'btn-outline-danger'}">Từ chối trả</a>
         </div>
 
         <form action="${pageContext.request.contextPath}/admin/orders" method="GET" class="d-flex">
@@ -36,6 +38,20 @@
 
     <c:if test="${not empty errorMessage}">
         <div class="alert alert-danger"><c:out value="${errorMessage}"/></div>
+    </c:if>
+    <c:if test="${not empty sessionScope.successMsg}">
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <c:out value="${sessionScope.successMsg}"/>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <c:remove var="successMsg" scope="session" />
+    </c:if>
+    <c:if test="${not empty sessionScope.errorMsg}">
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <c:out value="${sessionScope.errorMsg}"/>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <c:remove var="errorMsg" scope="session" />
     </c:if>
 
     <div class="table-responsive">
@@ -61,13 +77,37 @@
                             <fmt:formatNumber value="${order.totalAmount}" type="currency" currencySymbol="VNĐ" maxFractionDigits="0"/>
                         </td>
                         <td>
-                            <span class="badge ${order.status == 'COMPLETED' ? 'bg-success' : (order.status == 'CANCELLED' ? 'bg-danger' : (order.status == 'RETURNED' ? 'bg-warning text-dark' : 'bg-info text-dark'))}">
-                                <c:out value="${order.status}" />
-                            </span>
-                            <%-- Show return reason inline for returned orders --%>
-                            <c:if test="${order.status == 'RETURNED' and not empty order.returnReason}">
+                            <c:choose>
+                                <c:when test="${order.status == 'COMPLETED'}">
+                                    <span class="badge bg-success">COMPLETED</span>
+                                </c:when>
+                                <c:when test="${order.status == 'CANCELLED'}">
+                                    <span class="badge bg-danger">CANCELLED</span>
+                                </c:when>
+                                <c:when test="${order.status == 'RETURN_REQUESTED'}">
+                                    <span class="badge bg-info text-dark">RETURN_REQUESTED</span>
+                                </c:when>
+                                <c:when test="${order.status == 'RETURNED'}">
+                                    <span class="badge bg-warning text-dark">RETURNED</span>
+                                </c:when>
+                                <c:when test="${order.status == 'RETURN_REJECTED'}">
+                                    <span class="badge bg-secondary">RETURN_REJECTED</span>
+                                </c:when>
+                                <c:otherwise>
+                                    <span class="badge bg-info text-dark">${order.status}</span>
+                                </c:otherwise>
+                            </c:choose>
+                            
+                            <%-- Show return reason inline --%>
+                            <c:if test="${(order.status == 'RETURNED' or order.status == 'RETURN_REQUESTED' or order.status == 'RETURN_REJECTED') and not empty order.returnReason}">
                                 <div class="text-muted small mt-1" style="max-width:180px; white-space:normal;">
-                                    <i class="bi bi-chat-left-text me-1"></i><c:out value="${order.returnReason}"/>
+                                    <i class="bi bi-chat-left-text me-1"></i><strong>Lý do khách:</strong> <c:out value="${order.returnReason}"/>
+                                </div>
+                            </c:if>
+                            <%-- Show admin reject note --%>
+                            <c:if test="${order.status == 'RETURN_REJECTED' and not empty order.returnAdminNote}">
+                                <div class="text-danger small mt-1" style="max-width:180px; white-space:normal;">
+                                    <i class="bi bi-x-circle me-1"></i><strong>Lý do từ chối:</strong> <c:out value="${order.returnAdminNote}"/>
                                 </div>
                             </c:if>
                         </td>
@@ -133,6 +173,45 @@
                                     <input type="hidden" name="page" value="${currentPage}">
                                     <button type="submit" class="btn btn-sm btn-success ms-1">Hoàn thành</button>
                                 </form>
+                            </c:if>
+
+                            <c:if test="${order.status == 'RETURN_REQUESTED'}">
+                                <form action="${pageContext.request.contextPath}/admin/orders?action=approveReturn" method="POST" style="display:inline-block;" onsubmit="return confirm('Bạn chắc chắn muốn DUYỆT yêu cầu trả hàng cho đơn hàng #${order.id} này? Hành động này sẽ hoàn lại tồn kho.')">
+                                    <input type="hidden" name="orderId" value="${order.id}">
+                                    <input type="hidden" name="filterStatus" value="${safeStatus}">
+                                    <input type="hidden" name="search" value="${safeSearch}">
+                                    <input type="hidden" name="page" value="${currentPage}">
+                                    <button type="submit" class="btn btn-sm btn-success ms-1">Duyệt trả</button>
+                                </form>
+                                <button class="btn btn-sm btn-danger ms-1" data-bs-toggle="modal" data-bs-target="#rejectModal${order.id}">Từ chối</button>
+
+                                <!-- Modal Từ chối Trả hàng -->
+                                <div class="modal fade" id="rejectModal${order.id}" tabindex="-1" aria-hidden="true" onclick="event.stopPropagation();">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content text-start">
+                                            <form action="${pageContext.request.contextPath}/admin/orders?action=rejectReturn" method="POST">
+                                                <input type="hidden" name="orderId" value="${order.id}">
+                                                <input type="hidden" name="filterStatus" value="${safeStatus}">
+                                                <input type="hidden" name="search" value="${safeSearch}">
+                                                <input type="hidden" name="page" value="${currentPage}">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title text-dark">Từ Chối Trả Hàng - Đơn #${order.id}</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="mb-3">
+                                                        <label for="rejectReason" class="form-label text-dark">Lý do từ chối</label>
+                                                        <textarea class="form-control" name="rejectReason" rows="3" minlength="10" maxlength="500" required placeholder="Vui lòng nhập lý do từ chối trả hàng (tối thiểu 10 ký tự)..."></textarea>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                                                    <button type="submit" class="btn btn-danger">Xác nhận Từ chối</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
                             </c:if>
                         </td>
                     </tr>

@@ -51,6 +51,7 @@ public class OrderDAO extends BaseDAO {
         order.setContactPhone(rs.getString("ContactPhone"));
         order.setProcessedByUserId((Integer) rs.getObject("ProcessedByUserId"));
         order.setReturnReason(rs.getString("ReturnReason"));
+        order.setReturnAdminNote(rs.getString("ReturnAdminNote"));
         order.setCreatedAt(rs.getTimestamp("CreatedAt"));
         return order;
     }
@@ -111,7 +112,7 @@ public class OrderDAO extends BaseDAO {
     public List<Order> getOrdersPaged(String status, String searchQuery, int offset, int pageSize) throws SQLException {
         List<Order> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder(
-                "SELECT Id, UserId, DiscountId, TotalAmount, [Status], ShippingAddress, ContactPhone, ProcessedByUserId, ReturnReason, CreatedAt FROM Orders WHERE 1=1 ");
+                "SELECT Id, UserId, DiscountId, TotalAmount, [Status], ShippingAddress, ContactPhone, ProcessedByUserId, ReturnReason, ReturnAdminNote, CreatedAt FROM Orders WHERE 1=1 ");
 
         if (status != null && !status.equals("ALL")) {
             sql.append(" AND [Status] = ? ");
@@ -247,7 +248,7 @@ public class OrderDAO extends BaseDAO {
      */
     public Order getOrderById(int orderId) throws SQLException {
         Order order = null;
-        String sqlOrder = "SELECT Id, UserId, DiscountId, TotalAmount, [Status], ShippingAddress, ContactPhone, ProcessedByUserId, ReturnReason, CreatedAt FROM Orders WHERE Id = ?";
+        String sqlOrder = "SELECT Id, UserId, DiscountId, TotalAmount, [Status], ShippingAddress, ContactPhone, ProcessedByUserId, ReturnReason, ReturnAdminNote, CreatedAt FROM Orders WHERE Id = ?";
         String sqlItems = "SELECT oi.Id, oi.OrderId, oi.ProductId, oi.Quantity, oi.UnitPrice, oi.SubTotal, p.Title " +
                 "FROM OrderItems oi JOIN Products p ON oi.ProductId = p.Id WHERE oi.OrderId = ?";
 
@@ -304,8 +305,65 @@ public class OrderDAO extends BaseDAO {
      * @throws SQLException if a database error occurs or transaction is aborted
      */
     public boolean requestOrderReturn(int orderId, String reason) throws SQLException {
+        String sqlCheckOrder = "SELECT [Status] FROM Orders WHERE Id = ?";
+        String sqlUpdateOrder = "UPDATE Orders SET [Status] = 'RETURN_REQUESTED', ReturnReason = ?, ReturnAdminNote = NULL WHERE Id = ?";
+
+        Connection conn = null;
+        try {
+            conn = getConnection();
+            conn.setAutoCommit(false);
+
+            // 1. Validate precondition: Order must be COMPLETED or RETURN_REJECTED
+            try (PreparedStatement psCheck = conn.prepareStatement(sqlCheckOrder)) {
+                psCheck.setInt(1, orderId);
+                try (ResultSet rs = psCheck.executeQuery()) {
+                    if (rs.next()) {
+                        String currentStatus = rs.getString("Status");
+                        if (!"COMPLETED".equals(currentStatus) && !"RETURN_REJECTED".equals(currentStatus)) {
+                            conn.rollback();
+                            return false;
+                        }
+                    } else {
+                        conn.rollback();
+                        return false;
+                    }
+                }
+            }
+
+            // 2. Flag order as RETURN_REQUESTED and set return reason
+            try (PreparedStatement psUpdateOrder = conn.prepareStatement(sqlUpdateOrder)) {
+                psUpdateOrder.setString(1, reason);
+                psUpdateOrder.setInt(2, orderId);
+                psUpdateOrder.executeUpdate();
+            }
+
+            conn.commit();
+            return true;
+
+        } catch (Exception e) {
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+            }
+            throw new SQLException("Critical Failure: Order Return Request aborted and rolled back.", e);
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    public boolean approveReturn(int orderId, Integer adminId) throws SQLException {
         String sqlCheckOrder = "SELECT UserId, [Status] FROM Orders WHERE Id = ?";
-        String sqlUpdateOrder = "UPDATE Orders SET [Status] = 'RETURNED', ReturnReason = ? WHERE Id = ?";
+        String sqlUpdateOrder = "UPDATE Orders SET [Status] = 'RETURNED', ProcessedByUserId = ? WHERE Id = ?";
         String sqlGetItems = "SELECT ProductId, Quantity FROM OrderItems WHERE OrderId = ?";
         String sqlUpdateProduct = "UPDATE Inventory SET QuantityInStock = QuantityInStock + ? WHERE ProductId = ?";
         String sqlInsertStockTrans = "INSERT INTO StockTransactions (ProductId, HandledByUserId, TransactionType, Quantity, TransactionDate) VALUES (?, ?, 'RETURN_IN', ?, CURRENT_TIMESTAMP)";
@@ -317,13 +375,13 @@ public class OrderDAO extends BaseDAO {
 
             int userId = -1;
 
-            // 1. Validate precondition: Order must be COMPLETED
+            // 1. Validate precondition: Order must be RETURN_REQUESTED
             try (PreparedStatement psCheck = conn.prepareStatement(sqlCheckOrder)) {
                 psCheck.setInt(1, orderId);
                 try (ResultSet rs = psCheck.executeQuery()) {
                     if (rs.next()) {
                         String currentStatus = rs.getString("Status");
-                        if (!"COMPLETED".equals(currentStatus)) {
+                        if (!"RETURN_REQUESTED".equals(currentStatus)) {
                             conn.rollback();
                             return false;
                         }
@@ -337,7 +395,7 @@ public class OrderDAO extends BaseDAO {
 
             // 2. Flag order as RETURNED
             try (PreparedStatement psUpdateOrder = conn.prepareStatement(sqlUpdateOrder)) {
-                psUpdateOrder.setString(1, reason);
+                psUpdateOrder.setObject(1, adminId);
                 psUpdateOrder.setInt(2, orderId);
                 psUpdateOrder.executeUpdate();
             }
@@ -346,10 +404,8 @@ public class OrderDAO extends BaseDAO {
             try (PreparedStatement psGetItems = conn.prepareStatement(sqlGetItems)) {
                 psGetItems.setInt(1, orderId);
                 try (ResultSet rsItems = psGetItems.executeQuery()) {
-
                     try (PreparedStatement psUpdateInv = conn.prepareStatement(sqlUpdateProduct);
-                            PreparedStatement psInsertTrans = conn.prepareStatement(sqlInsertStockTrans)) {
-
+                         PreparedStatement psInsertTrans = conn.prepareStatement(sqlInsertStockTrans)) {
                         while (rsItems.next()) {
                             int productId = rsItems.getInt("ProductId");
                             int quantity = rsItems.getInt("Quantity");
@@ -361,7 +417,7 @@ public class OrderDAO extends BaseDAO {
 
                             // Maintain historical audit log (Stock Transaction)
                             psInsertTrans.setInt(1, productId);
-                            psInsertTrans.setInt(2, userId);
+                            psInsertTrans.setObject(2, adminId != null ? adminId : userId);
                             psInsertTrans.setInt(3, quantity);
                             psInsertTrans.executeUpdate();
                         }
@@ -369,7 +425,6 @@ public class OrderDAO extends BaseDAO {
                 }
             }
 
-            // 4. Success -> Persist all changes atomically
             conn.commit();
             return true;
 
@@ -381,7 +436,65 @@ public class OrderDAO extends BaseDAO {
                     ex.printStackTrace();
                 }
             }
-            throw new SQLException("Critical Failure: Order Return Transaction aborted and rolled back.", e);
+            throw new SQLException("Critical Failure: Order Return Approval aborted and rolled back.", e);
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    public boolean rejectReturn(int orderId, Integer adminId, String adminNote) throws SQLException {
+        String sqlCheckOrder = "SELECT [Status] FROM Orders WHERE Id = ?";
+        String sqlUpdateOrder = "UPDATE Orders SET [Status] = 'RETURN_REJECTED', ProcessedByUserId = ?, ReturnAdminNote = ? WHERE Id = ?";
+
+        Connection conn = null;
+        try {
+            conn = getConnection();
+            conn.setAutoCommit(false);
+
+            // 1. Validate precondition: Order must be RETURN_REQUESTED
+            try (PreparedStatement psCheck = conn.prepareStatement(sqlCheckOrder)) {
+                psCheck.setInt(1, orderId);
+                try (ResultSet rs = psCheck.executeQuery()) {
+                    if (rs.next()) {
+                        String currentStatus = rs.getString("Status");
+                        if (!"RETURN_REQUESTED".equals(currentStatus)) {
+                            conn.rollback();
+                            return false;
+                        }
+                    } else {
+                        conn.rollback();
+                        return false;
+                    }
+                }
+            }
+
+            // 2. Flag order as RETURN_REJECTED and set note
+            try (PreparedStatement psUpdateOrder = conn.prepareStatement(sqlUpdateOrder)) {
+                psUpdateOrder.setObject(1, adminId);
+                psUpdateOrder.setString(2, adminNote);
+                psUpdateOrder.setInt(3, orderId);
+                psUpdateOrder.executeUpdate();
+            }
+
+            conn.commit();
+            return true;
+
+        } catch (Exception e) {
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+            }
+            throw new SQLException("Critical Failure: Order Return Rejection aborted and rolled back.", e);
         } finally {
             if (conn != null) {
                 try {
@@ -514,7 +627,7 @@ public class OrderDAO extends BaseDAO {
      */
     public List<Order> getOrdersByUserId(int userId) throws SQLException {
         List<Order> list = new ArrayList<>();
-        String sql = "SELECT Id, UserId, DiscountId, TotalAmount, [Status], ShippingAddress, ContactPhone, ProcessedByUserId, ReturnReason, CreatedAt FROM Orders WHERE UserId = ? ORDER BY CreatedAt DESC";
+        String sql = "SELECT Id, UserId, DiscountId, TotalAmount, [Status], ShippingAddress, ContactPhone, ProcessedByUserId, ReturnReason, ReturnAdminNote, CreatedAt FROM Orders WHERE UserId = ? ORDER BY CreatedAt DESC";
 
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, userId);
@@ -538,7 +651,7 @@ public class OrderDAO extends BaseDAO {
      */
     public List<Order> getAllOrders() throws SQLException {
         List<Order> list = new ArrayList<>();
-        String sql = "SELECT Id, UserId, DiscountId, TotalAmount, [Status], ShippingAddress, ContactPhone, ProcessedByUserId, ReturnReason, CreatedAt FROM Orders ORDER BY CreatedAt DESC";
+        String sql = "SELECT Id, UserId, DiscountId, TotalAmount, [Status], ShippingAddress, ContactPhone, ProcessedByUserId, ReturnReason, ReturnAdminNote, CreatedAt FROM Orders ORDER BY CreatedAt DESC";
 
         try (Connection conn = getConnection();
                 PreparedStatement ps = conn.prepareStatement(sql);
@@ -563,7 +676,7 @@ public class OrderDAO extends BaseDAO {
      */
     public List<Order> getOrdersByStatus(String status) throws SQLException {
         List<Order> list = new ArrayList<>();
-        String sql = "SELECT Id, UserId, DiscountId, TotalAmount, [Status], ShippingAddress, ContactPhone, ProcessedByUserId, ReturnReason, CreatedAt FROM Orders WHERE [Status] = ? ORDER BY CreatedAt DESC";
+        String sql = "SELECT Id, UserId, DiscountId, TotalAmount, [Status], ShippingAddress, ContactPhone, ProcessedByUserId, ReturnReason, ReturnAdminNote, CreatedAt FROM Orders WHERE [Status] = ? ORDER BY CreatedAt DESC";
 
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, status);

@@ -1,5 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <jsp:include page="/WEB-INF/includes/header.jsp" />
 
 <div class="container my-5">
@@ -44,11 +45,28 @@
                             <td>#${order.id}</td>
                             <td>${order.createdAt}</td>
                             <td>${order.shippingAddress}</td>
-                            <td>${order.totalAmount} VNĐ</td>
+                            <td><fmt:formatNumber value="${order.totalAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/> VNĐ</td>
                             <td>
-                                <span class="badge ${order.status == 'COMPLETED' ? 'bg-success' : (order.status == 'CANCELLED' ? 'bg-danger' : (order.status == 'RETURNED' ? 'bg-warning' : 'bg-info'))}">
-                                    ${order.status}
-                                </span>
+                                <c:choose>
+                                    <c:when test="${order.status == 'COMPLETED'}">
+                                        <span class="badge bg-success">COMPLETED</span>
+                                    </c:when>
+                                    <c:when test="${order.status == 'CANCELLED'}">
+                                        <span class="badge bg-danger">CANCELLED</span>
+                                    </c:when>
+                                    <c:when test="${order.status == 'RETURN_REQUESTED'}">
+                                        <span class="badge bg-info text-dark">RETURN_REQUESTED</span>
+                                    </c:when>
+                                    <c:when test="${order.status == 'RETURNED'}">
+                                        <span class="badge bg-warning text-dark">RETURNED</span>
+                                    </c:when>
+                                    <c:when test="${order.status == 'RETURN_REJECTED'}">
+                                        <span class="badge bg-secondary">RETURN_REJECTED</span>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <span class="badge bg-info text-dark">${order.status}</span>
+                                    </c:otherwise>
+                                </c:choose>
                             </td>
                             <td>
                                 <a href="${pageContext.request.contextPath}/orders?action=detail&id=${order.id}" class="btn btn-sm btn-outline-primary">Chi tiết</a>
@@ -61,13 +79,18 @@
                                     </form>
                                 </c:if>
 
-                                <!-- Hỗ trợ trả hàng (Chỉ hiện nút Trả hàng khi trạng thái đơn là COMPLETED) -->
-                                <c:if test="${order.status == 'COMPLETED'}">
-                                    <button class="btn btn-sm btn-danger ms-2" data-bs-toggle="modal" data-bs-target="#returnModal${order.id}">Yêu cầu trả hàng</button>
+                                <!-- Hỗ trợ trả hàng (Chỉ hiện nút Trả hàng khi trạng thái đơn là COMPLETED hoặc RETURN_REJECTED) -->
+                                <c:if test="${order.status == 'COMPLETED' || order.status == 'RETURN_REJECTED'}">
+                                    <button class="btn btn-sm btn-danger ms-2" data-bs-toggle="modal" data-bs-target="#returnModal${order.id}">
+                                        <c:choose>
+                                            <c:when test="${order.status == 'RETURN_REJECTED'}">Gửi lại yêu cầu trả</c:when>
+                                            <c:otherwise>Yêu cầu trả hàng</c:otherwise>
+                                        </c:choose>
+                                    </button>
                                     
                                     <!-- Modal Yêu cầu Trả hàng -->
                                     <div class="modal fade" id="returnModal${order.id}" tabindex="-1" aria-hidden="true" onclick="event.stopPropagation();">
-                                        <div class="modal-dialog">
+                                        <div class="modal-dialog text-start">
                                             <div class="modal-content">
                                                 <form action="${pageContext.request.contextPath}/orders?action=return" method="POST">
                                                     <input type="hidden" name="orderId" value="${order.id}">
@@ -75,9 +98,15 @@
                                                         <h5 class="modal-title">Yêu cầu Trả Hàng - Đơn #${order.id}</h5>
                                                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                                     </div>
-                                                    <div class="modal-body">
+                                                    <div class="modal-body text-dark">
+                                                        <c:if test="${order.status == 'RETURN_REJECTED' and not empty order.returnAdminNote}">
+                                                            <div class="alert alert-warning p-2">
+                                                                <strong>Lý do từ chối trước đó của admin:</strong><br>
+                                                                <c:out value="${order.returnAdminNote}"/>
+                                                            </div>
+                                                        </c:if>
                                                         <div class="mb-3">
-                                                            <label for="returnReason" class="form-label">Lý do trả hàng</label>
+                                                            <label for="returnReason" class="form-label">Lý do trả hàng mới</label>
                                                             <textarea class="form-control" name="returnReason" rows="3" minlength="10" maxlength="500" title="Lý do trả hàng từ 10 đến 500 ký tự" required placeholder="Vui lòng nêu rõ lý do trả hàng để chúng tôi duyệt..."></textarea>
                                                         </div>
                                                     </div>

@@ -184,29 +184,7 @@ public class AdminOrderController extends HttpServlet {
                 }
 
                 // 4. Post-Redirect-Get (PRG) Pattern Implementation
-                // Reconstruct the previous URL state to maintain user's view (Search, Status,
-                // Page)
-                String filterStatus = request.getParameter("filterStatus");
-                String search = request.getParameter("search");
-                String page = request.getParameter("page");
-
-                StringBuilder redirectUrl = new StringBuilder(request.getContextPath()).append("/admin/orders");
-                boolean hasQueryParams = false;
-
-                if (filterStatus != null && !filterStatus.trim().isEmpty() && !"ALL".equals(filterStatus)) {
-                    redirectUrl.append("?status=").append(filterStatus);
-                    hasQueryParams = true;
-                }
-                if (search != null && !search.trim().isEmpty()) {
-                    redirectUrl.append(hasQueryParams ? "&" : "?").append("search=").append(search.trim());
-                    hasQueryParams = true;
-                }
-                if (page != null && !page.trim().isEmpty()) {
-                    redirectUrl.append(hasQueryParams ? "&" : "?").append("page=").append(page);
-                }
-
-                // Execute redirect to clear POST history
-                response.sendRedirect(redirectUrl.toString());
+                sendRedirectBack(request, response);
                 return;
 
             } catch (SQLException e) {
@@ -220,9 +198,85 @@ public class AdminOrderController extends HttpServlet {
                 request.getRequestDispatcher("/WEB-INF/error/400.jsp").forward(request, response);
                 return;
             }
+        } else if ("approveReturn".equals(action)) {
+            try {
+                int orderId = Integer.parseInt(request.getParameter("orderId"));
+                HttpSession session = request.getSession(false);
+                User admin = (User) session.getAttribute("user");
+                int adminId = admin.getId();
+
+                OrderDAO orderDAO = new OrderDAO();
+                boolean success = orderDAO.approveReturn(orderId, adminId);
+                if (success) {
+                    session.setAttribute("successMsg", "Đã phê duyệt yêu cầu trả hàng cho đơn hàng #" + orderId + " thành công.");
+                } else {
+                    session.setAttribute("errorMsg", "Không thể phê duyệt yêu cầu trả hàng. Trạng thái đơn hàng không hợp lệ.");
+                }
+
+                sendRedirectBack(request, response);
+                return;
+            } catch (Exception e) {
+                LOGGER.log(Level.SEVERE, "Failed to approve return request", e);
+                request.setAttribute("errorMessage", "Phê duyệt trả hàng thất bại: " + e.getMessage());
+                request.getRequestDispatcher("/WEB-INF/error/500.jsp").forward(request, response);
+                return;
+            }
+        } else if ("rejectReturn".equals(action)) {
+            try {
+                int orderId = Integer.parseInt(request.getParameter("orderId"));
+                String adminNote = request.getParameter("rejectReason");
+                HttpSession session = request.getSession(false);
+                User admin = (User) session.getAttribute("user");
+                int adminId = admin.getId();
+
+                if (adminNote == null || adminNote.trim().length() < 10 || adminNote.trim().length() > 500) {
+                    session.setAttribute("errorMsg", "Lý do từ chối phải từ 10 đến 500 ký tự.");
+                    sendRedirectBack(request, response);
+                    return;
+                }
+
+                OrderDAO orderDAO = new OrderDAO();
+                boolean success = orderDAO.rejectReturn(orderId, adminId, adminNote.trim());
+                if (success) {
+                    session.setAttribute("successMsg", "Đã từ chối yêu cầu trả hàng cho đơn hàng #" + orderId + ".");
+                } else {
+                    session.setAttribute("errorMsg", "Không thể từ chối yêu cầu trả hàng. Trạng thái đơn hàng không hợp lệ.");
+                }
+
+                sendRedirectBack(request, response);
+                return;
+            } catch (Exception e) {
+                LOGGER.log(Level.SEVERE, "Failed to reject return request", e);
+                request.setAttribute("errorMessage", "Từ chối trả hàng thất bại: " + e.getMessage());
+                request.getRequestDispatcher("/WEB-INF/error/500.jsp").forward(request, response);
+                return;
+            }
         } else {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Unknown POST action requested.");
             return;
         }
+    }
+
+    private void sendRedirectBack(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String filterStatus = request.getParameter("filterStatus");
+        String search = request.getParameter("search");
+        String page = request.getParameter("page");
+
+        StringBuilder redirectUrl = new StringBuilder(request.getContextPath()).append("/admin/orders");
+        boolean hasQueryParams = false;
+
+        if (filterStatus != null && !filterStatus.trim().isEmpty() && !"ALL".equals(filterStatus)) {
+            redirectUrl.append("?status=").append(filterStatus);
+            hasQueryParams = true;
+        }
+        if (search != null && !search.trim().isEmpty()) {
+            redirectUrl.append(hasQueryParams ? "&" : "?").append("search=").append(search.trim());
+            hasQueryParams = true;
+        }
+        if (page != null && !page.trim().isEmpty()) {
+            redirectUrl.append(hasQueryParams ? "&" : "?").append("page=").append(page);
+        }
+
+        response.sendRedirect(redirectUrl.toString());
     }
 }
