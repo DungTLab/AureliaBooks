@@ -13,12 +13,12 @@ public class GooglePojo implements Serializable {
     private String email;
     @SerializedName("email_verified")
     private boolean emailVerified;
-    private String name; // Họ và tên đầy đủ
+    private String name; // Full name
     @SerializedName("given_name")
     private String givenName;
     @SerializedName("family_name")
     private String familyName;
-    private String picture; // Link ảnh đại diện Google
+    private String picture; // Google profile picture URL
 
     public GooglePojo() {
     }

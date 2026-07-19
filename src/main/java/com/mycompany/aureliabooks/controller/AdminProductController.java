@@ -25,7 +25,7 @@ import jakarta.servlet.http.Part;
  * @author DungLT
  */
 @WebServlet(name = "AdminProductController", urlPatterns = {"/admin/products"})
-@MultipartConfig // Cần có annotation này để đọc được file upload (enctype="multipart/form-data")
+@MultipartConfig // Required to parse multipart file uploads (enctype="multipart/form-data")
 public class AdminProductController extends HttpServlet {
 
     private final ProductDAO productDAO = new ProductDAO();
@@ -66,7 +66,7 @@ public class AdminProductController extends HttpServlet {
         return value != null && value >= 1900 && value <= currentYear;
     }
 
-    // Hàm phụ trợ để tải danh sách sách và chuyển hướng sang list.jsp
+    // Helper method to load product list and forward to list.jsp
     private void showList(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         int limit = 10;
@@ -96,21 +96,21 @@ public class AdminProductController extends HttpServlet {
     }
 
     // =========================================================================
-    // doGet - Hiển thị các trang CRUD
+    // doGet - Display CRUD views
     // =========================================================================
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
         String view = request.getParameter("view");
-        // Mặc định hiển thị trang danh sách sách
+        // Default to displaying the product list page
         if (view == null || view.trim().isEmpty()) {
             view = "list";
         }
 
         switch (view) {
             // ------------------------------------------------------------------
-            // LIST: hiển thị danh sách tất cả sản phẩm
+            // LIST: Display all products
             // ------------------------------------------------------------------
             case "list": {
                 showList(request, response);
@@ -118,7 +118,7 @@ public class AdminProductController extends HttpServlet {
             }
 
             // ------------------------------------------------------------------
-            // CREATE: hiển thị form thêm sách mới
+            // CREATE: Display product creation form
             // ------------------------------------------------------------------
             case "create": {
                 String type = request.getParameter("type");
@@ -139,7 +139,7 @@ public class AdminProductController extends HttpServlet {
             }
 
             // ------------------------------------------------------------------
-            // UPDATE: hiển thị form sửa sách, load data sách lên trước
+            // UPDATE: Display product edit form, pre-load existing product data
             // ------------------------------------------------------------------
             case "update": {
                 String productIdParam = request.getParameter("productId");
@@ -179,7 +179,7 @@ public class AdminProductController extends HttpServlet {
             }
 
             // ------------------------------------------------------------------
-            // DELETE: hiển thị trang xác nhận xóa
+            // DELETE: Display product deletion confirmation page
             // ------------------------------------------------------------------
             case "delete": {
                 String productIdParam = request.getParameter("productId");
@@ -205,7 +205,7 @@ public class AdminProductController extends HttpServlet {
                 break;
             }
 
-            // Không khớp view nào thì về list
+            // Default back to list view if no matches found
             default:
                 showList(request, response);
                 break;
@@ -213,18 +213,18 @@ public class AdminProductController extends HttpServlet {
     }
 
     // =========================================================================
-    // doPost - Xử lý form submit (thêm / sửa / xóa sản phẩm)
+    // doPost - Handle form submissions (create / update / delete product)
     // =========================================================================
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // Đặt encoding để đọc tiếng Việt không bị lỗi
+        // Set encoding to handle UTF-8 request data
         request.setCharacterEncoding("UTF-8");
 
         String view = request.getParameter("view");
 
-        // Dựa vào tham số ?view= để biết đang làm gì
+        // Check view parameter to decide action
         if ("create".equals(view)) {
             handleCreate(request, response);
 
@@ -240,7 +240,7 @@ public class AdminProductController extends HttpServlet {
     }
 
     // =========================================================================
-    // Xử lý THÊM sách mới
+    // Process creation of a new product
     // =========================================================================
     private void handleCreate(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -414,7 +414,7 @@ public class AdminProductController extends HttpServlet {
     }
 
     // =========================================================================
-    // Xử lý SỬA sách
+    // Process updating an existing product
     // =========================================================================
     private void handleUpdate(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -600,13 +600,13 @@ public class AdminProductController extends HttpServlet {
     }
 
     // =========================================================================
-    // Xử lý XÓA sách (soft delete - chỉ set isActive = 0)
+    // Process product deletion (soft delete - sets isActive = 0)
     // =========================================================================
     private void handleDelete(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
         try {
-            // Bước 1: Lấy productId từ hidden input
+            // Step 1: Get productId from hidden input
             String productIdParam = request.getParameter("productId");
             if (productIdParam == null || productIdParam.trim().isEmpty()) {
                 request.setAttribute("errorMessage", "Thiếu ID sản phẩm khi xóa.");
@@ -615,7 +615,7 @@ public class AdminProductController extends HttpServlet {
             }
             int productId = Integer.parseInt(productIdParam);
 
-            // Bước 2: Kiểm tra sản phẩm còn tồn tại không
+            // Step 2: Check if the product exists
             Product existing = productDAO.getProductById(productId);
             if (existing == null) {
                 request.setAttribute("errorMessage", "Không tìm thấy sản phẩm để xóa.");
@@ -623,10 +623,10 @@ public class AdminProductController extends HttpServlet {
                 return;
             }
 
-            // Bước 3: Gọi DAO xóa mềm (đặt isActive = 0, không xóa khỏi DB)
+            // Step 3: Call DAO to soft-delete (sets isActive = 0, does not remove from DB)
             boolean ok = productDAO.deleteProduct(productId);
 
-            // Bước 4: Đặt thông báo kết quả và hiển thị danh sách sách mới
+            // Step 4: Set success message and redirect back to the product list
             if (ok) {
                 request.setAttribute("successMessage", "Đã ngừng bán sách \"" + existing.getTitle() + "\" thành công!");
             } else {

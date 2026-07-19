@@ -12,10 +12,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 /**
- * ImageServlet - Khung xương xử lý hiển thị ảnh động từ thư mục ngoài webapp.
- * [Nhiệm vụ của thành viên nhóm: Triển khai code đọc file vật lý và trả về stream]
+ * ImageServlet - Handles serving uploaded image files from directory outside webapp root.
  * 
- * Đường dẫn gọi Servlet: http://localhost:8080/AureliaBooks/uploads/...
+ * URL Pattern: http://localhost:8080/AureliaBooks/uploads/...
  * 
  * @author DungLT
  */
@@ -23,39 +22,39 @@ import jakarta.servlet.http.HttpServletResponse;
 public class ImageServlet extends HttpServlet {
 
     /**
-     * Xử lý yêu cầu lấy ảnh từ trình duyệt (GET Request).
+     * Handles HTTP GET requests to serve image files.
      * 
-     * Hướng dẫn xử lý bên trong doGet:
-     * 1. Lấy đường dẫn ảnh chi tiết từ request.getPathInfo()
-     * 2. Lấy đường dẫn thư mục uploads ngoài webapp (Sử dụng getServletContext().getRealPath("/") và đi ngược lên 2 cấp)
-     * 3. Trỏ tới file ảnh vật lý trên ổ đĩa
-     * 4. Kiểm tra file tồn tại, nếu không trả về 404 (SC_NOT_FOUND)
-     * 5. Xác định MIME Type của ảnh bằng getServletContext().getMimeType()
-     * 6. Thiết lập contentType cho response
-     * 7. Đọc dữ liệu bytes từ file ảnh bằng FileInputStream và ghi ra response.getOutputStream()
+     * Processing steps:
+     * 1. Get detailed image path from request.getPathInfo()
+     * 2. Get absolute uploads directory path outside webapp (using UploadUtils.getUploadPath)
+     * 3. Reference physical file on disk
+     * 4. Check if file exists, else return 404 (SC_NOT_FOUND)
+     * 5. Determine MIME Type of the image
+     * 6. Set response content type
+     * 7. Stream file bytes to response output stream
      */
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // 1. Lấy đường dẫn ảnh từ URL request (ví dụ: /products/filename.jpg)
+        // 1. Get image path from URL request (e.g. /products/filename.jpg)
         String pathInfo = request.getPathInfo();
         if (pathInfo == null || pathInfo.equals("/")) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
 
-        // 2. Dựng đường dẫn vật lý động trỏ tới thư mục uploads ngoài gốc project
+        // 2. Resolve physical uploads path pointing outside project root
         String baseUploadPath = com.mycompany.aureliabooks.util.UploadUtils.getUploadPath(getServletContext());
         java.io.File file = new java.io.File(baseUploadPath + pathInfo);
 
 
-        // 3. Kiểm tra file tồn tại
+        // 3. Verify file existence
         if (!file.exists() || !file.isFile()) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
 
-        // 4. Xác định MIME Type (Content-Type)
+        // 4. Resolve MIME Type (Content-Type)
         String contentType = getServletContext().getMimeType(file.getName());
         if (contentType == null) {
             contentType = "application/octet-stream";
@@ -63,7 +62,7 @@ public class ImageServlet extends HttpServlet {
         response.setContentType(contentType);
         response.setContentLength((int) file.length());
 
-        // 5. Đọc file và xuất ra OutputStream của Response
+        // 5. Read file and write to Response OutputStream
         try (java.io.FileInputStream fis = new java.io.FileInputStream(file);
              java.io.OutputStream os = response.getOutputStream()) {
             byte[] buffer = new byte[4096];

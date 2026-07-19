@@ -19,73 +19,72 @@ import java.util.UUID;
 public class UploadUtils {
 
     /**
-     * Lấy đường dẫn tuyệt đối của thư mục "uploads" nằm ở gốc dự án một cách tự động.
-     * Thuật toán: dò ngược từ thư mục deploy thực tế (target/...) lên 2 cấp để ra thư mục project.
+     * Automatically retrieves the absolute path of the "uploads" folder located at the project root.
+     * Algorithm: trace back 2 levels from the actual deploy directory (target/...) to locate the project root directory.
      *
-     * @param context ServletContext của servlet đang gọi
-     * @return Đường dẫn tuyệt đối tới thư mục uploads (ví dụ: D:/Project/uploads)
+     * @param context ServletContext of the calling servlet
+     * @return Absolute path to the uploads folder (e.g., D:/Project/uploads)
      */
     public static String getUploadPath(ServletContext context) {
-        // Đường dẫn thực tế khi deploy (ví dụ: D:\Project\target\AureliaBooks-1.0-SNAPSHOT\)
+        // Actual path when deployed (e.g. D:\Project\target\AureliaBooks-1.0-SNAPSHOT\)
         String deployPath = context.getRealPath("/");
         File deployDir = new File(deployPath);
 
-        // Đi ngược lên 2 cấp để ra ngoài thư mục target/ và build/
+        // Trace back 2 levels to get out of target/ and build/ folders
         File projectRootDir = deployDir.getParentFile().getParentFile();
 
-        // Trỏ tới thư mục "uploads" ở gốc project
+        // Point to the "uploads" directory at the project root
         File uploadsDir = new File(projectRootDir, "uploads");
         if (!uploadsDir.exists()) {
-            uploadsDir.mkdirs(); // Tạo thư mục nếu chưa tồn tại
+            uploadsDir.mkdirs(); // Create folder if it doesn't exist
         }
         return uploadsDir.getAbsolutePath();
     }
 
     /**
-     * Lưu file tải lên vào thư mục vật lý và trả về đường dẫn tương đối để lưu DB.
+     * Saves the uploaded file to the physical directory and returns the relative path for database storage.
      *
-     * @param filePart  Đối tượng Part nhận từ Request
-     * @param context   ServletContext để dò tìm đường dẫn động
-     * @param subFolder Thư mục con (ví dụ: "products" hoặc "avatars")
-     * @return Chuỗi đường dẫn tương đối lưu vào DB (ví dụ: "products/uuid.jpg"),
-     *         hoặc null nếu không có file được tải lên.
-     * @throws IOException
+     * @param filePart  Part object received from the request
+     * @param context   ServletContext to resolve the dynamic path
+     * @param subFolder Subfolder name (e.g., "products" or "avatars")
+     * @return Relative path string for DB storage (e.g., "products/uuid.jpg"), or null if no file is uploaded.
+     * @throws IOException if an I/O error occurs
      */
     public static String saveUploadedFile(Part filePart, ServletContext context, String subFolder) throws IOException {
         if (filePart == null || filePart.getSize() == 0) {
             return null;
         }
 
-        // Lấy tên file gốc
+        // Get original filename
         String submittedFileName = filePart.getSubmittedFileName();
         if (submittedFileName == null || submittedFileName.isEmpty()) {
             return null;
         }
 
-        // Trích xuất phần mở rộng (extension) của file (ví dụ: .jpg, .png)
+        // Extract file extension (e.g. .jpg, .png)
         String extension = "";
         int dotIndex = submittedFileName.lastIndexOf('.');
         if (dotIndex >= 0) {
             extension = submittedFileName.substring(dotIndex);
         }
 
-        // Tạo tên file ngẫu nhiên bằng UUID để tránh bị trùng tên
+        // Generate random filename with UUID to avoid collisions
         String newFileName = UUID.randomUUID().toString() + extension;
 
-        // Thư mục lưu trữ vật lý: project/uploads/subFolder/
+        // Physical storage directory: project/uploads/subFolder/
         String baseUploadPath = getUploadPath(context);
         File uploadFolder = new File(baseUploadPath + File.separator + subFolder);
         if (!uploadFolder.exists()) {
-            uploadFolder.mkdirs(); // Tạo thư mục nếu chưa tồn tại
+            uploadFolder.mkdirs(); // Create directory if it does not exist
         }
 
-        // Đường dẫn file vật lý đầy đủ
+        // Full physical file path
         String filePath = uploadFolder.getAbsolutePath() + File.separator + newFileName;
 
-        // Lưu file vật lý xuống ổ đĩa
+        // Write the file to disk
         filePart.write(filePath);
 
-        // Trả về đường dẫn tương đối để lưu vào DB (ví dụ: products/abc-xyz.jpg)
+        // Return relative path for database storage (e.g., products/abc-xyz.jpg)
         return subFolder + "/" + newFileName;
     }
 }

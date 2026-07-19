@@ -40,7 +40,7 @@ public class ProfileController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // 1. Kiểm tra đăng nhập
+        // 1. Check user login status
         HttpSession session = request.getSession(false);
         User loggedInUser = (session != null) ? (User) session.getAttribute("user") : null;
 
@@ -49,7 +49,7 @@ public class ProfileController extends HttpServlet {
             return;
         }
 
-        // --- Đọc & Xóa THÔNG BÁO TỪ SESSION ---
+        // --- Read & Remove notifications from session ---
         if (session.getAttribute("profileSuccess") != null) {
             request.setAttribute("profileSuccess", session.getAttribute("profileSuccess"));
             session.removeAttribute("profileSuccess");
@@ -69,11 +69,11 @@ public class ProfileController extends HttpServlet {
         // -------------------------------------------------------------
 
         try {
-            // 2. Lấy thông tin UserProfile mới nhất từ DB
+            // 2. Fetch the latest UserProfile information from database
             UserProfile profile = userDAO.getUserProfile(loggedInUser.getId());
             session.setAttribute("userProfile", profile);
 
-            // 3. Hiển thị trang profile.jsp
+            // 3. Forward to the profile.jsp view
             request.getRequestDispatcher("/WEB-INF/user/profile.jsp").forward(request, response);
         } catch (Exception e) {
             e.printStackTrace();

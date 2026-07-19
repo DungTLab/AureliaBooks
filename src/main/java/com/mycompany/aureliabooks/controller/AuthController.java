@@ -37,7 +37,7 @@ public class AuthController extends HttpServlet {
             throws ServletException, IOException {
         String action = request.getParameter("action");
         if ("logout".equals(action)) {
-            // Hủy session và logout
+            // Invalidate session and log out user
             HttpSession session = request.getSession(false);
             if (session != null) {
                 session.invalidate();
@@ -56,10 +56,10 @@ public class AuthController extends HttpServlet {
         String action = request.getParameter("action");
         if ("login".equals(action)) {
             handlelogin(request, response);
-            // Xử lý đăng nhập
+            // Handle login process
         } else if ("register".equals(action)) {
             handleRegister(request, response);
-            // Xử lý đăng ký tài khoản
+            // Handle registration process
         }
 
     }
@@ -89,10 +89,10 @@ public class AuthController extends HttpServlet {
             if (loggedInUser != null) {
                 HttpSession session = request.getSession(true);
                 session.setAttribute("user", loggedInUser);
-                // Chuyển hướng về trang chủ
+                // Redirect to homepage
                 response.sendRedirect(request.getContextPath() + "/");
             } else {
-                // Đăng nhập thất bại -> quay lại trang login kèm thông báo lỗi
+                // Login failed -> return to login page with error message
                 request.setAttribute("error", "Tài khoản hoặc mật khẩu không chính xác!");
                 request.getRequestDispatcher("/WEB-INF/auth/login.jsp").forward(request, response);
             }
