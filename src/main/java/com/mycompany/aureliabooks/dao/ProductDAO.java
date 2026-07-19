@@ -158,7 +158,7 @@ public class ProductDAO extends BaseDAO {
     }
 
     public Product getProductById(int id) {
-        // 1. Tìm trong bảng Sách trước và map trực tiếp
+        // 1. Search in Books table first and map properties
         String sqlBook = "SELECT p.*, b.* FROM [dbo].[Products] p JOIN [dbo].[Books] b ON p.[Id] = b.[ProductId] WHERE p.[Id] = ?";
         try (Connection conn = this.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sqlBook)) {
@@ -204,7 +204,7 @@ public class ProductDAO extends BaseDAO {
             e.printStackTrace();
         }
 
-        // 2. Nếu không phải sách, tìm trong bảng Văn phòng phẩm và map trực tiếp
+        // 2. If not a book, search in Stationeries table and map properties
         String sqlStationery = "SELECT p.*, s.* FROM [dbo].[Products] p JOIN [dbo].[Stationeries] s ON p.[Id] = s.[ProductId] WHERE p.[Id] = ?";
         try (Connection conn = this.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sqlStationery)) {
@@ -266,7 +266,7 @@ public class ProductDAO extends BaseDAO {
     public HashMap<String, Object> getProductFullInformationById(int id) {
         HashMap<String, Object> map = new HashMap<>();
 
-        // 1. Tìm trong bảng Sách trước (JOIN với Publishers, Suppliers, Authors)
+        // 1. Search in Books table first (JOIN with Publishers, Suppliers, Authors)
         String sqlBook = "SELECT p.*, b.*, pub.[Name] AS PublisherName, sup.[Name] AS SupplierName, "
                 + "(SELECT TOP 1 a.[FullName] FROM [dbo].[Contributor] c JOIN [dbo].[Authors] a ON c.[AuthorId] = a.[AuthorId] WHERE c.[ProductId] = p.[Id]) AS AuthorName "
                 + "FROM [dbo].[Products] p "
@@ -309,7 +309,7 @@ public class ProductDAO extends BaseDAO {
             e.printStackTrace();
         }
 
-        // 2. Nếu không phải sách, tìm trong bảng Văn phòng phẩm (JOIN với Brands, Suppliers)
+        // 2. If not a book, search in Stationeries table (JOIN with Brands, Suppliers)
         String sqlStationery = "SELECT p.*, s.*, br.[Name] AS BrandName, sup.[Name] AS SupplierName "
                 + "FROM [dbo].[Products] p "
                 + "JOIN [dbo].[Stationeries] s ON p.[Id] = s.[ProductId] "
@@ -499,7 +499,7 @@ public class ProductDAO extends BaseDAO {
 
         try {
             conn = this.getConnection();
-            conn.setAutoCommit(false); // Bắt đầu transaction
+            conn.setAutoCommit(false); // Begin transaction
 
             stmtProduct = conn.prepareStatement(insertProductSQL, PreparedStatement.RETURN_GENERATED_KEYS);
             stmtProduct.setInt(1, book.getCategoryId());
@@ -555,7 +555,7 @@ public class ProductDAO extends BaseDAO {
 
             stmtBook.executeUpdate();
 
-            conn.commit(); // Hoàn thành transaction
+            conn.commit(); // Commit transaction
             return true;
         } catch (SQLException | ClassNotFoundException e) {
             if (conn != null) {
@@ -592,7 +592,7 @@ public class ProductDAO extends BaseDAO {
 
         try {
             conn = this.getConnection();
-            conn.setAutoCommit(false); // Bắt đầu transaction
+            conn.setAutoCommit(false); // Begin transaction
 
             stmtProduct = conn.prepareStatement(insertProductSQL, PreparedStatement.RETURN_GENERATED_KEYS);
             stmtProduct.setInt(1, stationery.getCategoryId());
@@ -678,7 +678,7 @@ public class ProductDAO extends BaseDAO {
 
         try {
             conn = this.getConnection();
-            conn.setAutoCommit(false); // Bắt đầu transaction
+            conn.setAutoCommit(false); // Begin transaction
 
             stmtProduct = conn.prepareStatement(updateProductSQL);
             stmtProduct.setInt(1, book.getCategoryId());
@@ -726,7 +726,7 @@ public class ProductDAO extends BaseDAO {
 
             stmtBook.executeUpdate();
 
-            conn.commit();
+            conn.commit(); // Commit transaction
             return true;
         } catch (SQLException | ClassNotFoundException e) {
             if (conn != null) {
@@ -763,7 +763,7 @@ public class ProductDAO extends BaseDAO {
 
         try {
             conn = this.getConnection();
-            conn.setAutoCommit(false); // Bắt đầu transaction
+            conn.setAutoCommit(false); // Begin transaction
 
             stmtProduct = conn.prepareStatement(updateProductSQL);
             stmtProduct.setInt(1, stationery.getCategoryId());
@@ -966,8 +966,8 @@ public class ProductDAO extends BaseDAO {
     public List<HashMap<String, Object>> getTopSellingBooks(int categoryId, int offset, int limit) {
     List<HashMap<String, Object>> list = new ArrayList<>();
     
-    // Câu lệnh SQL liên kết các bảng: Products, Books, Publishers, OrderItems và Orders
-    // Dùng OFFSET/FETCH NEXT để phân trang
+    // SQL query joining tables: Products, Books, Publishers, OrderItems and Orders
+    // Using OFFSET/FETCH NEXT for pagination
     String sql = "SELECT "
             + "    p.[Id], p.[Title], p.[Price], p.[Image_URL], p.[Description], "
             + "    b.[Language], b.[CoverType], b.[Dimensions], b.[Weight], b.[NumberOfPages], b.[PublicationYear], "
@@ -1020,7 +1020,7 @@ public class ProductDAO extends BaseDAO {
 }
 
     /**
-     * Đếm tổng số sách bán chạy theo category (dùng cho phân trang).
+     * Count total top selling books by category (used for pagination).
      */
     public int countTopSellingBooks(int categoryId) {
         int count = 0;
@@ -1121,7 +1121,7 @@ public class ProductDAO extends BaseDAO {
     }
 
     public boolean adjustInventory(int productId, int quantityChange, String warehouseLocation) {
-        // Kiểm tra tồn kho hiện tại
+        // Verify current stock level
         String selectSql = "SELECT [QuantityInStock] FROM [dbo].[Inventory] WHERE [ProductId] = ?";
         try (Connection conn = this.getConnection();
              PreparedStatement selectStmt = conn.prepareStatement(selectSql)) {
@@ -1143,7 +1143,7 @@ public class ProductDAO extends BaseDAO {
                         updateStmt.executeUpdate();
                     }
                 } else {
-                    // Chưa có record -> INSERT
+                    // No record exists -> INSERT
                     if (quantityChange < 0) return false;
 
                     String insertSql = "INSERT INTO [dbo].[Inventory] ([ProductId], [QuantityInStock], "

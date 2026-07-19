@@ -41,7 +41,7 @@ public class GoogleUtils {
     private static final Gson gson = new Gson();
 
     /**
-     * Trao đổi Authorization Code lấy Access Token.
+     * Exchanges Authorization Code for Access Token.
      */
     public static String getToken(String code) throws IOException, InterruptedException {
         String tokenUrl = "https://oauth2.googleapis.com/token";
@@ -69,7 +69,7 @@ public class GoogleUtils {
     }
 
     /**
-     * Sử dụng Access Token để tải thông tin Profile người dùng từ Google UserInfo API.
+     * Uses Access Token to fetch Google User Profile from Google UserInfo API.
      */
     public static GooglePojo getUserInfo(String accessToken) throws IOException, InterruptedException {
         String userInfoUrl = "https://www.googleapis.com/oauth2/v3/userinfo";

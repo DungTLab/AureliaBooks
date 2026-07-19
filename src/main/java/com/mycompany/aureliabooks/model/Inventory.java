@@ -54,7 +54,7 @@ public class Inventory implements Serializable {
     }
 
     // -------------------------------------------------------------------------
-    // Transient fields - populated by JOIN queries (không có cột trong DB)
+    // Transient fields - populated by JOIN queries (no corresponding column in DB)
     // -------------------------------------------------------------------------
     private String productTitle;
     private String sku;

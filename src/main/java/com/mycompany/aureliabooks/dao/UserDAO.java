@@ -150,7 +150,7 @@ public class UserDAO extends BaseDAO {
                     profile.setFullName(rs.getString("FullName"));
                     profile.setPhone(rs.getString("Phone"));
                     profile.setAddress(rs.getString("Address"));
-                    profile.setAvatarUrl(rs.getString("AvatarUrl")); // Tên cột đúng: AvatarUrl
+                    profile.setAvatarUrl(rs.getString("AvatarUrl")); // Exact column name: AvatarUrl
                     return profile;
                 }
             }

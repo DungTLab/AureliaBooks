@@ -32,7 +32,7 @@ public class HomeController extends HttpServlet {
         try {
             ProductDAO productDAO = new ProductDAO();
 
-            // 3. Xử lý phân trang: 3 sản phẩm/trang ( hàng, mỗi hàng 1 sản phẩm)
+            // 3. Handle pagination: 3 products per page
             int productsPerPage = 3;
             int currentPage = 1;
             String pageParam = request.getParameter("page");
@@ -46,19 +46,19 @@ public class HomeController extends HttpServlet {
             }
             int offset = (currentPage - 1) * productsPerPage;
 
-            // 4. Đếm tổng số sản phẩm đang bán (tất cả category) để tính số trang
+            // 4. Count total active products across all categories for total pages calculation
             int totalBooks = productDAO.countTopSellingProductsOfMonth();
             int totalPages = (int) Math.ceil((double) totalBooks / productsPerPage);
             if (totalPages < 1) totalPages = 1;
             if (currentPage > totalPages) currentPage = totalPages;
 
-            // 5. Tải danh sách sản phẩm bán chạy nhất trong tháng (không phân biệt category)
+            // 5. Load top selling products of the month (across all categories)
             List<HashMap<String, Object>> listTopSaleProducts = productDAO.getTopSellingProductsOfMonth(offset, productsPerPage);
             request.setAttribute("listTopSaleProducts", listTopSaleProducts);
             request.setAttribute("currentPage", currentPage);
             request.setAttribute("totalPages", totalPages);
 
-            // Chuyển tiếp yêu cầu sang trang hiển thị index.jsp
+            // Forward request to index.jsp view
             request.getRequestDispatcher("/index.jsp").forward(request, response);
         } catch (Exception e) {
             e.printStackTrace();

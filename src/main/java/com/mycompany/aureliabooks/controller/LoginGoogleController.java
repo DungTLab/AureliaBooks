@@ -16,7 +16,7 @@ import java.util.UUID;
 import org.mindrot.jbcrypt.BCrypt;
 
 /**
- * LoginGoogleController - Xử lý callback OAuth từ Google.
+ * LoginGoogleController - Handles OAuth callback from Google.
  * @author DungLT
  */
 @WebServlet(name = "LoginGoogleController", urlPatterns = {"/login-google"})
@@ -28,11 +28,11 @@ public class LoginGoogleController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         
-        // Bước A: Đọc mã code hoặc mã error từ Google gửi về qua URL
+        // Step A: Read code or error parameters sent from Google via URL
         String code = request.getParameter("code");
         String error = request.getParameter("error");
 
-        // Gặp lỗi (Ví dụ: Người dùng nhấn nút Hủy từ chối cấp quyền trên màn hình Google)
+        // Handle error (e.g. user cancelled or denied access on Google consent screen)
         if (error != null && !error.isEmpty()) {
             HttpSession session = request.getSession();
             session.setAttribute("error", "Đăng nhập bằng Google bị từ chối hoặc xảy ra lỗi.");
@@ -40,7 +40,7 @@ public class LoginGoogleController extends HttpServlet {
             return;
         }
 
-        // TÌNH HUỐNG 1: Người dùng vừa click nút Google (Chưa có Code) -> Chuyển hướng họ sang Google đăng nhập
+        // CASE 1: User just clicked Google sign-in button (No code yet) -> Redirect them to Google login screen
         if (code == null || code.isEmpty()) {
             String googleAuthUrl = "https://accounts.google.com/o/oauth2/auth"
                     + "?client_id=" + GoogleUtils.CLIENT_ID

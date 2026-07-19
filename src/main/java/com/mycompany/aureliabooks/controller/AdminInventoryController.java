@@ -32,12 +32,12 @@ public class AdminInventoryController extends HttpServlet {
         String view = request.getParameter("view");
 
         if (view == null || view.equals("list")) {
-            // Load danh sách toàn bộ inventory để hiển thị
+            // Load all inventory data for listing
             request.setAttribute("inventoryList", productDAO.getInventoryList());
             request.getRequestDispatcher("/WEB-INF/inventory/list.jsp").forward(request, response);
 
         } else if (view.equals("adjust")) {
-            // Load thông tin sản phẩm và tồn kho hiện tại để hiển thị form điều chỉnh
+            // Load product info and current stock level to display the adjustment form
             String productIdParam = request.getParameter("productId");
             if (productIdParam == null || productIdParam.trim().isEmpty()) {
                 request.setAttribute("errorMessage", "Thiếu mã sản phẩm.");
@@ -55,7 +55,7 @@ public class AdminInventoryController extends HttpServlet {
                     request.getRequestDispatcher("/WEB-INF/inventory/list.jsp").forward(request, response);
                     return;
                 }
-                // Lấy currentStock và warehouseLocation từ getInventoryList
+                // Get currentStock and warehouseLocation from getInventoryList
                 int currentStock = 0;
                 String warehouseLocation = "";
                 for (Inventory inv : productDAO.getInventoryList()) {
@@ -97,7 +97,7 @@ public class AdminInventoryController extends HttpServlet {
         // Validate quantityChange
         if (quantityChangeParam == null || quantityChangeParam.trim().isEmpty()) {
             request.setAttribute("errorMessage", "Vui lòng nhập số lượng thay đổi.");
-            // Load lại product để hiển thị form
+            // Reload product information to display in the form
             try {
                 int productId = Integer.parseInt(productIdParam);
                 Product product = productDAO.getProductById(productId);
@@ -113,7 +113,7 @@ public class AdminInventoryController extends HttpServlet {
                 request.setAttribute("product", product);
                 request.setAttribute("currentStock", currentStockVal);
                 request.setAttribute("warehouseLocation", wlVal);
-            } catch (NumberFormatException ex) { /* bỏ qua */ }
+            } catch (NumberFormatException ex) { /* ignore */ }
             request.getRequestDispatcher("/WEB-INF/inventory/adjust.jsp").forward(request, response);
             return;
         }
