@@ -9,6 +9,18 @@
         </session-timeout>
     </session-config>
 
+    <!-- Application Configuration -->
+    <!-- Application context parameters for business rules -->
+    <context-param>
+        <param-name>TAX_RATE</param-name>
+        <param-value>0.08</param-value>
+    </context-param>
+    <context-param>
+        <param-name>SHIPPING_COST_STANDARD</param-name>
+        <param-value>30000</param-value>
+    </context-param>
+
+
     <!-- Error pages configuration -->
     <error-page>
         <error-code>400</error-code>

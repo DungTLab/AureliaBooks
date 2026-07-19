@@ -25,7 +25,7 @@
                 <h4 class="mb-3">Thông tin sản phẩm chung</h4>
                 <div class="mb-3">
                     <label for="title" class="form-label">Tiêu đề sách</label>
-                    <input type="text" class="form-control" id="title" name="title" required>
+                    <input type="text" class="form-control" id="title" name="title" value="${param.title}" required>
                 </div>
                 <div class="mb-3">
                     <label for="categoryId" class="form-label">Danh mục</label>
@@ -37,11 +37,11 @@
                 </div>
                 <div class="mb-3">
                     <label for="price" class="form-label">Giá tiền</label>
-                    <input type="number" step="0.01" class="form-control" id="price" name="price" required>
+                    <input type="number" step="1000" min="1000" class="form-control" id="price" name="price" value="${param.price}" required>
                 </div>
                 <div class="mb-3">
                     <label for="sku" class="form-label">Mã SKU</label>
-                    <input type="text" class="form-control" id="sku" name="sku">
+                    <input type="text" class="form-control" id="sku" name="sku" value="${param.sku}">
                 </div>
                 <div class="mb-3">
                     <label for="image" class="form-label">Hình ảnh minh họa</label>
@@ -49,7 +49,7 @@
                 </div>
                 <div class="mb-3">
                     <label for="description" class="form-label">Mô tả sản phẩm</label>
-                    <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    <textarea class="form-control" id="description" name="description" rows="3">${param.description}</textarea>
                 </div>
             </div>
             
@@ -67,23 +67,23 @@
                         </div>
                         <div class="mb-3">
                             <label for="translator" class="form-label">Dịch giả</label>
-                            <input type="text" class="form-control" id="translator" name="translator">
+                            <input type="text" class="form-control" id="translator" name="translator" value="${param.translator}">
                         </div>
                         <div class="mb-3">
                             <label for="publicationYear" class="form-label">Năm xuất bản</label>
-                            <input type="number" class="form-control" id="publicationYear" name="publicationYear">
+                            <input type="number" class="form-control" id="publicationYear" name="publicationYear" value="${param.publicationYear}">
                         </div>
                         <div class="mb-3">
                             <label for="numberOfPages" class="form-label">Số trang</label>
-                            <input type="number" class="form-control" id="numberOfPages" name="numberOfPages">
+                            <input type="number" class="form-control" id="numberOfPages" name="numberOfPages" value="${param.numberOfPages}">
                         </div>
                         <div class="mb-3">
                             <label for="coverType" class="form-label">Loại bìa</label>
-                            <input type="text" class="form-control" id="coverType" name="coverType">
+                            <input type="text" class="form-control" id="coverType" name="coverType" value="${param.coverType}">
                         </div>
                         <div class="mb-3">
                             <label for="language" class="form-label">Ngôn ngữ</label>
-                            <input type="text" class="form-control" id="language" name="language" value="Tiếng Việt">
+                            <input type="text" class="form-control" id="language" name="language" value="${not empty param.language ? param.language : 'Tiếng Việt'}">
                         </div>
                     </c:when>
                     <c:when test="${productType == 'stationery'}">
@@ -108,31 +108,31 @@
                         </div>
                         <div class="mb-3">
                             <label for="origin" class="form-label">Xuất xứ</label>
-                            <input type="text" class="form-control" id="origin" name="origin">
+                            <input type="text" class="form-control" id="origin" name="origin" value="${param.origin}">
                         </div>
                         <div class="mb-3">
                             <label for="material" class="form-label">Chất liệu</label>
-                            <input type="text" class="form-control" id="material" name="material">
+                            <input type="text" class="form-control" id="material" name="material" value="${param.material}">
                         </div>
                         <div class="mb-3">
                             <label for="color" class="form-label">Màu sắc</label>
-                            <input type="text" class="form-control" id="color" name="color">
+                            <input type="text" class="form-control" id="color" name="color" value="${param.color}">
                         </div>
                         <div class="mb-3">
                             <label for="weight" class="form-label">Trọng lượng (g)</label>
-                            <input type="number" step="0.01" class="form-control" id="weight" name="weight">
+                            <input type="number" step="0.01" class="form-control" id="weight" name="weight" value="${param.weight}">
                         </div>
                         <div class="mb-3">
                             <label for="dimensions" class="form-label">Kích thước</label>
-                            <input type="text" class="form-control" id="dimensions" name="dimensions">
+                            <input type="text" class="form-control" id="dimensions" name="dimensions" value="${param.dimensions}">
                         </div>
                         <div class="mb-3">
                             <label for="specifications" class="form-label">Thông số kỹ thuật</label>
-                            <textarea class="form-control" id="specifications" name="specifications" rows="2"></textarea>
+                            <textarea class="form-control" id="specifications" name="specifications" rows="2">${param.specifications}</textarea>
                         </div>
                         <div class="mb-3">
                             <label for="warning" class="form-label">Cảnh báo (nếu có)</label>
-                            <input type="text" class="form-control" id="warning" name="warning">
+                            <input type="text" class="form-control" id="warning" name="warning" value="${param.warning}">
                         </div>
                     </c:when>
                 </c:choose>

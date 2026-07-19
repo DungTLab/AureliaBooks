@@ -41,6 +41,10 @@ public class ProductController extends HttpServlet {
                     return;
                 }
                 
+                // Add stock information for detail view
+                int stock = productDAO.getProductStock(id);
+                product.put("stock", stock);
+                
                 request.setAttribute("product", product);
                 request.getRequestDispatcher("/WEB-INF/view/book-detail.jsp").forward(request, response);
             } catch (NumberFormatException e) {

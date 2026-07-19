@@ -268,7 +268,33 @@ public class AdminProductController extends HttpServlet {
                 return;
             }
 
+            // Enforce alphanumeric formatting constraints for SKU
+            if (sku == null || sku.trim().isEmpty() || !sku.matches("^[a-zA-Z0-9_\\-]+$")) {
+                request.setAttribute("errorMessage", "SKU không hợp lệ (không được để trống, chỉ chứa chữ, số, gạch nối).");
+                request.setAttribute("productType", productType);
+                request.setAttribute("categories", categoryDAO.getAllCategories());
+                if ("book".equals(productType)) request.setAttribute("publishers", productDAO.getAllPublishers());
+                else {
+                    request.setAttribute("brands", productDAO.getAllBrands());
+                    request.setAttribute("suppliers", productDAO.getAllSuppliers());
+                }
+                request.getRequestDispatcher("/WEB-INF/product/create.jsp").forward(request, response);
+                return;
+            }
+
             Part imagePart = request.getPart("image");
+            if (imagePart == null || imagePart.getSize() == 0 || imagePart.getContentType() == null || !imagePart.getContentType().startsWith("image/")) {
+                request.setAttribute("errorMessage", "Vui lòng tải lên một tệp hình ảnh hợp lệ (VD: .jpg, .png)!");
+                request.setAttribute("productType", productType);
+                request.setAttribute("categories", categoryDAO.getAllCategories());
+                if ("book".equals(productType)) request.setAttribute("publishers", productDAO.getAllPublishers());
+                else {
+                    request.setAttribute("brands", productDAO.getAllBrands());
+                    request.setAttribute("suppliers", productDAO.getAllSuppliers());
+                }
+                request.getRequestDispatcher("/WEB-INF/product/create.jsp").forward(request, response);
+                return;
+            }
             String imageUrl = UploadUtils.saveUploadedFile(imagePart, getServletContext(), "book-image");
             if (imageUrl == null) {
                 imageUrl = "default.jpg";
@@ -305,8 +331,22 @@ public class AdminProductController extends HttpServlet {
                 Integer publisherId = parseIntegerValue(request.getParameter("publisherId"));
                 newBook.setPublisherId(publisherId);
                 newBook.setTranslator(request.getParameter("translator"));
-                newBook.setPublicationYear(parseIntegerValue(request.getParameter("publicationYear")));
-                newBook.setNumberOfPages(parseIntegerValue(request.getParameter("numberOfPages")));
+                
+                // Validate Book-specific numerical constraints
+                Integer pubYear = parseIntegerValue(request.getParameter("publicationYear"));
+                String pubYearRaw = request.getParameter("publicationYear");
+                if (pubYearRaw != null && !pubYearRaw.trim().isEmpty() && !isValidPublicationYear(pubYear)) {
+                    throw new IllegalArgumentException("Năm xuất bản không hợp lệ.");
+                }
+                newBook.setPublicationYear(pubYear);
+                
+                Integer numPages = parseIntegerValue(request.getParameter("numberOfPages"));
+                String numPagesRaw = request.getParameter("numberOfPages");
+                if (numPagesRaw != null && !numPagesRaw.trim().isEmpty() && !isValidPositiveInteger(numPages)) {
+                    throw new IllegalArgumentException("Số trang phải là số dương.");
+                }
+                newBook.setNumberOfPages(numPages);
+                
                 newBook.setCoverType(request.getParameter("coverType"));
                 newBook.setLanguage(request.getParameter("language"));
 
@@ -326,7 +366,15 @@ public class AdminProductController extends HttpServlet {
                 stat.setOrigin(request.getParameter("origin"));
                 stat.setMaterial(request.getParameter("material"));
                 stat.setColor(request.getParameter("color"));
-                stat.setWeight(parseBigDecimalValue(request.getParameter("weight")));
+                
+                // Validate Stationery-specific numerical constraints
+                BigDecimal weight = parseBigDecimalValue(request.getParameter("weight"));
+                String weightRaw = request.getParameter("weight");
+                if (weightRaw != null && !weightRaw.trim().isEmpty() && (weight == null || weight.compareTo(BigDecimal.ZERO) < 0)) {
+                    throw new IllegalArgumentException("Trọng lượng không hợp lệ.");
+                }
+                stat.setWeight(weight);
+                
                 stat.setDimensions(request.getParameter("dimensions"));
                 stat.setSpecifications(request.getParameter("specifications"));
                 stat.setWarning(request.getParameter("warning"));
@@ -336,15 +384,32 @@ public class AdminProductController extends HttpServlet {
 
             if (ok) {
                 request.setAttribute("successMessage", "Thêm sản phẩm \"" + title.trim() + "\" thành công!");
+                showList(request, response);
             } else {
                 request.setAttribute("errorMessage", "Thêm sản phẩm thất bại, vui lòng thử lại.");
+                request.setAttribute("productType", productType);
+                request.setAttribute("categories", categoryDAO.getAllCategories());
+                if ("book".equals(productType)) request.setAttribute("publishers", productDAO.getAllPublishers());
+                else {
+                    request.setAttribute("brands", productDAO.getAllBrands());
+                    request.setAttribute("suppliers", productDAO.getAllSuppliers());
+                }
+                request.getRequestDispatcher("/WEB-INF/product/create.jsp").forward(request, response);
             }
-            showList(request, response);
 
         } catch (Exception e) {
             e.printStackTrace();
             request.setAttribute("errorMessage", "Lỗi hệ thống: " + e.getMessage());
-            showList(request, response);
+            
+            String pType = request.getParameter("productType") != null ? request.getParameter("productType") : "book";
+            request.setAttribute("productType", pType);
+            request.setAttribute("categories", categoryDAO.getAllCategories());
+            if ("book".equals(pType)) request.setAttribute("publishers", productDAO.getAllPublishers());
+            else {
+                request.setAttribute("brands", productDAO.getAllBrands());
+                request.setAttribute("suppliers", productDAO.getAllSuppliers());
+            }
+            request.getRequestDispatcher("/WEB-INF/product/create.jsp").forward(request, response);
         }
     }
 
@@ -381,6 +446,21 @@ public class AdminProductController extends HttpServlet {
 
             if (title == null || title.trim().isEmpty()) {
                 request.setAttribute("errorMessage", "Tiêu đề không được để trống!");
+                request.setAttribute("productType", productType);
+                request.setAttribute("product", existing);
+                request.setAttribute("categories", categoryDAO.getAllCategories());
+                if ("book".equals(productType)) request.setAttribute("publishers", productDAO.getAllPublishers());
+                else {
+                    request.setAttribute("brands", productDAO.getAllBrands());
+                    request.setAttribute("suppliers", productDAO.getAllSuppliers());
+                }
+                request.getRequestDispatcher("/WEB-INF/product/update.jsp").forward(request, response);
+                return;
+            }
+
+            // Enforce alphanumeric formatting constraints for SKU
+            if (sku == null || sku.trim().isEmpty() || !sku.matches("^[a-zA-Z0-9_\\-]+$")) {
+                request.setAttribute("errorMessage", "SKU không hợp lệ (không được để trống, chỉ chứa chữ, số, gạch nối).");
                 request.setAttribute("productType", productType);
                 request.setAttribute("product", existing);
                 request.setAttribute("categories", categoryDAO.getAllCategories());
@@ -431,8 +511,22 @@ public class AdminProductController extends HttpServlet {
 
                 updatedBook.setPublisherId(parseIntegerValue(request.getParameter("publisherId")));
                 updatedBook.setTranslator(request.getParameter("translator"));
-                updatedBook.setPublicationYear(parseIntegerValue(request.getParameter("publicationYear")));
-                updatedBook.setNumberOfPages(parseIntegerValue(request.getParameter("numberOfPages")));
+                
+                // Validate Book-specific numerical constraints
+                Integer pubYear = parseIntegerValue(request.getParameter("publicationYear"));
+                String pubYearRaw = request.getParameter("publicationYear");
+                if (pubYearRaw != null && !pubYearRaw.trim().isEmpty() && !isValidPublicationYear(pubYear)) {
+                    throw new IllegalArgumentException("Năm xuất bản không hợp lệ.");
+                }
+                updatedBook.setPublicationYear(pubYear);
+                
+                Integer numPages = parseIntegerValue(request.getParameter("numberOfPages"));
+                String numPagesRaw = request.getParameter("numberOfPages");
+                if (numPagesRaw != null && !numPagesRaw.trim().isEmpty() && !isValidPositiveInteger(numPages)) {
+                    throw new IllegalArgumentException("Số trang phải là số dương.");
+                }
+                updatedBook.setNumberOfPages(numPages);
+                
                 updatedBook.setCoverType(request.getParameter("coverType"));
                 updatedBook.setLanguage(request.getParameter("language"));
 
@@ -453,7 +547,15 @@ public class AdminProductController extends HttpServlet {
                 stat.setOrigin(request.getParameter("origin"));
                 stat.setMaterial(request.getParameter("material"));
                 stat.setColor(request.getParameter("color"));
-                stat.setWeight(parseBigDecimalValue(request.getParameter("weight")));
+                
+                // Validate Stationery-specific numerical constraints
+                BigDecimal weight = parseBigDecimalValue(request.getParameter("weight"));
+                String weightRaw = request.getParameter("weight");
+                if (weightRaw != null && !weightRaw.trim().isEmpty() && (weight == null || weight.compareTo(BigDecimal.ZERO) < 0)) {
+                    throw new IllegalArgumentException("Trọng lượng không hợp lệ.");
+                }
+                stat.setWeight(weight);
+                
                 stat.setDimensions(request.getParameter("dimensions"));
                 stat.setSpecifications(request.getParameter("specifications"));
                 stat.setWarning(request.getParameter("warning"));
@@ -463,15 +565,37 @@ public class AdminProductController extends HttpServlet {
 
             if (ok) {
                 request.setAttribute("successMessage", "Cập nhật sản phẩm \"" + title.trim() + "\" thành công!");
+                showList(request, response);
             } else {
                 request.setAttribute("errorMessage", "Cập nhật thất bại, vui lòng thử lại.");
+                request.setAttribute("productType", productType);
+                request.setAttribute("product", existing);
+                request.setAttribute("categories", categoryDAO.getAllCategories());
+                if ("book".equals(productType)) request.setAttribute("publishers", productDAO.getAllPublishers());
+                else {
+                    request.setAttribute("brands", productDAO.getAllBrands());
+                    request.setAttribute("suppliers", productDAO.getAllSuppliers());
+                }
+                request.getRequestDispatcher("/WEB-INF/product/update.jsp").forward(request, response);
             }
-            showList(request, response);
 
         } catch (Exception e) {
             e.printStackTrace();
             request.setAttribute("errorMessage", "Lỗi hệ thống: " + e.getMessage());
-            showList(request, response);
+            
+            String pType = request.getParameter("productType") != null ? request.getParameter("productType") : "book";
+            request.setAttribute("productType", pType);
+            try {
+                int pid = Integer.parseInt(request.getParameter("productId"));
+                request.setAttribute("product", productDAO.getProductById(pid));
+            } catch(Exception ignored) {}
+            request.setAttribute("categories", categoryDAO.getAllCategories());
+            if ("book".equals(pType)) request.setAttribute("publishers", productDAO.getAllPublishers());
+            else {
+                request.setAttribute("brands", productDAO.getAllBrands());
+                request.setAttribute("suppliers", productDAO.getAllSuppliers());
+            }
+            request.getRequestDispatcher("/WEB-INF/product/update.jsp").forward(request, response);
         }
     }
 
