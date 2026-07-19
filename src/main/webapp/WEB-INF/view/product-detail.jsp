@@ -203,6 +203,7 @@
                 </div>
 
             </div>
+        </div>
         </c:when>
     </c:choose>
 </div>
