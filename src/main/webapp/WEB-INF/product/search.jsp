@@ -59,93 +59,67 @@
                         </c:otherwise>
                     </c:choose>
 
-                    <c:if test="${totalProducts > 0}">
+                    <c:if test="${totalPages > 1}">
                         <nav aria-label="Page navigation" class="d-flex justify-content-center py-4 mt-3">
                             <ul class="pagination mb-0">
+
+                                <%-- Trang đầu và trang trước --%>
+                                <c:url var="firstPageUrl" value="/products">
+                                    <c:param name="query" value="${query}" />
+                                    <c:param name="categoryId" value="${categoryId}" />
+                                    <c:param name="page" value="1" />
+                                </c:url>
                                 <c:url var="prevPageUrl" value="/products">
                                     <c:param name="query" value="${query}" />
                                     <c:param name="categoryId" value="${categoryId}" />
                                     <c:param name="page" value="${currentPage - 1}" />
                                 </c:url>
-                                <li class="page-item ${currentPage == 1 ? 'disabled' : ''}">
-                                    <a class="page-link" href="${prevPageUrl}" aria-label="Previous">
-                                        <span aria-hidden="true">&laquo;</span>
-                                    </a>
+                                <li class="page-item ${currentPage <= 1 ? 'disabled' : ''}">
+                                    <a class="page-link" href="${firstPageUrl}" title="Trang đầu">&laquo;&laquo;</a>
+                                </li>
+                                <li class="page-item ${currentPage <= 1 ? 'disabled' : ''}">
+                                    <a class="page-link" href="${prevPageUrl}" title="Trang trước">&laquo;</a>
                                 </li>
 
-                                <c:choose>
-                                    <c:when test="${totalPages <= 7}">
-                                        <c:forEach var="i" begin="1" end="${totalPages}">
-                                            <c:url var="pageUrl" value="/products">
-                                                <c:param name="query" value="${query}" />
-                                                <c:param name="categoryId" value="${categoryId}" />
-                                                <c:param name="page" value="${i}" />
-                                            </c:url>
-                                            <li class="page-item ${i == currentPage ? 'active' : ''}">
-                                                <a class="page-link" href="${pageUrl}">${i}</a>
-                                            </li>
-                                        </c:forEach>
-                                    </c:when>
-                                    <c:otherwise>
-                                        <c:url var="firstPageUrl" value="/products">
-                                            <c:param name="query" value="${query}" />
-                                            <c:param name="categoryId" value="${categoryId}" />
-                                            <c:param name="page" value="1" />
-                                        </c:url>
-                                        <li class="page-item ${currentPage == 1 ? 'active' : ''}">
-                                            <a class="page-link" href="${firstPageUrl}">1</a>
-                                        </li>
+                                <%-- Dấu ba chấm bên trái --%>
+                                <c:if test="${startPage > 1}">
+                                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                                </c:if>
 
-                                        <c:set var="startPage" value="${currentPage - 2}" />
-                                        <c:set var="endPage" value="${currentPage + 2}" />
-                                        <c:if test="${startPage < 2}">
-                                            <c:set var="startPage" value="2" />
-                                            <c:set var="endPage" value="5" />
-                                        </c:if>
-                                        <c:if test="${endPage > totalPages - 1}">
-                                            <c:set var="endPage" value="${totalPages - 1}" />
-                                            <c:set var="startPage" value="${totalPages - 4}" />
-                                        </c:if>
+                                <%-- Cửa sổ số trang --%>
+                                <c:forEach begin="${startPage}" end="${endPage}" var="i">
+                                    <c:url var="pageUrl" value="/products">
+                                        <c:param name="query" value="${query}" />
+                                        <c:param name="categoryId" value="${categoryId}" />
+                                        <c:param name="page" value="${i}" />
+                                    </c:url>
+                                    <li class="page-item ${currentPage == i ? 'active' : ''}">
+                                        <a class="page-link" href="${pageUrl}"><c:out value="${i}" /></a>
+                                    </li>
+                                </c:forEach>
 
-                                        <c:if test="${startPage > 2}">
-                                            <li class="page-item disabled"><span class="page-link">...</span></li>
-                                        </c:if>
-
-                                        <c:forEach var="i" begin="${startPage}" end="${endPage}">
-                                            <c:url var="pageUrl" value="/products">
-                                                <c:param name="query" value="${query}" />
-                                                <c:param name="categoryId" value="${categoryId}" />
-                                                <c:param name="page" value="${i}" />
-                                            </c:url>
-                                            <li class="page-item ${i == currentPage ? 'active' : ''}">
-                                                <a class="page-link" href="${pageUrl}">${i}</a>
-                                            </li>
-                                        </c:forEach>
-
-                                        <c:if test="${endPage < totalPages - 1}">
-                                            <li class="page-item disabled"><span class="page-link">...</span></li>
-                                        </c:if>
-
-                                        <c:url var="lastPageUrl" value="/products">
-                                            <c:param name="query" value="${query}" />
-                                            <c:param name="categoryId" value="${categoryId}" />
-                                            <c:param name="page" value="${totalPages}" />
-                                        </c:url>
-                                        <li class="page-item ${currentPage == totalPages ? 'active' : ''}">
-                                            <a class="page-link" href="${lastPageUrl}">${totalPages}</a>
-                                        </li>
-                                    </c:otherwise>
-                                </c:choose>
+                                <%-- Dấu ba chấm bên phải --%>
+                                <c:if test="${endPage < totalPages}">
+                                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                                </c:if>
 
                                 <c:url var="nextPageUrl" value="/products">
                                     <c:param name="query" value="${query}" />
                                     <c:param name="categoryId" value="${categoryId}" />
                                     <c:param name="page" value="${currentPage + 1}" />
                                 </c:url>
-                                <li class="page-item ${currentPage == totalPages ? 'disabled' : ''}">
-                                    <a class="page-link" href="${nextPageUrl}" aria-label="Next">
-                                        <span aria-hidden="true">&raquo;</span>
-                                    </a>
+                                <c:url var="lastPageUrl" value="/products">
+                                    <c:param name="query" value="${query}" />
+                                    <c:param name="categoryId" value="${categoryId}" />
+                                    <c:param name="page" value="${totalPages}" />
+                                </c:url>
+
+                                <%-- Trang sau và trang cuối --%>
+                                <li class="page-item ${currentPage >= totalPages ? 'disabled' : ''}">
+                                    <a class="page-link" href="${nextPageUrl}" title="Trang sau">&raquo;</a>
+                                </li>
+                                <li class="page-item ${currentPage >= totalPages ? 'disabled' : ''}">
+                                    <a class="page-link" href="${lastPageUrl}" title="Trang cuối">&raquo;&raquo;</a>
                                 </li>
                             </ul>
                         </nav>

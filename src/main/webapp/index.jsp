@@ -66,25 +66,40 @@
             <c:if test="${totalPages > 1}">
                 <nav aria-label="Page navigation" class="d-flex justify-content-center pb-3 pt-2">
                     <ul class="pagination mb-0">
-                        <%-- Nút Previous --%>
-                        <li class="page-item ${currentPage == 1 ? 'disabled' : ''}">
-                            <a class="page-link" href="?page=${currentPage - 1}" aria-label="Previous">
-                                <span aria-hidden="true">&laquo;</span>
-                            </a>
+
+                        <%-- Trang đầu và trang trước --%>
+                        <li class="page-item ${currentPage <= 1 ? 'disabled' : ''}">
+                            <a class="page-link" href="?page=1" title="Trang đầu">&laquo;&laquo;</a>
+                        </li>
+                        <li class="page-item ${currentPage <= 1 ? 'disabled' : ''}">
+                            <a class="page-link" href="?page=${currentPage - 1}" title="Trang trước">&laquo;</a>
                         </li>
 
-                        <%-- Các số trang --%>
-                        <c:forEach var="i" begin="1" end="${totalPages}">
-                            <li class="page-item ${i == currentPage ? 'active' : ''}">
-                                <a class="page-link" href="?page=${i}">${i}</a>
+                        <%-- Dấu ba chấm bên trái --%>
+                        <c:if test="${startPage > 1}">
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        </c:if>
+
+                        <%-- Cửa sổ số trang --%>
+                        <c:forEach begin="${startPage}" end="${endPage}" var="i">
+                            <li class="page-item ${currentPage == i ? 'active' : ''}">
+                                <a class="page-link" href="?page=${i}">
+                                    <c:out value="${i}"/>
+                                </a>
                             </li>
                         </c:forEach>
 
-                        <%-- Nút Next --%>
-                        <li class="page-item ${currentPage == totalPages ? 'disabled' : ''}">
-                            <a class="page-link" href="?page=${currentPage + 1}" aria-label="Next">
-                                <span aria-hidden="true">&raquo;</span>
-                            </a>
+                        <%-- Dấu ba chấm bên phải --%>
+                        <c:if test="${endPage < totalPages}">
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        </c:if>
+
+                        <%-- Trang sau và trang cuối --%>
+                        <li class="page-item ${currentPage >= totalPages ? 'disabled' : ''}">
+                            <a class="page-link" href="?page=${currentPage + 1}" title="Trang sau">&raquo;</a>
+                        </li>
+                        <li class="page-item ${currentPage >= totalPages ? 'disabled' : ''}">
+                            <a class="page-link" href="?page=${totalPages}" title="Trang cuối">&raquo;&raquo;</a>
                         </li>
                     </ul>
                 </nav>
