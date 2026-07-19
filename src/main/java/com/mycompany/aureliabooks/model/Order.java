@@ -20,7 +20,7 @@ public class Order implements Serializable {
     private int userId;
     private Integer discountId;
     private BigDecimal totalAmount;
-    private String status; // PENDING, CONFIRMED, SHIPPING, COMPLETED, CANCELLED, RETURNED
+    private String status; // PENDING, CONFIRMED, SHIPPING, COMPLETED, CANCELLED, RETURNED, RETURN_REQUESTED, RETURN_REJECTED
     private String shippingAddress;
     private String contactPhone;
     private Integer processedByUserId;

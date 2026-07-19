@@ -117,7 +117,7 @@
                                             </li>
                                             <li>
                                                 <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/products">
-                                                    <i class="bi bi-book me-2"></i>Quản lý Sách
+                                                    <i class="bi bi-book me-2"></i>Quản lý Sản phẩm
                                                 </a>
                                             </li>
                                             <li>
@@ -217,7 +217,7 @@
                                             </li>
                                             <li>
                                                 <a class="dropdown-item py-2" href="${pageContext.request.contextPath}/admin/products">
-                                                    <i class="bi bi-book me-2 text-secondary"></i>Quản lý Sách
+                                                    <i class="bi bi-book me-2 text-secondary"></i>Quản lý Sản phẩm
                                                 </a>
                                             </li>
                                             <li>

@@ -452,7 +452,7 @@ INSERT INTO [dbo].[Inventory] ([ProductId], [QuantityInStock], [WarehouseLocatio
 GO
 
 -- 15. Insert Orders & OrderItems data
--- Order 1: Completed
+-- Order 1: Completed (demo for return flow)
 INSERT INTO [dbo].[Orders] ([UserId], [DiscountId], [TotalAmount], [Status], [ShippingAddress], [ContactPhone], [ProcessedByUserId], [CreatedAt]) VALUES 
 (7, NULL, 196000.00, 'COMPLETED', N'789 Nguyễn Trãi, Quận 5, TP. HCM', '0987654321', 2, '2026-06-10 14:30:00');
 
@@ -466,4 +466,37 @@ INSERT INTO [dbo].[Orders] ([UserId], [DiscountId], [TotalAmount], [Status], [Sh
 
 INSERT INTO [dbo].[OrderItems] ([OrderId], [ProductId], [Quantity], [UnitPrice], [SubTotal]) VALUES 
 (2, 3, 1, 250000.00, 250000.00); -- 1 copy of Norwegian Wood (with discount)
+
+-- Order 3: Return Requested (demo for admin return approval flow)
+INSERT INTO [dbo].[Orders] ([UserId], [DiscountId], [TotalAmount], [Status], [ShippingAddress], [ContactPhone], [ProcessedByUserId], [ReturnReason], [CreatedAt]) VALUES 
+(7, NULL, 295000.00, 'RETURN_REQUESTED', N'789 Nguyễn Trãi, Quận 5, TP. HCM', '0987654321', 2, N'Sách bị lỗi trang, thiếu trang 120-135.', '2026-06-20 10:00:00');
+
+INSERT INTO [dbo].[OrderItems] ([OrderId], [ProductId], [Quantity], [UnitPrice], [SubTotal]) VALUES 
+(3, 12, 1, 295000.00, 295000.00); -- 1 copy of Harry Potter
+GO
+
+-- 16. Insert sample StockTransactions data
+-- Import transactions (initial stock imports handled by employee)
+INSERT INTO [dbo].[StockTransactions] ([ProductId], [HandledByUserId], [SupplierId], [TransactionType], [Quantity], [TransactionDate]) VALUES
+(1,  2, 1, 'IMPORT', 100, '2026-05-01 08:00:00'), -- Mat Biec - nhập kho ban đầu
+(2,  2, 1, 'IMPORT', 150, '2026-05-01 08:00:00'), -- Dac Nhan Tam
+(3,  2, 2, 'IMPORT', 30,  '2026-05-01 08:00:00'), -- Norwegian Wood
+(4,  4, 3, 'IMPORT', 1000,'2026-05-01 09:00:00'), -- Bút Bi Thiên Long
+(5,  4, 3, 'IMPORT', 200, '2026-05-01 09:00:00'), -- Bút Chì Kim Pentel
+(6,  2, 1, 'IMPORT', 80,  '2026-05-01 08:00:00'), -- Số Đỏ
+(7,  2, 1, 'IMPORT', 120, '2026-05-01 08:00:00'), -- Tuổi Trẻ Đáng Giá
+(8,  2, 2, 'IMPORT', 90,  '2026-05-01 08:00:00'), -- Nhà Giả Kim
+(9,  2, 1, 'IMPORT', 110, '2026-05-01 08:00:00'), -- Cho Tôi Xin Một Vé
+(10, 2, 1, 'IMPORT', 150, '2026-05-01 08:00:00'), -- Đời Ngắn Đừng Ngủ Dài
+(11, 2, 2, 'IMPORT', 40,  '2026-05-01 08:00:00'), -- The Alchemist
+(12, 2, 2, 'IMPORT', 25,  '2026-05-01 08:00:00'), -- Harry Potter
+(13, 2, 2, 'IMPORT', 15,  '2026-05-01 08:00:00'), -- To Kill a Mockingbird
+(14, 4, 3, 'IMPORT', 300, '2026-05-01 09:00:00'), -- Sổ Tay Faber-Castell
+(15, 4, 3, 'IMPORT', 180, '2026-05-01 09:00:00'), -- Bút Màu Sáp
+(16, 4, 3, 'IMPORT', 500, '2026-05-01 09:00:00'); -- Gôm Tẩy
+
+-- Export transactions (from Order 1 fulfillment)
+INSERT INTO [dbo].[StockTransactions] ([ProductId], [HandledByUserId], [SupplierId], [TransactionType], [Quantity], [TransactionDate]) VALUES
+(1, 2, NULL, 'EXPORT', 1, '2026-06-10 15:00:00'), -- Mat Biec sold in Order 1
+(2, 2, NULL, 'EXPORT', 1, '2026-06-10 15:00:00'); -- Dac Nhan Tam sold in Order 1
 GO
