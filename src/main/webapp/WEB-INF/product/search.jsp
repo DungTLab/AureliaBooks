@@ -30,7 +30,7 @@
                             </div>
                         </c:when>
                         <c:otherwise>
-                            <div class="row row-cols-5 g-4 gy-5">
+                            <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-3 gy-4">
                                 <c:forEach var="product" items="${products}">
                                     <div class="col">
                                         <a href="${pageContext.request.contextPath}/products?action=detail&id=${product.id}"
@@ -38,16 +38,16 @@
                                             <div class="ratio ratio-1x1">
                                                 <c:choose>
                                                     <c:when test="${not empty product.imageUrl && product.imageUrl.contains('/')}">
-                                                        <img src="${pageContext.request.contextPath}/uploads/${product.imageUrl}" class="card-img-top img-fluid object-fit-contain p-3" alt="${product.title}">
+                                                        <img src="${pageContext.request.contextPath}/uploads/${product.imageUrl}" class="card-img-top img-fluid object-fit-contain p-2 p-md-3" alt="${product.title}">
                                                     </c:when>
                                                     <c:otherwise>
-                                                        <img src="${pageContext.request.contextPath}/assets/images/book-image/${product.imageUrl}" class="card-img-top img-fluid object-fit-contain p-3" alt="${product.title}">
+                                                        <img src="${pageContext.request.contextPath}/assets/images/book-image/${product.imageUrl}" class="card-img-top img-fluid object-fit-contain p-2 p-md-3" alt="${product.title}">
                                                     </c:otherwise>
                                                 </c:choose>
                                             </div>
                                             <div class="card-body">
-                                                <h5 class="card-title fs-6 fw-normal mb-2">${product.title}</h5>
-                                                <div class="text-danger fw-bold fs-5">
+                                                <h5 class="card-title fs-7 fs-md-6 fw-normal mb-2 text-truncate" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; white-space: normal;">${product.title}</h5>
+                                                <div class="text-danger fw-bold fs-6 fs-md-5">
                                                     <fmt:formatNumber value="${product.price}" type="number"
                                                         groupingUsed="true" /> đ
                                                 </div>

@@ -112,8 +112,13 @@ public class CheckoutController extends HttpServlet {
         }
 
         // Calculate final taxes and shipping costs
-        BigDecimal shippingCost = new BigDecimal("30000"); // Fixed shipping cost
-        BigDecimal tax = subTotalAfterDiscount.multiply(new BigDecimal("0.08")); // 8% Tax Rate
+        // Retrieve tax and shipping configuration from application context
+        String shippingParam = getServletContext().getInitParameter("SHIPPING_COST_STANDARD");
+        String taxParam = getServletContext().getInitParameter("TAX_RATE");
+        BigDecimal shippingCost = new BigDecimal(shippingParam != null ? shippingParam : "30000");
+        BigDecimal taxRate = new BigDecimal(taxParam != null ? taxParam : "0.08");
+        
+        BigDecimal tax = subTotalAfterDiscount.multiply(taxRate);
         BigDecimal totalAmount = subTotalAfterDiscount.add(shippingCost).add(tax);
 
         // Fetch User Profile to pre-fill the checkout form
@@ -263,6 +268,13 @@ public class CheckoutController extends HttpServlet {
             // Final Inventory Check: Ensure all items have sufficient stock before processing
             ProductDAO productDAO = new ProductDAO();
             for (CartItem item : checkoutItems) {
+                // Verify product availability and active status before checkout
+                if (!item.getProduct().isIsActive()) {
+                    session.setAttribute("voucherError", "Không thể đặt hàng. Sản phẩm '" + item.getProduct().getTitle() + "' đã bị ngừng kinh doanh.");
+                    response.sendRedirect(request.getContextPath() + "/checkout");
+                    return;
+                }
+
                 int stock = productDAO.getProductStock(item.getProductId());
                 if (item.getQuantity() > stock) {
                     session.setAttribute("voucherError", "Cannot place order. Product '" + item.getProduct().getTitle() + "' has insufficient stock (Available: " + stock + ")");
@@ -299,8 +311,13 @@ public class CheckoutController extends HttpServlet {
                 subTotalAfterDiscount = BigDecimal.ZERO;
             }
 
-            BigDecimal shippingCost = new BigDecimal("30000");
-            BigDecimal tax = subTotalAfterDiscount.multiply(new BigDecimal("0.08"));
+            // Retrieve application configuration for tax and shipping constants
+            String shippingParam = getServletContext().getInitParameter("SHIPPING_COST_STANDARD");
+            String taxParam = getServletContext().getInitParameter("TAX_RATE");
+            BigDecimal shippingCost = new BigDecimal(shippingParam != null ? shippingParam : "30000");
+            BigDecimal taxRate = new BigDecimal(taxParam != null ? taxParam : "0.08");
+
+            BigDecimal tax = subTotalAfterDiscount.multiply(taxRate);
             BigDecimal totalAmount = subTotalAfterDiscount.add(shippingCost).add(tax);
 
             if (totalAmount.compareTo(BigDecimal.ZERO) > 0) {

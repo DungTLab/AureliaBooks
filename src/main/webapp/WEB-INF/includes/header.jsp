@@ -117,7 +117,7 @@
                                             </li>
                                             <li>
                                                 <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/products">
-                                                    <i class="bi bi-book me-2"></i>Quản lý Sản phẩm
+                                                    <i class="bi bi-box-seam me-2"></i>Quản lý Sản phẩm
                                                 </a>
                                             </li>
                                             <li>
@@ -127,27 +127,22 @@
                                             </li>
                                             <li>
                                                 <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/publishers">
-                                                    <i class="bi bi-building-fill me-2 text-secondary"></i>Quản lý NXB
+                                                    <i class="bi bi-building-fill me-2"></i>Quản lý NXB
                                                 </a>
                                             </li>
                                             <li>
                                                 <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/brands">
-                                                    <i class="bi bi-tags me-2 text-secondary"></i>Quản lý Thương hiệu
+                                                    <i class="bi bi-tags me-2"></i>Quản lý Thương hiệu
                                                 </a>
                                             </li>
                                             <li>
                                                 <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/suppliers">
-                                                    <i class="bi bi-truck me-2 text-secondary"></i>Quản lý Nhà cung cấp
+                                                    <i class="bi bi-truck me-2"></i>Quản lý Nhà cung cấp
                                                 </a>
                                             </li>
                                             <li>
                                                 <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/inventory">
-                                                    <i class="bi bi-archive me-2 text-secondary"></i>Quản lý Kho hàng
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/discounts">
-                                                    <i class="bi bi-ticket-perforated me-2 text-secondary"></i>Quản lý Voucher
+                                                    <i class="bi bi-archive me-2"></i>Quản lý Kho hàng
                                                 </a>
                                             </li>
 
@@ -210,6 +205,12 @@
                                         </c:if>
 
                                         <c:if test="${sessionScope.user.roleName eq 'ADMIN' or sessionScope.user.roleName eq 'EMPLOYEE'}">
+                                            <li><hr class="dropdown-divider my-1"></li>
+                                            <li>
+                                                <a class="dropdown-item py-2" href="${pageContext.request.contextPath}/admin/orders">
+                                                    <i class="bi bi-bag-check me-2 text-secondary"></i>Quản lý Đơn Hàng
+                                                </a>
+                                            </li>
                                             <li>
                                                 <a class="dropdown-item py-2" href="${pageContext.request.contextPath}/admin/categories">
                                                     <i class="bi bi-list-ul me-2 text-secondary"></i>Quản lý Danh mục
@@ -217,7 +218,7 @@
                                             </li>
                                             <li>
                                                 <a class="dropdown-item py-2" href="${pageContext.request.contextPath}/admin/products">
-                                                    <i class="bi bi-book me-2 text-secondary"></i>Quản lý Sản phẩm
+                                                    <i class="bi bi-box-seam me-2 text-secondary"></i>Quản lý Sản phẩm
                                                 </a>
                                             </li>
                                             <li>
@@ -226,12 +227,23 @@
                                                 </a>
                                             </li>
                                             <li>
-                                                <a class="dropdown-item py-2" href="${pageContext.request.contextPath}/admin/orders">
-                                                    <i class="bi bi-speedometer2 me-2"></i>
-                                                    <c:choose>
-                                                        <c:when test="${sessionScope.user.roleName eq 'ADMIN'}">Quản trị hệ thống</c:when>
-                                                        <c:otherwise>Trang Nhân viên</c:otherwise>
-                                                    </c:choose>
+                                                <a class="dropdown-item py-2" href="${pageContext.request.contextPath}/admin/publishers">
+                                                    <i class="bi bi-building-fill me-2 text-secondary"></i>Quản lý NXB
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item py-2" href="${pageContext.request.contextPath}/admin/brands">
+                                                    <i class="bi bi-tags me-2 text-secondary"></i>Quản lý Thương hiệu
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item py-2" href="${pageContext.request.contextPath}/admin/suppliers">
+                                                    <i class="bi bi-truck me-2 text-secondary"></i>Quản lý Nhà cung cấp
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item py-2" href="${pageContext.request.contextPath}/admin/inventory">
+                                                    <i class="bi bi-archive me-2 text-secondary"></i>Quản lý Kho hàng
                                                 </a>
                                             </li>
                                             <c:if test="${sessionScope.user.roleName eq 'ADMIN'}">

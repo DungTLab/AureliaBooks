@@ -63,11 +63,12 @@
                     <div class="row align-items-center mb-4">
                         <div class="col-3 text-secondary" style="font-size: 14px;">Số lượng:</div>
                         <div class="col-9">
-                            <div class="input-group" style="width: 120px;">
-                                <button class="btn border text-secondary bg-light" type="button" onclick="decreaseQuantity()"><i class="bi bi-dash"></i></button>
-                                <input type="text" id="quantityInput" class="form-control text-center fw-bold border-start-0 border-end-0 bg-white" value="1" readonly>
-                                <button class="btn border text-secondary bg-light" type="button" onclick="increaseQuantity()"><i class="bi bi-plus"></i></button>
+                            <div class="input-group d-inline-flex" style="width: 140px;">
+                                <button class="btn border text-secondary bg-light px-2" type="button" onclick="decreaseQuantity()"><i class="bi bi-dash"></i></button>
+                                <input type="text" id="quantityInput" class="form-control text-center fw-bold border-start-0 border-end-0 bg-white px-1" value="1" oninput="this.value = this.value.replace(/[^0-9]/g, '');" onblur="validateQuantity(this)">
+                                <button class="btn border text-secondary bg-light px-2" type="button" onclick="increaseQuantity()"><i class="bi bi-plus"></i></button>
                             </div>
+                            <span class="text-secondary ms-3" style="font-size: 14px;">(Kho còn: ${product.stock})</span>
                         </div>
                     </div>
 
@@ -135,11 +136,12 @@
                     <div class="row align-items-center mb-4">
                         <div class="col-3 text-secondary" style="font-size: 14px;">Số lượng:</div>
                         <div class="col-9">
-                            <div class="input-group" style="width: 120px;">
-                                <button class="btn border text-secondary bg-light" type="button" onclick="decreaseQuantity()"><i class="bi bi-dash"></i></button>
-                                <input type="text" id="quantityInput" class="form-control text-center fw-bold border-start-0 border-end-0 bg-white" value="1" readonly>
-                                <button class="btn border text-secondary bg-light" type="button" onclick="increaseQuantity()"><i class="bi bi-plus"></i></button>
+                            <div class="input-group d-inline-flex" style="width: 140px;">
+                                <button class="btn border text-secondary bg-light px-2" type="button" onclick="decreaseQuantity()"><i class="bi bi-dash"></i></button>
+                                <input type="text" id="quantityInput" class="form-control text-center fw-bold border-start-0 border-end-0 bg-white px-1" value="1" oninput="this.value = this.value.replace(/[^0-9]/g, '');" onblur="validateQuantity(this)">
+                                <button class="btn border text-secondary bg-light px-2" type="button" onclick="increaseQuantity()"><i class="bi bi-plus"></i></button>
                             </div>
+                            <span class="text-secondary ms-3" style="font-size: 14px;">(Kho còn: ${product.stock})</span>
                         </div>
                     </div>
 
@@ -209,19 +211,33 @@
 
 
 <script>
+    var maxStock = ${product.stock != null ? product.stock : 1};
+    
+    function validateQuantity(input) {
+        var val = parseInt(input.value);
+        if (isNaN(val) || val < 1) {
+            input.value = 1;
+        } else if (val > maxStock) {
+            input.value = maxStock;
+        }
+    }
+
     function decreaseQuantity() {
         var input = document.getElementById('quantityInput');
         var val = parseInt(input.value);
         if (val > 1) {
             input.value = val - 1;
         }
+        validateQuantity(input);
     }
+    
     function increaseQuantity() {
         var input = document.getElementById('quantityInput');
         var val = parseInt(input.value);
-        if (val < 99) {
+        if (val < maxStock) {
             input.value = val + 1;
         }
+        validateQuantity(input);
     }
     function addToCart(redirect) {
         var productId = "${product.id}";

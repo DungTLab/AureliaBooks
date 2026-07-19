@@ -38,7 +38,7 @@
                 </div>
                 <div class="mb-3">
                     <label for="price" class="form-label">Giá tiền</label>
-                    <input type="number" step="0.01" class="form-control" id="price" name="price" value="${product.price}" required>
+                    <input type="number" step="1000" min="1000" class="form-control" id="price" name="price" value="${product.price}" required>
                 </div>
                 <div class="mb-3">
                     <label for="sku" class="form-label">Mã SKU</label>

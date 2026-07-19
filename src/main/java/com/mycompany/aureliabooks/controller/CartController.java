@@ -171,7 +171,6 @@ public class CartController extends HttpServlet {
                     } else {
                         cartDAO.updateQuantity(itemId, quantity, loggedUser.getId());
                     }
-
                     // Redirect back to the cart view to refresh the data
                     response.sendRedirect(request.getContextPath() + "/cart");
 
