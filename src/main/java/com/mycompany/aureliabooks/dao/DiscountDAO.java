@@ -92,6 +92,28 @@ public class DiscountDAO extends BaseDAO {
         return null;
     }
 
+    public boolean isCodeExists(String code, Integer excludeId) {
+        String sql = "SELECT 1 FROM Discounts WHERE Code = ?";
+        if (excludeId != null) {
+            sql += " AND Id != ?";
+        }
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, code);
+            if (excludeId != null) {
+                ps.setInt(2, excludeId);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return true;
+                }
+            }
+        } catch (SQLException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     public boolean insertDiscount(Discount discount) {
         String sql = "INSERT INTO Discounts (Code, DiscountPercent, MaxDiscountAmount, MinOrderValue, StartDate, EndDate, IsActive) VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = getConnection();
