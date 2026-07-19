@@ -37,10 +37,10 @@ public class DiscountController extends HttpServlet {
         }
         
         long now = System.currentTimeMillis();
-        long minFuture = now + 7L * 24 * 60 * 60 * 1000;
+        long maxFuture = now + 7L * 24 * 60 * 60 * 1000;
         
-        if (d.getStartDate().getTime() <= minFuture) {
-            return "Thời gian bắt đầu phải cách thời điểm hiện tại ít nhất 7 ngày.";
+        if (d.getStartDate().getTime() <= now || d.getStartDate().getTime() > maxFuture) {
+            return "Thời gian bắt đầu mới phải lớn hơn hiện tại và nằm trong vòng 7 ngày tới.";
         }
         
         if (d.getEndDate().getTime() <= d.getStartDate().getTime()) {

@@ -31,7 +31,7 @@ public class CartDAO extends BaseDAO {
     public List<CartItem> findAll(int userId) {
         List<CartItem> list = new ArrayList<>();
         String sql = "SELECT ci.Id, ci.CartId, ci.ProductId, ci.Quantity, ci.AddedAt, "
-                + "p.Title, p.Price, p.Image_URL, p.Sku "
+                + "p.Title, p.Price, p.Image_URL, p.Sku, p.IsActive "
                 + "FROM CartItems ci "
                 + "JOIN Carts c ON ci.CartId = c.Id "
                 + "JOIN Products p ON ci.ProductId = p.Id "
@@ -55,6 +55,7 @@ public class CartDAO extends BaseDAO {
                     product.setPrice(rs.getBigDecimal("Price"));
                     product.setImageUrl(rs.getString("Image_URL"));
                     product.setSku(rs.getString("Sku"));
+                    product.setIsActive(rs.getBoolean("IsActive"));
 
                     item.setProduct(product);
                     list.add(item);
