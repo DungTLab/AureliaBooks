@@ -4,7 +4,7 @@
 
         <div class="container my-5">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2>Quản Lý Kho Sách (Admin - TPT)</h2>
+                <h2>Quản lý Sản phẩm</h2>
                 <div>
                     <a href="${pageContext.request.contextPath}/admin/products?view=create&type=book"
                         class="btn btn-success me-2">Thêm Sách</a>
