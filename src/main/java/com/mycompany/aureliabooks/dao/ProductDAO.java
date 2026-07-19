@@ -323,7 +323,7 @@ public class ProductDAO extends BaseDAO {
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     map.put("productType", "Stationery");
-                    map.put("Stationeryid", rs.getInt("Id"));
+                    map.put("id", rs.getInt("Id"));
                     map.put("categoryId", rs.getInt("CategoryId"));
                     map.put("supplierId", rs.getObject("SupplierId"));
                     map.put("supplierName", rs.getString("SupplierName"));
