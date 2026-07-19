@@ -1095,7 +1095,7 @@ public class ProductDAO extends BaseDAO {
 
     public List<Inventory> getInventoryList() {
         List<Inventory> list = new ArrayList<>();
-        String sql = "SELECT p.[Id], p.[Title], p.[Sku], "
+        String sql = "SELECT p.[Id], p.[Title], p.[Sku], p.[Image_URL], "
                 + "ISNULL(inv.[QuantityInStock], 0) AS [QuantityInStock], "
                 + "inv.[WarehouseLocation] "
                 + "FROM [dbo].[Products] p "
@@ -1109,6 +1109,7 @@ public class ProductDAO extends BaseDAO {
                 item.setProductId(rs.getInt("Id"));
                 item.setProductTitle(rs.getString("Title"));
                 item.setSku(rs.getString("Sku"));
+                item.setImageUrl(rs.getString("Image_URL"));
                 item.setQuantityInStock(rs.getInt("QuantityInStock"));
                 item.setWarehouseLocation(rs.getString("WarehouseLocation"));
                 list.add(item);

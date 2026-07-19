@@ -8,14 +8,14 @@
     </div>
 
     <c:if test="${not empty successMessage}">
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            ${successMessage}
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>${successMessage}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     </c:if>
     <c:if test="${not empty errorMessage}">
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            ${errorMessage}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>${errorMessage}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     </c:if>
@@ -25,8 +25,9 @@
             <table class="table table-striped table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th style="width: 10%;">Mã SP</th>
-                        <th style="width: 35%;">Tên Sản Phẩm / Sách</th>
+                        <th style="width: 8%;">Mã SP</th>
+                        <th style="width: 7%;">Ảnh</th>
+                        <th style="width: 30%;">Tên Sản Phẩm</th>
                         <th style="width: 15%;">SKU</th>
                         <th style="width: 15%;">Số Lượng Tồn</th>
                         <th style="width: 15%;">Vị Trí Kho</th>
@@ -37,6 +38,16 @@
                     <c:forEach var="item" items="${inventoryList}">
                         <tr>
                             <td>${item.productId}</td>
+                            <td>
+                                <c:choose>
+                                    <c:when test="${not empty item.imageUrl && item.imageUrl.contains('/')}">
+                                        <img src="${pageContext.request.contextPath}/uploads/${item.imageUrl}" class="img-thumbnail" style="width: 45px; height: 45px; object-fit: contain;" alt="${item.productTitle}">
+                                    </c:when>
+                                    <c:otherwise>
+                                        <img src="${pageContext.request.contextPath}/assets/images/book-image/${item.imageUrl}" class="img-thumbnail" style="width: 45px; height: 45px; object-fit: contain;" alt="${item.productTitle}">
+                                    </c:otherwise>
+                                </c:choose>
+                            </td>
                             <td>
                                 <strong>${item.productTitle}</strong>
                             </td>

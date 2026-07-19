@@ -58,6 +58,7 @@ public class Inventory implements Serializable {
     // -------------------------------------------------------------------------
     private String productTitle;
     private String sku;
+    private String imageUrl;
 
     public String getProductTitle() {
         return productTitle;
@@ -73,5 +74,13 @@ public class Inventory implements Serializable {
 
     public void setSku(String sku) {
         this.sku = sku;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 }

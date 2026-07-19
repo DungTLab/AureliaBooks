@@ -166,32 +166,11 @@ public class CartController extends HttpServlet {
                     int itemId = Integer.parseInt(request.getParameter("itemId"));
                     int quantity = Integer.parseInt(request.getParameter("quantity"));
 
-                    // Validate stock limit against the requested quantity before processing the cart update
-                    // Find the product ID for this cart item
-                    int productId = -1;
-                    List<CartItem> cartItems = cartDAO.findAll(loggedUser.getId());
-                    for (CartItem item : cartItems) {
-                        if (item.getId() == itemId) {
-                            productId = item.getProductId();
-                            break;
-                        }
-                    }
-
-                    // Check stock limit and adjust quantity if it exceeds stock
-                    if (productId != -1) {
-                        int stock = productDAO.getProductStock(productId);
-                        if (quantity > stock) {
-                            session.setAttribute("cartWarningMessage", "Số lượng cập nhật vượt quá tồn kho hiện tại (" + stock + "). Hệ thống đã tự động điều chỉnh.");
-                            quantity = stock;
-                        }
-                    }
-
                     if (quantity <= 0) {
                         cartDAO.deleteItem(itemId, loggedUser.getId());
                     } else {
                         cartDAO.updateQuantity(itemId, quantity, loggedUser.getId());
                     }
-
                     // Redirect back to the cart view to refresh the data
                     response.sendRedirect(request.getContextPath() + "/cart");
 
