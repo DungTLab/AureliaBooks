@@ -32,31 +32,41 @@ public class HomeController extends HttpServlet {
         try {
             ProductDAO productDAO = new ProductDAO();
 
-            // 3. Xử lý phân trang: 3 sản phẩm/trang ( hàng, mỗi hàng 1 sản phẩm)
+            // 3. Xử lý phân trang: 3 sản phẩm/trang (mỗi hàng 1 sản phẩm)
             int productsPerPage = 3;
             int currentPage = 1;
             String pageParam = request.getParameter("page");
             if (pageParam != null && !pageParam.isEmpty()) {
                 try {
                     currentPage = Integer.parseInt(pageParam);
-                    if (currentPage < 1) currentPage = 1;
                 } catch (NumberFormatException e) {
                     currentPage = 1;
                 }
             }
-            int offset = (currentPage - 1) * productsPerPage;
+            currentPage = Math.max(1, currentPage);
 
             // 4. Đếm tổng số sản phẩm đang bán (tất cả category) để tính số trang
             int totalBooks = productDAO.countTopSellingProductsOfMonth();
             int totalPages = (int) Math.ceil((double) totalBooks / productsPerPage);
-            if (totalPages < 1) totalPages = 1;
-            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage > totalPages && totalPages > 0) {
+                currentPage = totalPages;
+            }
+
+            // Tính offset sau khi đã đưa trang yêu cầu về phạm vi hợp lệ
+            int offset = Math.max(0, (currentPage - 1) * productsPerPage);
+
+            // Chỉ hiển thị tối đa 2 trang ở mỗi phía của trang hiện tại
+            int windowSize = 2;
+            int startPage = Math.max(1, currentPage - windowSize);
+            int endPage = Math.min(totalPages, currentPage + windowSize);
 
             // 5. Tải danh sách sản phẩm bán chạy nhất trong tháng (không phân biệt category)
             List<HashMap<String, Object>> listTopSaleProducts = productDAO.getTopSellingProductsOfMonth(offset, productsPerPage);
             request.setAttribute("listTopSaleProducts", listTopSaleProducts);
             request.setAttribute("currentPage", currentPage);
             request.setAttribute("totalPages", totalPages);
+            request.setAttribute("startPage", startPage);
+            request.setAttribute("endPage", endPage);
 
             // Chuyển tiếp yêu cầu sang trang hiển thị index.jsp
             request.getRequestDispatcher("/index.jsp").forward(request, response);
