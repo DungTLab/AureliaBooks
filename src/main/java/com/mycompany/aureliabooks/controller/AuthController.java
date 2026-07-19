@@ -89,10 +89,10 @@ public class AuthController extends HttpServlet {
             if (loggedInUser != null) {
                 HttpSession session = request.getSession(true);
                 session.setAttribute("user", loggedInUser);
-                // Chuyển hướng về trang chủ
+                // Redirect to homepage
                 response.sendRedirect(request.getContextPath() + "/");
             } else {
-                // Đăng nhập thất bại -> quay lại trang login kèm thông báo lỗi
+                // Login failed -> return to login page with error message
                 request.setAttribute("error", "Tài khoản hoặc mật khẩu không chính xác!");
                 request.getRequestDispatcher("/WEB-INF/auth/login.jsp").forward(request, response);
             }

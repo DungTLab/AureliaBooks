@@ -52,58 +52,58 @@ public class LoginGoogleController extends HttpServlet {
             return;
         }
 
-        // TÌNH HUỐNG 2: Đã có Authorization Code gửi về từ Google
+        // CASE 2: Authorization Code received from Google
         try {
-            // 1. Gọi hàm tiện ích đổi code lấy Access Token
+            // 1. Exchange code for Access Token
             String accessToken = GoogleUtils.getToken(code);
 
-            // 2. Gửi Access Token đi lấy thông tin Profile người dùng
+            // 2. Fetch Google User Profile using Access Token
             GooglePojo googlePojo = GoogleUtils.getUserInfo(accessToken);
 
             if (googlePojo == null || googlePojo.getEmail() == null) {
                 throw new Exception("Không thể lấy thông tin email từ tài khoản Google của bạn.");
             }
 
-            // 3. Truy vấn xem Email này đã tồn tại trong CSDL của ứng dụng chưa
+            // 3. Query if this email already exists in our database
             User user = userDAO.getUserByEmail(googlePojo.getEmail());
 
             if (user == null) {
-                // CASE 2.1: Tài khoản Google này đăng nhập lần đầu -> Tự động đăng ký
+                // CASE 2.1: First time login with this Google account -> Register automatically
                 user = new User();
-                user.setRoleId(3); // 3 ứng với vai trò CUSTOMER
-                user.setUsername(googlePojo.getEmail()); // Đặt username bằng chính Email
+                user.setRoleId(3); // 3 maps to the CUSTOMER role
+                user.setUsername(googlePojo.getEmail()); // Set username as the Email address
                 user.setEmail(googlePojo.getEmail());
-                user.setAuthProvider("google"); // Đánh dấu loại tài khoản Google
+                user.setAuthProvider("google"); // Mark auth provider as Google
                 
-                // Mật khẩu local của acc Google sẽ được sinh ngẫu nhiên UUID để đảm bảo an toàn bảo mật
+                // Generate a random local password for safety/security purposes
                 String randomPassword = UUID.randomUUID().toString();
                 user.setPasswordHash(BCrypt.hashpw(randomPassword, BCrypt.gensalt()));
 
                 UserProfile profile = new UserProfile();
                 profile.setFullName(googlePojo.getName() != null ? googlePojo.getName() : "Google User");
-                profile.setAvatarUrl(googlePojo.getPicture()); // Lưu link ảnh đại diện Google cung cấp
+                profile.setAvatarUrl(googlePojo.getPicture()); // Save Google picture url
 
-                // Thực hiện lưu tài khoản vào DB
+                // Persist user and profile into the database
                 boolean success = userDAO.registerUser(user, profile);
                 if (success) {
-                    // Lấy lại User từ DB sau khi lưu thành công để có đầy đủ thông tin Id tự sinh
+                    // Retrieve newly created User to populate the auto-generated Id
                     user = userDAO.getUserByEmail(googlePojo.getEmail());
                 } else {
-                    throw new Exception("Không thể tự động khởi tạo tài khoản mới từ Google.");
+                    throw new Exception("Unable to automatically create a new account from Google.");
                 }
             }
 
-            // CASE 2.2: Đã có tài khoản (hoặc vừa đăng ký xong) -> Tiến hành đăng nhập
+            // CASE 2.2: User exists (or just registered) -> Proceed with login
             HttpSession session = request.getSession();
-            session.setAttribute("user", user); // Lưu User vào session để SecurityFilter nhận diện
+            session.setAttribute("user", user); // Store User in session for SecurityFilter checks
 
-            // Điều hướng về trang chủ
+            // Redirect to home page
             response.sendRedirect(request.getContextPath() + "/home");
 
         } catch (Exception e) {
             e.printStackTrace();
             HttpSession session = request.getSession();
-            session.setAttribute("error", "Lỗi xác thực Google: " + e.getMessage());
+            session.setAttribute("error", "Google authentication error: " + e.getMessage());
             response.sendRedirect(request.getContextPath() + "/auth?action=login");
         }
     }

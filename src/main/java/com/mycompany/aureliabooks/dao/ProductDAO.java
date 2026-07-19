@@ -130,7 +130,7 @@ public class ProductDAO extends BaseDAO {
     public int getProductCount() {
         int count = 0;
 
-        // Đếm số lượng Sách
+        // Count Books
         String sqlBooks = "SELECT COUNT(*) FROM [dbo].[Products] p JOIN [dbo].[Books] b ON p.[Id] = b.[ProductId] WHERE p.[IsActive] = 1";
         try (Connection conn = this.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sqlBooks);
@@ -142,7 +142,7 @@ public class ProductDAO extends BaseDAO {
             e.printStackTrace();
         }
 
-        // Đếm số lượng Văn phòng phẩm
+        // Count Stationeries
         String sqlStationeries = "SELECT COUNT(*) FROM [dbo].[Products] p JOIN [dbo].[Stationeries] s ON p.[Id] = s.[ProductId] WHERE p.[IsActive] = 1";
         try (Connection conn = this.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sqlStationeries);
@@ -415,7 +415,7 @@ public class ProductDAO extends BaseDAO {
     public int countSearchProducts(String query, int categoryId) {
         int count = 0;
 
-        // Đếm sách thỏa mãn tìm kiếm
+        // Count Books matching search criteria
         StringBuilder sqlBooks = new StringBuilder("SELECT COUNT(*) FROM [dbo].[Products] p JOIN [dbo].[Books] b ON p.[Id] = b.[ProductId] WHERE p.[IsActive] = 1 ");
         if (query != null && !query.trim().isEmpty()) {
             sqlBooks.append("AND (p.[Title] LIKE ? OR p.[Description] LIKE ?) ");
@@ -450,7 +450,7 @@ public class ProductDAO extends BaseDAO {
             e.printStackTrace();
         }
 
-        // Đếm văn phòng phẩm thỏa mãn tìm kiếm
+        // Count Stationeries matching search criteria
         StringBuilder sqlStationeries = new StringBuilder("SELECT COUNT(*) FROM [dbo].[Products] p JOIN [dbo].[Stationeries] s ON p.[Id] = s.[ProductId] WHERE p.[IsActive] = 1 ");
         if (query != null && !query.trim().isEmpty()) {
             sqlStationeries.append("AND (p.[Title] LIKE ? OR p.[Description] LIKE ?) ");
@@ -1128,7 +1128,7 @@ public class ProductDAO extends BaseDAO {
             selectStmt.setInt(1, productId);
             try (ResultSet rs = selectStmt.executeQuery()) {
                 if (rs.next()) {
-                    // Đã có record -> UPDATE
+                    // Record exists -> UPDATE
                     int currentStock = rs.getInt("QuantityInStock");
                     int newStock = currentStock + quantityChange;
                     if (newStock < 0) return false;
