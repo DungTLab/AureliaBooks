@@ -1,13 +1,16 @@
 package com.mycompany.aureliabooks.controller;
 
+import com.mycompany.aureliabooks.dao.AuthorDAO;
 import com.mycompany.aureliabooks.dao.CategoryDAO;
 import com.mycompany.aureliabooks.dao.ProductDAO;
+import com.mycompany.aureliabooks.model.Author;
 import com.mycompany.aureliabooks.model.Book;
 import com.mycompany.aureliabooks.model.Product;
 import com.mycompany.aureliabooks.model.Stationery;
 import com.mycompany.aureliabooks.util.UploadUtils;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.MultipartConfig;
@@ -30,6 +33,7 @@ public class AdminProductController extends HttpServlet {
 
     private final ProductDAO productDAO = new ProductDAO();
     private final CategoryDAO categoryDAO = new CategoryDAO();
+    private final AuthorDAO authorDAO = new AuthorDAO();
 
     private Integer parseIntegerValue(String value) {
         if (value == null || value.trim().isEmpty()) {
@@ -64,6 +68,18 @@ public class AdminProductController extends HttpServlet {
     private boolean isValidPublicationYear(Integer value) {
         int currentYear = java.time.Year.now().getValue();
         return value != null && value >= 1900 && value <= currentYear;
+    }
+
+    private void setProductFormAttributes(HttpServletRequest request, String productType) {
+        request.setAttribute("categories", categoryDAO.getAllCategories());
+        if ("book".equals(productType)) {
+            request.setAttribute("publishers", productDAO.getAllPublishers());
+            request.setAttribute("suppliers", productDAO.getAllSuppliers());
+            request.setAttribute("authors", authorDAO.getAllAuthors());
+        } else {
+            request.setAttribute("brands", productDAO.getAllBrands());
+            request.setAttribute("suppliers", productDAO.getAllSuppliers());
+        }
     }
 
     // Helper method to load product list and forward to list.jsp
@@ -127,13 +143,7 @@ public class AdminProductController extends HttpServlet {
                 }
                 request.setAttribute("productType", type);
                 
-                request.setAttribute("categories", categoryDAO.getAllCategories());
-                if ("book".equals(type)) {
-                    request.setAttribute("publishers", productDAO.getAllPublishers());
-                } else if ("stationery".equals(type)) {
-                    request.setAttribute("brands", productDAO.getAllBrands());
-                    request.setAttribute("suppliers", productDAO.getAllSuppliers());
-                }
+                setProductFormAttributes(request, type);
                 request.getRequestDispatcher("/WEB-INF/product/create.jsp").forward(request, response);
                 break;
             }
@@ -160,16 +170,13 @@ public class AdminProductController extends HttpServlet {
                     String productType = "book";
                     if (product instanceof Book) {
                         productType = "book";
-                        request.setAttribute("publishers", productDAO.getAllPublishers());
                     } else if (product instanceof Stationery) {
                         productType = "stationery";
-                        request.setAttribute("brands", productDAO.getAllBrands());
-                        request.setAttribute("suppliers", productDAO.getAllSuppliers());
                     }
                     
                     request.setAttribute("productType", productType);
                     request.setAttribute("product", product);
-                    request.setAttribute("categories", categoryDAO.getAllCategories());
+                    setProductFormAttributes(request, productType);
                     request.getRequestDispatcher("/WEB-INF/product/update.jsp").forward(request, response);
                 } catch (NumberFormatException e) {
                     request.setAttribute("errorMessage", "ID sản phẩm không hợp lệ.");
@@ -258,12 +265,7 @@ public class AdminProductController extends HttpServlet {
             if (title == null || title.trim().isEmpty()) {
                 request.setAttribute("errorMessage", "Tiêu đề không được để trống!");
                 request.setAttribute("productType", productType);
-                request.setAttribute("categories", categoryDAO.getAllCategories());
-                if ("book".equals(productType)) request.setAttribute("publishers", productDAO.getAllPublishers());
-                else {
-                    request.setAttribute("brands", productDAO.getAllBrands());
-                    request.setAttribute("suppliers", productDAO.getAllSuppliers());
-                }
+                setProductFormAttributes(request, productType);
                 request.getRequestDispatcher("/WEB-INF/product/create.jsp").forward(request, response);
                 return;
             }
@@ -272,12 +274,7 @@ public class AdminProductController extends HttpServlet {
             if (sku == null || sku.trim().isEmpty() || !sku.matches("^[a-zA-Z0-9_\\-]+$")) {
                 request.setAttribute("errorMessage", "SKU không hợp lệ (không được để trống, chỉ chứa chữ, số, gạch nối).");
                 request.setAttribute("productType", productType);
-                request.setAttribute("categories", categoryDAO.getAllCategories());
-                if ("book".equals(productType)) request.setAttribute("publishers", productDAO.getAllPublishers());
-                else {
-                    request.setAttribute("brands", productDAO.getAllBrands());
-                    request.setAttribute("suppliers", productDAO.getAllSuppliers());
-                }
+                setProductFormAttributes(request, productType);
                 request.getRequestDispatcher("/WEB-INF/product/create.jsp").forward(request, response);
                 return;
             }
@@ -286,12 +283,7 @@ public class AdminProductController extends HttpServlet {
             if (imagePart == null || imagePart.getSize() == 0 || imagePart.getContentType() == null || !imagePart.getContentType().startsWith("image/")) {
                 request.setAttribute("errorMessage", "Vui lòng tải lên một tệp hình ảnh hợp lệ (VD: .jpg, .png)!");
                 request.setAttribute("productType", productType);
-                request.setAttribute("categories", categoryDAO.getAllCategories());
-                if ("book".equals(productType)) request.setAttribute("publishers", productDAO.getAllPublishers());
-                else {
-                    request.setAttribute("brands", productDAO.getAllBrands());
-                    request.setAttribute("suppliers", productDAO.getAllSuppliers());
-                }
+                setProductFormAttributes(request, productType);
                 request.getRequestDispatcher("/WEB-INF/product/create.jsp").forward(request, response);
                 return;
             }
@@ -306,12 +298,7 @@ public class AdminProductController extends HttpServlet {
             if (categoryId == null || !isValidPrice(price)) {
                 request.setAttribute("errorMessage", "Danh mục hoặc giá tiền không hợp lệ.");
                 request.setAttribute("productType", productType);
-                request.setAttribute("categories", categoryDAO.getAllCategories());
-                if ("book".equals(productType)) request.setAttribute("publishers", productDAO.getAllPublishers());
-                else {
-                    request.setAttribute("brands", productDAO.getAllBrands());
-                    request.setAttribute("suppliers", productDAO.getAllSuppliers());
-                }
+                setProductFormAttributes(request, productType);
                 request.getRequestDispatcher("/WEB-INF/product/create.jsp").forward(request, response);
                 return;
             }
@@ -331,6 +318,22 @@ public class AdminProductController extends HttpServlet {
                 Integer publisherId = parseIntegerValue(request.getParameter("publisherId"));
                 newBook.setPublisherId(publisherId);
                 newBook.setTranslator(request.getParameter("translator"));
+
+                Integer supplierId = parseIntegerValue(request.getParameter("supplierId"));
+                newBook.setSupplierId(supplierId);
+
+                String[] authorIdsParam = request.getParameterValues("authorIds");
+                List<Integer> authorIds = new ArrayList<>();
+                if (authorIdsParam != null) {
+                    for (String idStr : authorIdsParam) {
+                        try {
+                            authorIds.add(Integer.parseInt(idStr));
+                        } catch (NumberFormatException e) {
+                            // ignore
+                        }
+                    }
+                }
+                newBook.setAuthorIds(authorIds);
                 
                 // Validate Book-specific numerical constraints
                 Integer pubYear = parseIntegerValue(request.getParameter("publicationYear"));
@@ -388,12 +391,7 @@ public class AdminProductController extends HttpServlet {
             } else {
                 request.setAttribute("errorMessage", "Thêm sản phẩm thất bại, vui lòng thử lại.");
                 request.setAttribute("productType", productType);
-                request.setAttribute("categories", categoryDAO.getAllCategories());
-                if ("book".equals(productType)) request.setAttribute("publishers", productDAO.getAllPublishers());
-                else {
-                    request.setAttribute("brands", productDAO.getAllBrands());
-                    request.setAttribute("suppliers", productDAO.getAllSuppliers());
-                }
+                setProductFormAttributes(request, productType);
                 request.getRequestDispatcher("/WEB-INF/product/create.jsp").forward(request, response);
             }
 
@@ -403,12 +401,7 @@ public class AdminProductController extends HttpServlet {
             
             String pType = request.getParameter("productType") != null ? request.getParameter("productType") : "book";
             request.setAttribute("productType", pType);
-            request.setAttribute("categories", categoryDAO.getAllCategories());
-            if ("book".equals(pType)) request.setAttribute("publishers", productDAO.getAllPublishers());
-            else {
-                request.setAttribute("brands", productDAO.getAllBrands());
-                request.setAttribute("suppliers", productDAO.getAllSuppliers());
-            }
+            setProductFormAttributes(request, pType);
             request.getRequestDispatcher("/WEB-INF/product/create.jsp").forward(request, response);
         }
     }
@@ -448,12 +441,7 @@ public class AdminProductController extends HttpServlet {
                 request.setAttribute("errorMessage", "Tiêu đề không được để trống!");
                 request.setAttribute("productType", productType);
                 request.setAttribute("product", existing);
-                request.setAttribute("categories", categoryDAO.getAllCategories());
-                if ("book".equals(productType)) request.setAttribute("publishers", productDAO.getAllPublishers());
-                else {
-                    request.setAttribute("brands", productDAO.getAllBrands());
-                    request.setAttribute("suppliers", productDAO.getAllSuppliers());
-                }
+                setProductFormAttributes(request, productType);
                 request.getRequestDispatcher("/WEB-INF/product/update.jsp").forward(request, response);
                 return;
             }
@@ -463,12 +451,7 @@ public class AdminProductController extends HttpServlet {
                 request.setAttribute("errorMessage", "SKU không hợp lệ (không được để trống, chỉ chứa chữ, số, gạch nối).");
                 request.setAttribute("productType", productType);
                 request.setAttribute("product", existing);
-                request.setAttribute("categories", categoryDAO.getAllCategories());
-                if ("book".equals(productType)) request.setAttribute("publishers", productDAO.getAllPublishers());
-                else {
-                    request.setAttribute("brands", productDAO.getAllBrands());
-                    request.setAttribute("suppliers", productDAO.getAllSuppliers());
-                }
+                setProductFormAttributes(request, productType);
                 request.getRequestDispatcher("/WEB-INF/product/update.jsp").forward(request, response);
                 return;
             }
@@ -486,12 +469,7 @@ public class AdminProductController extends HttpServlet {
                 request.setAttribute("errorMessage", "Danh mục hoặc giá tiền không hợp lệ.");
                 request.setAttribute("productType", productType);
                 request.setAttribute("product", existing);
-                request.setAttribute("categories", categoryDAO.getAllCategories());
-                if ("book".equals(productType)) request.setAttribute("publishers", productDAO.getAllPublishers());
-                else {
-                    request.setAttribute("brands", productDAO.getAllBrands());
-                    request.setAttribute("suppliers", productDAO.getAllSuppliers());
-                }
+                setProductFormAttributes(request, productType);
                 request.getRequestDispatcher("/WEB-INF/product/update.jsp").forward(request, response);
                 return;
             }
@@ -511,6 +489,22 @@ public class AdminProductController extends HttpServlet {
 
                 updatedBook.setPublisherId(parseIntegerValue(request.getParameter("publisherId")));
                 updatedBook.setTranslator(request.getParameter("translator"));
+
+                Integer supplierId = parseIntegerValue(request.getParameter("supplierId"));
+                updatedBook.setSupplierId(supplierId);
+
+                String[] authorIdsParam = request.getParameterValues("authorIds");
+                List<Integer> authorIds = new ArrayList<>();
+                if (authorIdsParam != null) {
+                    for (String idStr : authorIdsParam) {
+                        try {
+                            authorIds.add(Integer.parseInt(idStr));
+                        } catch (NumberFormatException e) {
+                            // ignore
+                        }
+                    }
+                }
+                updatedBook.setAuthorIds(authorIds);
                 
                 // Validate Book-specific numerical constraints
                 Integer pubYear = parseIntegerValue(request.getParameter("publicationYear"));
@@ -570,12 +564,7 @@ public class AdminProductController extends HttpServlet {
                 request.setAttribute("errorMessage", "Cập nhật thất bại, vui lòng thử lại.");
                 request.setAttribute("productType", productType);
                 request.setAttribute("product", existing);
-                request.setAttribute("categories", categoryDAO.getAllCategories());
-                if ("book".equals(productType)) request.setAttribute("publishers", productDAO.getAllPublishers());
-                else {
-                    request.setAttribute("brands", productDAO.getAllBrands());
-                    request.setAttribute("suppliers", productDAO.getAllSuppliers());
-                }
+                setProductFormAttributes(request, productType);
                 request.getRequestDispatcher("/WEB-INF/product/update.jsp").forward(request, response);
             }
 
@@ -589,12 +578,7 @@ public class AdminProductController extends HttpServlet {
                 int pid = Integer.parseInt(request.getParameter("productId"));
                 request.setAttribute("product", productDAO.getProductById(pid));
             } catch(Exception ignored) {}
-            request.setAttribute("categories", categoryDAO.getAllCategories());
-            if ("book".equals(pType)) request.setAttribute("publishers", productDAO.getAllPublishers());
-            else {
-                request.setAttribute("brands", productDAO.getAllBrands());
-                request.setAttribute("suppliers", productDAO.getAllSuppliers());
-            }
+            setProductFormAttributes(request, pType);
             request.getRequestDispatcher("/WEB-INF/product/update.jsp").forward(request, response);
         }
     }

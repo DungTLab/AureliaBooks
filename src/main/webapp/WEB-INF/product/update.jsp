@@ -62,10 +62,39 @@
                         <div class="mb-3">
                             <label for="publisherId" class="form-label">Nhà xuất bản</label>
                             <select class="form-select" id="publisherId" name="publisherId">
+                                <option value="">-- Chọn Nhà xuất bản --</option>
                                 <c:forEach var="pub" items="${publishers}">
                                     <option value="${pub.id}" ${pub.id == product.publisherId ? 'selected' : ''}>${pub.name}</option>
                                 </c:forEach>
                             </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="supplierId" class="form-label">Nhà cung cấp</label>
+                            <select class="form-select" id="supplierId" name="supplierId">
+                                <option value="">-- Chọn Nhà cung cấp --</option>
+                                <c:forEach var="supplier" items="${suppliers}">
+                                    <option value="${supplier.id}" ${supplier.id == product.supplierId ? 'selected' : ''}>${supplier.name}</option>
+                                </c:forEach>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label d-block">Tác giả</label>
+                            <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto; background-color: #fff;">
+                                <c:forEach var="author" items="${authors}">
+                                    <c:set var="isSel" value="false" />
+                                    <c:forEach var="selectedId" items="${product.authorIds}">
+                                        <c:if test="${selectedId == author.authorId}">
+                                            <c:set var="isSel" value="true" />
+                                        </c:if>
+                                    </c:forEach>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="authorIds" value="${author.authorId}" id="author_${author.authorId}" ${isSel ? 'checked' : ''}>
+                                        <label class="form-check-label" for="author_${author.authorId}">
+                                            ${author.fullName}
+                                        </label>
+                                    </div>
+                                </c:forEach>
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label for="translator" class="form-label">Dịch giả</label>

@@ -197,6 +197,7 @@ public class ProductDAO extends BaseDAO {
                     book.setLanguage(rs.getString("Language"));
                     book.setWeight(rs.getBigDecimal("Weight"));
                     book.setDimensions(rs.getString("Dimensions"));
+                    book.setAuthorIds(getBookAuthorIds(id));
                     return book;
                 }
             }
@@ -245,6 +246,23 @@ public class ProductDAO extends BaseDAO {
         }
 
         return null;
+    }
+
+    public List<Integer> getBookAuthorIds(int productId) {
+        List<Integer> list = new ArrayList<>();
+        String sql = "SELECT [AuthorId] FROM [dbo].[Contributor] WHERE [ProductId] = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, productId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(rs.getInt("AuthorId"));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
     }
 
     public int getProductStock(int id) {
@@ -302,6 +320,7 @@ public class ProductDAO extends BaseDAO {
                     map.put("language", rs.getString("Language"));
                     map.put("weight", rs.getBigDecimal("Weight"));
                     map.put("dimensions", rs.getString("Dimensions"));
+                    map.put("authorIds", getBookAuthorIds(id));
                     return map;
                 }
             }
@@ -555,6 +574,19 @@ public class ProductDAO extends BaseDAO {
 
             stmtBook.executeUpdate();
 
+            // Insert Contributor associations
+            if (book.getAuthorIds() != null && !book.getAuthorIds().isEmpty()) {
+                String insertContributorSQL = "INSERT INTO [dbo].[Contributor] ([ProductId], [AuthorId]) VALUES (?, ?)";
+                try (PreparedStatement stmtContrib = conn.prepareStatement(insertContributorSQL)) {
+                    for (Integer authorId : book.getAuthorIds()) {
+                        stmtContrib.setInt(1, book.getId());
+                        stmtContrib.setInt(2, authorId);
+                        stmtContrib.addBatch();
+                    }
+                    stmtContrib.executeBatch();
+                }
+            }
+
             conn.commit(); // Commit transaction
             return true;
         } catch (SQLException | ClassNotFoundException e) {
@@ -725,6 +757,26 @@ public class ProductDAO extends BaseDAO {
             stmtBook.setInt(9, book.getId());
 
             stmtBook.executeUpdate();
+
+            // Delete existing contributor associations
+            String deleteContributorSQL = "DELETE FROM [dbo].[Contributor] WHERE [ProductId] = ?";
+            try (PreparedStatement stmtDelContrib = conn.prepareStatement(deleteContributorSQL)) {
+                stmtDelContrib.setInt(1, book.getId());
+                stmtDelContrib.executeUpdate();
+            }
+
+            // Insert new contributor associations
+            if (book.getAuthorIds() != null && !book.getAuthorIds().isEmpty()) {
+                String insertContributorSQL = "INSERT INTO [dbo].[Contributor] ([ProductId], [AuthorId]) VALUES (?, ?)";
+                try (PreparedStatement stmtContrib = conn.prepareStatement(insertContributorSQL)) {
+                    for (Integer authorId : book.getAuthorIds()) {
+                        stmtContrib.setInt(1, book.getId());
+                        stmtContrib.setInt(2, authorId);
+                        stmtContrib.addBatch();
+                    }
+                    stmtContrib.executeBatch();
+                }
+            }
 
             conn.commit(); // Commit transaction
             return true;
