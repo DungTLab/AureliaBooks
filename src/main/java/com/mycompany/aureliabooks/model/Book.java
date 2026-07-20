@@ -5,6 +5,7 @@
 package com.mycompany.aureliabooks.model;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 /**
  * Book subclass entity.
@@ -20,6 +21,7 @@ public class Book extends Product {
     private String language;
     private BigDecimal weight;
     private String dimensions;
+    private List<Integer> authorIds;
 
     public Book() {
     }
@@ -86,5 +88,13 @@ public class Book extends Product {
 
     public void setDimensions(String dimensions) {
         this.dimensions = dimensions;
+    }
+
+    public List<Integer> getAuthorIds() {
+        return authorIds;
+    }
+
+    public void setAuthorIds(List<Integer> authorIds) {
+        this.authorIds = authorIds;
     }
 }

@@ -131,6 +131,11 @@
                                                 </a>
                                             </li>
                                             <li>
+                                                <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/authors">
+                                                    <i class="bi bi-pencil-square me-2"></i>Quản lý Tác giả
+                                                </a>
+                                            </li>
+                                            <li>
                                                 <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/brands">
                                                     <i class="bi bi-tags me-2"></i>Quản lý Thương hiệu
                                                 </a>
@@ -229,6 +234,11 @@
                                             <li>
                                                 <a class="dropdown-item py-2" href="${pageContext.request.contextPath}/admin/publishers">
                                                     <i class="bi bi-building-fill me-2 text-secondary"></i>Quản lý NXB
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item py-2" href="${pageContext.request.contextPath}/admin/authors">
+                                                    <i class="bi bi-pencil-square me-2 text-secondary"></i>Quản lý Tác giả
                                                 </a>
                                             </li>
                                             <li>
